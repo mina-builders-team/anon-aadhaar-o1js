@@ -103,8 +103,8 @@ Along with the proof, the following values are output:
 ```mermaid
 flowchart TD
     %% Main sections
-    Inputs["Inputs"] --> AadhaarVerifier["Aadhaar Verifier Circuit"]
-    AadhaarVerifier["Aadhaar Verifier Circuit"] --> Outputs["Outputs"]
+    Inputs["Inputs"] --> AadhaarVerifier["Aadhaar QR Verifier Circuit"]
+    AadhaarVerifier["Aadhaar QR Verifier Circuit"] --> Outputs["Outputs"]
     
     %% Input section contents
     subgraph Inputs
@@ -124,7 +124,7 @@ flowchart TD
     end
     
     %% Aadhaar Verifier Circuit contents
-    subgraph AadhaarVerifier["Aadhaar Verifier Circuit"]
+    subgraph AadhaarVerifier["Aadhaar QR Verifier Circuit"]
         subgraph SignatureVerifierTemplate["Signature Verifier Template"]
             ApplySHA256["Apply SHA256 to data"] --> VerifyRSA1["Verify the RSA signature of the hashed data"]
             VerifyRSA1 --> VerifyRSA2["Hash the RSA public key and output it"]
