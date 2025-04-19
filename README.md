@@ -12,9 +12,11 @@ In the Aadhaar QR code, identity data is embedded in a structured, encrypted for
 
 ## How does it work?
 
-The architecture is split into two parts: 1) Data Extraction & Processing 2) Proof Genereation. In the first part, the user fetches data from UIDAI, validates it, and processes it to use it in circuits.
+The architecture is split into two parts: 1) Data Extraction & Processing 2) Proof Generation. 
 
-In the second part, by using user’s private data, proof generation is done on the user’s device. 
+In the first part, the user fetches data from UIDAI, validates it, and processes it to use it in circuits.
+
+In the second part, by using user's private data, proof generation is done on the user’s device. 
 
 ### Data Extraction & Processing
 
@@ -61,7 +63,7 @@ The Aadhaar QR verifier circuit takes the following inputs:
 
 - **Signature** and **signed data**, which are obtained off the circuit. The signature is used in the verification component together with the signed data.
 - **RSA Public Key**, which is fetched from UIDAI off the circuit.
-- **Signal Hash**: The hash of a user-chosen **Signal**, which acts as a commitment to a public message. It's used in the circuit for two main reasons:
+- **Signal Hash**: A hash of a user-chosen **signal**, which acts as a commitment to a public message. It's used in the circuit for two main reasons:
     - **Prevent front-running** – Binding the proof to a specific signal (e.g., an Ethereum address) ensures only the intended party can use it.
     - **Enable secure signing** – especially useful in ERC-4337 flows, where the signal can represent a specific action (like a transaction), tying the proof directly to that action.
 - **Nullifier Seed**, which is used to generate a **nullifier** by hashing it with the user's photo. This prevents the same Aadhaar from being used multiple times for the same action or across apps, while keeping the identity private.
@@ -93,12 +95,12 @@ For each field in the data, a dedicated extractor circuit is used to extract the
 
 Along with the proof, the following values are output:
 
-- **Nullifier**, which is calculated using photograph bytes and the nullifier seed.
-- **Timestamp**, which is obtained from the **Timestamp Extractor** component.
-- **Public Key Hash**, which is derived by hashing the RSA public key in the signature verifier component.
-- **Signal Hash**, which is the same hash provided as input by the user.
-- **Nullifier Seed**, which is returned as is for verification.
-- **Age Above 18**, **Gender**, **State**, and **Pincode**, which are extracted from the identity data and revealed based on the user's disclosure preferences.
+- **Nullifier**, calculated using photograph bytes and the nullifier seed.
+- **Timestamp**, obtained from the **Timestamp Extractor** component.
+- **Public Key Hash**, derived by hashing the RSA public key in the signature verifier component.
+- **Signal Hash**, the same hash provided as input by the user.
+- **Nullifier Seed**, returned as is for verification.
+- **Age Above 18**, **Gender**, **State**, and **Pincode**, extracted from the identity data and revealed based on the user's disclosure preferences.
 
 ```mermaid
 flowchart TD
