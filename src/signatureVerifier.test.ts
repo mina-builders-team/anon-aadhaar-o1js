@@ -9,6 +9,9 @@ import {
   convertBigIntToByteArray,
   decompressByteArray,
 } from '@anon-aadhaar/core';
+import { SignatureVerifier } from './signatureVerifier';
+import { Bytes, Gadgets } from 'o1js';
+import { wordToBytes } from './utils';
 
 const proofsEnabled = false;
 
@@ -18,6 +21,7 @@ const qrPath = path.resolve(__dirname, '../src/assets/test.json');
 const certPath = path.resolve(__dirname, '../src/assets/testPublicKey.pem');
 
 describe('Signature Verifier', () => {
+
   let qrData: string;
   let pkData: string;
   let publicKey: crypto.KeyObject;
@@ -34,6 +38,9 @@ describe('Signature Verifier', () => {
   let signatureBigint: Bigint2048;
 
   beforeAll(async () => {
+
+    await SignatureVerifier.compile({proofsEnabled});
+
     // Get QR data file
     qrData = fs.readFileSync(qrPath, 'utf8');
 
@@ -79,5 +86,44 @@ describe('Signature Verifier', () => {
     signatureBigint = Bigint2048.from(
       BigInt('0x' + bufferToHex(Buffer.from(signatureBytes)).toString())
     );
+  });
+  describe('Partial hashing computations', () => {
+    it('should compute partial hashing with byte blocks split by 512-512-128.', async () => {
+      // Pad the blocks for SHA256 processes. Padding of the internla SHA256 function will be used here.
+
+      const properlyPaddedBlocks = Gadgets.SHA256.padding(signedData);
+
+      // Process these blocks in chunks if needed
+      const initialValue = Gadgets.SHA256.initialState;
+
+      // If you want to split at specific byte boundaries, first convert blocks to bytes
+      let paddedData = Bytes.from(
+        properlyPaddedBlocks
+          .flat()
+          .map((word) => word.toBytesBE())
+          .flat()
+      );
+
+      // Now split at your desired boundaries (multiple of 64 bytes)
+      const pad1 = Bytes.from(paddedData.toBytes().slice(0, 512));
+      const pad2 = Bytes.from(paddedData.toBytes().slice(512, 1024));
+      const pad3 = Bytes.from(paddedData.toBytes().slice(1024));
+
+      const proof1 = await SignatureVerifier.baseCase(pad1, initialValue);
+      const proof2 = await SignatureVerifier.hashStep(proof1.proof, pad2);
+      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
+
+      const result3 = proof3.proof.publicOutput;
+
+      // Get final digest
+      const finalDigest = Bytes.from(
+        result3.hashState.map((x) => wordToBytes(x.value, 4, true)).flat()
+      );
+
+      const expectedDigest = Gadgets.SHA2.hash(256, signedData);
+      expect(finalDigest.toHex()).toEqual(expectedDigest.toHex());
+      const timeEnd = performance.now();
+
+    });
   });
 });
