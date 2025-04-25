@@ -90,7 +90,7 @@ describe('Signature Verifier', () => {
   describe('Partial hashing computations', () => {
     it.skip('should compute partial hashing with 9 byte blocks of size 128 bytes.', async () => {
       //
-      // Warning: This step is used for testing 128-byte hashing. Remove .skip if you want to experiment the full proof generation
+      // Warning: This step is used for testing 128-byte hashing. Remove .skip if you want to experiment the full proof generation.
       //
 
       // Pad the blocks for SHA256 processes. Padding of the internal SHA256 function will be used here.
@@ -200,7 +200,6 @@ describe('Signature Verifier', () => {
       const expectedDigest = Gadgets.SHA2.hash(256, signedData);
       expect(finalDigest.toHex()).toEqual(expectedDigest.toHex());
       const timeEnd = performance.now();
-
     });
   });
 
@@ -215,7 +214,7 @@ describe('Signature Verifier', () => {
       // If you want to split at specific byte boundaries, first convert blocks to bytes
       let paddedData = Bytes.from(
         properlyPaddedBlocks
-          .flat() 
+          .flat()
           .map((word) => word.toBytesBE())
           .flat()
       );
