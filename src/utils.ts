@@ -1,5 +1,6 @@
 import { Bytes, UInt32, Gadgets, Provable, Field, UInt8, assert } from 'o1js';
 import { Bigint2048 } from './rsa';
+import pako from 'pako';
 
 /**
  * Creates a PKCS#1 v1.5 padded message for the given SHA-256 digest.
@@ -173,4 +174,43 @@ function chunk<T>(array: T[], size: number): T[][] {
   return Array.from({ length: array.length / size }, (_, i) =>
     array.slice(size * i, size * (i + 1))
   );
+}
+
+/**
+ * Converts a `bigint` value into a `Uint8Array` byte array representation.
+ *
+ * The conversion is done in little-endian order (least significant byte first),
+ * and the resulting array is reversed to produce big-endian format (most significant byte first),
+ * which is the conventional format for cryptographic and binary protocols.
+ *
+ * @param bigInt - The bigint value to convert into a byte array.
+ * @returns A `Uint8Array` representing the input bigint in big-endian byte order.
+ * @notice - Copied from https://github.com/anon-aadhaar/anon-aadhaar/blob/main/packages/core/src/utils.ts
+ */
+export function convertBigIntToByteArray(bigInt: bigint): Uint8Array {
+  const byteLength = Math.max(1, Math.ceil(bigInt.toString(2).length / 8));
+
+  const result = new Uint8Array(byteLength);
+  let i = 0;
+  while (bigInt > 0) {
+    result[i] = Number(bigInt % BigInt(256));
+    bigInt = bigInt / BigInt(256);
+    i += 1;
+  }
+  return result.reverse();
+}
+
+/**
+ * Decompresses a compressed byte array (e.g., gzip or deflate format) using the `pako` library.
+ *
+ * This function is typically used to decompress data that has been compressed using zlib/deflate,
+ * such as Aadhaar QR payloads or similar.
+ *
+ * @param byteArray - The compressed `Uint8Array` to decompress.
+ * @returns A decompressed `Uint8Array` containing the original data.
+ * @notice - Copied from https://github.com/anon-aadhaar/anon-aadhaar/blob/main/packages/core/src/utils.ts
+ */
+export function decompressByteArray(byteArray: Uint8Array): Uint8Array {
+  const decompressedArray = pako.inflate(byteArray);
+  return decompressedArray;
 }

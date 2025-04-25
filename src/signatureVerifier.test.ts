@@ -2,17 +2,16 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 
-import {
-  convertBigIntToByteArray,
-  decompressByteArray,
-} from '@anon-aadhaar/core';
-
 import { bufferToHex } from '@zk-email/helpers';
 
 import { SignatureVerifier } from './signatureVerifier';
 import { Bytes, Field, Gadgets, Struct, UInt8, ZkProgram } from 'o1js';
 import { Bigint2048 } from './rsa';
-import { wordToBytes } from './utils';
+import {
+  wordToBytes,
+  convertBigIntToByteArray,
+  decompressByteArray,
+} from './utils';
 
 const proofsEnabled = false;
 
