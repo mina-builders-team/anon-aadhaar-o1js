@@ -40,5 +40,9 @@
   },
   "engines": {
     "node": ">=18.14.0"
+  },
+  "dependencies": {
+    "@anon-aadhaar/core": "^2.4.3",
+    "@zk-email/helpers": "^6.4.2"
   }
 }
