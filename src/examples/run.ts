@@ -78,8 +78,6 @@ await SignatureVerifier.compile();
 console.timeEnd('Compile');
 
 
-
-
 // Now split at your desired boundaries (Should be a multiple of 64 bytes).
 const pad1 = Bytes.from(paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM));
 
@@ -101,7 +99,7 @@ const { proof } = await SignatureVerifier.verifySignature(
   signatureBigint,
   publicKeyBigint
 );
-console.timeEnd('Compile');
+console.timeEnd('Proof generations');
 
 console.time('Verification');
 await proof.verify();

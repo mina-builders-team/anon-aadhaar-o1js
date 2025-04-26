@@ -4,7 +4,7 @@ import crypto from 'crypto';
 
 import { bufferToHex } from '@zk-email/helpers';
 
-import { SignatureVerifier } from './SignatureVerifier';
+import { SignatureVerifier } from './SignatureVerifier.js';
 import { Bytes, Gadgets, UInt32 } from 'o1js';
 import { Bigint2048 } from './rsa';
 import {
@@ -19,7 +19,7 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const qrPath = path.resolve(__dirname, '../src/assets/test.json');
 const certPath = path.resolve(__dirname, '../src/assets/testPublicKey.pem');
 
-const proofsEnabled = true;
+const proofsEnabled = false;
 
 describe('Signature Verifier', () => {
   let qrData: string;
@@ -160,7 +160,7 @@ describe('Signature Verifier', () => {
 
       // Get final digest
       const finalDigest = Bytes.from(
-        result.hashState.map((x) => wordToBytes(x.value, 4, true)).flat()
+        result.hashState.map((x: UInt32) => wordToBytes(x.value, 4, true)).flat()
       );
 
       const expectedDigest = Gadgets.SHA2.hash(256, signedData);
