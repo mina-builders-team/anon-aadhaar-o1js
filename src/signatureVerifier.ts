@@ -7,8 +7,8 @@ import {
   SelfProof,
   Field,
 } from 'o1js';
-import { pkcs1v15Pad, updateHash, wordToBytes } from './utils';
-import { Bigint2048, rsaVerify65537 } from './rsa';
+import { pkcs1v15Pad, updateHash, wordToBytes } from './utils.js';
+import { Bigint2048, rsaVerify65537 } from './rsa.js';
 
 /**
  * Represents a 512-byte array, used for SHA256 block-wise hashing.

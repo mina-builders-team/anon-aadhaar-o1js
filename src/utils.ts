@@ -1,9 +1,8 @@
 import { Bytes, UInt32, Gadgets, Provable, Field, UInt8, assert } from 'o1js';
-import { Bigint2048 } from './rsa';
+import { Bigint2048 } from './rsa.js';
 import pako from 'pako';
 
 export const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
-
 
 /**
  * Creates a PKCS#1 v1.5 padded message for the given SHA-256 digest.
@@ -87,7 +86,7 @@ export function updateHash(
 
     // Update hash state using compression function
     hashValues[i + 1] = [
-      ...Gadgets.SHA2.compression(256,hashValues[i], messageSchedule),
+      ...Gadgets.SHA2.compression(256, hashValues[i], messageSchedule),
     ];
   }
 

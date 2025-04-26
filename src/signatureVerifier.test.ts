@@ -14,7 +14,6 @@ import {
 } from './utils';
 import { BLOCK_SIZES } from './utils';
 
-
 // Path for QR and public key data files.
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const qrPath = path.resolve(__dirname, '../src/assets/test.json');
@@ -201,7 +200,9 @@ describe('Signature Verifier', () => {
 
       // Get final digest
       const finalDigest = Bytes.from(
-        result3.hashState.map((x) => wordToBytes(x.value, 4, true)).flat()
+        result3.hashState
+          .map((x: UInt32) => wordToBytes(x.value, 4, true))
+          .flat()
       );
 
       const expectedDigest = Gadgets.SHA2.hash(256, signedData);
