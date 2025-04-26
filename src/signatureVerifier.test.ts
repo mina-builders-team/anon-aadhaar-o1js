@@ -4,7 +4,7 @@ import crypto from 'crypto';
 
 import { bufferToHex } from '@zk-email/helpers';
 
-import { SignatureVerifier } from './SignatureVerifier.js';
+import { SignatureVerifier } from './signatureVerifier.js';
 import { Bytes, Gadgets, UInt32 } from 'o1js';
 import { Bigint2048 } from './rsa.js';
 import {
