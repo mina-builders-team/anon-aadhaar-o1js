@@ -58,6 +58,12 @@ export function updateHash(
 ): { hashState: UInt32[] } {
   // Split the padded preimage into 512-bit (64-byte) blocks
   // TODO: investigate if it is better to do it out of the circuit.
+
+  assert(
+    paddedPreimage.length % 64 === 0,
+    'Preimage must be padded to a multiple of 64 bytes'
+  );
+
   const messageBlocks = generateMessageBlocks(paddedPreimage);
 
   // Create array to store hash states after each block

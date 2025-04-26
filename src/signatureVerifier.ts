@@ -40,11 +40,12 @@ export const SignatureVerifier = ZkProgram({
   methods: {
     /**
      * Performs the initial SHA256 hash on a 512-byte preimage.
+     * Rows : 43537
      * @param preimage - First 512-byte chunk of the message.
      * @param initialHashValues - Initial hash state (SHA256 IV).
      * @returns The hash state after processing the first block.
      */
-    baseCase: {
+    baseCase512: {
       privateInputs: [Bytes512.provable, Provable.Array(UInt32, 8)],
 
       async method(preimage: Bytes512, initialHashValues: UInt32[]) {
@@ -59,9 +60,11 @@ export const SignatureVerifier = ZkProgram({
 
     /**
      * Performs the initial SHA256 hash on a 128-byte preimage.
+     * Rows : 10897
      * @param preimage - First 128-byte chunk of the message.
      * @param initialHashValues - Initial hash state (SHA256 IV).
      * @returns The hash state after processing the block.
+     *
      */
     baseCase128: {
       privateInputs: [Bytes128.provable, Provable.Array(UInt32, 8)],
@@ -78,11 +81,12 @@ export const SignatureVerifier = ZkProgram({
 
     /**
      * Continues hashing with a new 512-byte chunk using the hash state from the previous proof.
+     * Rows : 43537
      * @param earlierProof - The previous recursive proof with hash state.
      * @param preimage - The next 512-byte padded chunk of the message.
      * @returns Updated hash state after processing this chunk.
      */
-    hashStep: {
+    hashStep512: {
       privateInputs: [SelfProof, Bytes512.provable],
 
       async method(
@@ -104,6 +108,7 @@ export const SignatureVerifier = ZkProgram({
 
     /**
      * Continues hashing with a new 128-byte chunk using the hash state from the previous proof.
+     * Rows : 10897
      * @param earlierProof - The previous recursive proof with hash state.
      * @param preimage - The next 128-byte padded chunk of the message.
      * @returns Updated hash state after processing this chunk.
@@ -130,6 +135,7 @@ export const SignatureVerifier = ZkProgram({
 
     /**
      * Verifies RSA-65537 signature of a SHA256 digest using a given public key.
+     * Rows : 12510
      * Converts the final hash state to a byte array, applies PKCS#1 v1.5 padding,
      * and then verifies against the provided RSA signature.
      *

@@ -28,7 +28,6 @@
     "@types/jest": "^29.5.12",
     "@types/json-bigint": "^1.0.4",
     "@types/pako": "^2.0.3",
-    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^5.5.0",
     "@typescript-eslint/parser": "^5.5.0",
     "eslint": "^8.7.0",
@@ -45,7 +44,6 @@
     "node": ">=18.14.0"
   },
   "dependencies": {
-    "@anon-aadhaar/core": "^2.4.3",
     "@zk-email/helpers": "^6.4.2"
   }
 }

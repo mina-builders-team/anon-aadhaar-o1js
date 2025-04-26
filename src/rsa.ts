@@ -1,7 +1,8 @@
 /**
- * RSA signature verification with o1js
+ * RSA signature verification with o1js.
+ * Taken from o1js repository: https://github.com/o1-labs/o1js/blob/main/src/examples/crypto/rsa/rsa.ts
  */
-import { Field, Gadgets, Provable, Struct, Unconstrained, Bytes } from 'o1js';
+import { Field, Gadgets, Provable, Struct, Unconstrained } from 'o1js';
 
 export { Bigint2048, rsaVerify65537 };
 

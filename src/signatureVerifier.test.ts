@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { bufferToHex } from '@zk-email/helpers';
 
 import { SignatureVerifier } from './signatureVerifier';
-import { Bytes, Field, Gadgets, Struct, UInt8, ZkProgram } from 'o1js';
+import { Bytes, Gadgets, UInt32 } from 'o1js';
 import { Bigint2048 } from './rsa';
 import {
   wordToBytes,
@@ -13,7 +13,10 @@ import {
   decompressByteArray,
 } from './utils';
 
-const proofsEnabled = false;
+// Block sizes used in the code is shown.
+const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
+
+const proofsEnabled = true;
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
@@ -59,7 +62,7 @@ describe('Signature Verifier', () => {
     qrDataBytes = convertBigIntToByteArray(QRData);
     decodedData = decompressByteArray(qrDataBytes);
 
-    // Split signature and signed data
+    // Split signature and signed data. Signature in aadhaar QR data is the last 256 bytes.
     signatureBytes = decodedData.slice(
       decodedData.length - 256,
       decodedData.length
@@ -87,6 +90,15 @@ describe('Signature Verifier', () => {
   });
 
   describe('Partial hashing computations', () => {
+    it('Print the rows of the methods', async () => {
+      const summarize = await SignatureVerifier.analyzeMethods();
+
+      console.log('baseCase128: ', summarize.baseCase128);
+      console.log('baseCase512: ', summarize.baseCase512);
+      console.log('hashStep128: ', summarize.hashStep128);
+      console.log('hashStep512: ', summarize.hashStep512);
+      console.log('verifySignature: ', summarize.verifySignature);
+    });
     it.skip('should compute partial hashing with 9 byte blocks of size 128 bytes.', async () => {
       //
       // Warning: This step is used for testing 128-byte hashing. Remove .skip if you want to experiment the full proof generation.
@@ -94,10 +106,10 @@ describe('Signature Verifier', () => {
 
       // Pad the blocks for SHA256 processes. Padding of the internal SHA256 function will be used here.
 
-      const properlyPaddedBlocks = Gadgets.SHA256.padding(signedData);
+      const properlyPaddedBlocks = Gadgets.SHA2.padding(256, signedData);
 
       // Process these blocks in chunks if needed
-      const initialValue = Gadgets.SHA256.initialState;
+      const initialValue: UInt32[] = Gadgets.SHA2.initialState(256);
 
       // If you want to split at specific byte boundaries, first convert blocks to bytes
       let paddedData = Bytes.from(
@@ -112,7 +124,9 @@ describe('Signature Verifier', () => {
       const paddedBytes = [];
       for (let i = 0; i < 9; i++) {
         paddedBytes[i] = Bytes.from(
-          paddedData.toBytes().slice(i * 128, 128 * (i + 1))
+          paddedData
+            .toBytes()
+            .slice(i * BLOCK_SIZES.SMALL, BLOCK_SIZES.SMALL * (i + 1))
         );
       }
       // Compute proofs recursively
@@ -165,12 +179,12 @@ describe('Signature Verifier', () => {
     });
 
     it('should compute partial hashing with byte blocks split by 512-512-128.', async () => {
-      // Pad the blocks for SHA256 processes. Padding of the internla SHA256 function will be used here.
+      // Pad the blocks for SHA256 processes. Padding of the internal SHA256 function will be used here.
 
-      const properlyPaddedBlocks = Gadgets.SHA256.padding(signedData);
+      const properlyPaddedBlocks = Gadgets.SHA2.padding(256, signedData);
 
       // Process these blocks in chunks if needed
-      const initialValue = Gadgets.SHA256.initialState;
+      const initialValue: UInt32[] = Gadgets.SHA2.initialState(256);
 
       // If you want to split at specific byte boundaries, first convert blocks to bytes
       let paddedData = Bytes.from(
@@ -181,12 +195,16 @@ describe('Signature Verifier', () => {
       );
 
       // Now split at your desired boundaries (multiple of 64 bytes)
-      const pad1 = Bytes.from(paddedData.toBytes().slice(0, 512));
-      const pad2 = Bytes.from(paddedData.toBytes().slice(512, 1024));
-      const pad3 = Bytes.from(paddedData.toBytes().slice(1024));
+      const pad1 = Bytes.from(
+        paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
+      );
+      const pad2 = Bytes.from(
+        paddedData.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
+      );
+      const pad3 = Bytes.from(paddedData.toBytes().slice(BLOCK_SIZES.LARGE));
 
-      const proof1 = await SignatureVerifier.baseCase(pad1, initialValue);
-      const proof2 = await SignatureVerifier.hashStep(proof1.proof, pad2);
+      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
+      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
       const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
 
       const result3 = proof3.proof.publicOutput;
@@ -205,10 +223,10 @@ describe('Signature Verifier', () => {
   describe('Signature verification computations', () => {
     it('should verify rsa signature correctly', async () => {
       // Pad the blocks for SHA256 processes. Padding of the internla SHA256 function will be used here.
-      const properlyPaddedBlocks = Gadgets.SHA256.padding(signedData);
+      const properlyPaddedBlocks = Gadgets.SHA2.padding(256, signedData);
 
       // Process these blocks in chunks if needed
-      const initialValue = Gadgets.SHA256.initialState;
+      const initialValue: UInt32[] = Gadgets.SHA2.initialState(256);
 
       // If you want to split at specific byte boundaries, first convert blocks to bytes
       let paddedData = Bytes.from(
@@ -219,12 +237,18 @@ describe('Signature Verifier', () => {
       );
 
       // Now split at your desired boundaries (multiple of 64 bytes)
-      const pad1 = Bytes.from(paddedData.toBytes().slice(0, 512));
-      const pad2 = Bytes.from(paddedData.toBytes().slice(512, 1024));
-      const pad3 = Bytes.from(paddedData.toBytes().slice(1024));
+      const pad1 = Bytes.from(
+        paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
+      );
 
-      const proof1 = await SignatureVerifier.baseCase(pad1, initialValue);
-      const proof2 = await SignatureVerifier.hashStep(proof1.proof, pad2);
+      const pad2 = Bytes.from(
+        paddedData.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
+      );
+
+      const pad3 = Bytes.from(paddedData.toBytes().slice(BLOCK_SIZES.LARGE));
+
+      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
+      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
       const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
 
       // Should throw an error if verification fails.
