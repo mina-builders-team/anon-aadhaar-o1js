@@ -1,3 +1,2 @@
-import { SignatureVerifier } from './signatureVerifier';
-
+import { SignatureVerifier } from './SignatureVerifier';
 export { SignatureVerifier };

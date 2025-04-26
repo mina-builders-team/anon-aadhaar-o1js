@@ -4,7 +4,7 @@ import crypto from 'crypto';
 
 import { bufferToHex } from '@zk-email/helpers';
 
-import { SignatureVerifier } from './signatureVerifier';
+import { SignatureVerifier } from './SignatureVerifier';
 import { Bytes, Gadgets, UInt32 } from 'o1js';
 import { Bigint2048 } from './rsa';
 import {
@@ -12,16 +12,15 @@ import {
   convertBigIntToByteArray,
   decompressByteArray,
 } from './utils';
+import { BLOCK_SIZES } from './utils';
 
-// Block sizes used in the code is shown.
-const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
 
-const proofsEnabled = true;
-
+// Path for QR and public key data files.
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
-
 const qrPath = path.resolve(__dirname, '../src/assets/test.json');
 const certPath = path.resolve(__dirname, '../src/assets/testPublicKey.pem');
+
+const proofsEnabled = true;
 
 describe('Signature Verifier', () => {
   let qrData: string;
@@ -90,15 +89,6 @@ describe('Signature Verifier', () => {
   });
 
   describe('Partial hashing computations', () => {
-    it('Print the rows of the methods', async () => {
-      const summarize = await SignatureVerifier.analyzeMethods();
-
-      console.log('baseCase128: ', summarize.baseCase128);
-      console.log('baseCase512: ', summarize.baseCase512);
-      console.log('hashStep128: ', summarize.hashStep128);
-      console.log('hashStep512: ', summarize.hashStep512);
-      console.log('verifySignature: ', summarize.verifySignature);
-    });
     it.skip('should compute partial hashing with 9 byte blocks of size 128 bytes.', async () => {
       //
       // Warning: This step is used for testing 128-byte hashing. Remove .skip if you want to experiment the full proof generation.

@@ -7,8 +7,7 @@ import {
   SelfProof,
   Field,
 } from 'o1js';
-import { pkcs1v15Pad, updateHash } from './utils';
-import { wordToBytes } from './utils';
+import { pkcs1v15Pad, updateHash, wordToBytes } from './utils';
 import { Bigint2048, rsaVerify65537 } from './rsa';
 
 /**
