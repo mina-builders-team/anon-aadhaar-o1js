@@ -6,13 +6,13 @@ import { bufferToHex } from '@zk-email/helpers';
 
 import { SignatureVerifier } from './SignatureVerifier.js';
 import { Bytes, Gadgets, UInt32 } from 'o1js';
-import { Bigint2048 } from './rsa';
+import { Bigint2048 } from './rsa.js';
 import {
   wordToBytes,
   convertBigIntToByteArray,
   decompressByteArray,
-} from './utils';
-import { BLOCK_SIZES } from './utils';
+} from './utils.js';
+import { BLOCK_SIZES } from './utils.js';
 
 // Path for QR and public key data files.
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -160,7 +160,9 @@ describe('Signature Verifier', () => {
 
       // Get final digest
       const finalDigest = Bytes.from(
-        result.hashState.map((x: UInt32) => wordToBytes(x.value, 4, true)).flat()
+        result.hashState
+          .map((x: UInt32) => wordToBytes(x.value, 4, true))
+          .flat()
       );
 
       const expectedDigest = Gadgets.SHA2.hash(256, signedData);
