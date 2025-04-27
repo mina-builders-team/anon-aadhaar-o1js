@@ -1,4 +1,4 @@
-import { Bytes, UInt32, Gadgets, Provable, Field, UInt8, assert } from 'o1js';
+import { Bytes, UInt32, Gadgets, Provable, UInt8, assert } from 'o1js';
 import { Bigint2048 } from './rsa.js';
 import pako from 'pako';
 
@@ -12,7 +12,7 @@ export const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
  * @param sha256Digest The SHA-256 digest to be padded.
  * @param modulusLength The size of the RSA modulus in bytes.
  * @returns The padded PKCS#1 v1.5 message.
- * @notice - Copied from https://github.com/mohammed7s/zk-email-o1js/blob/main/src/utils.ts
+ * @notice - Copied from https://github.com/mohammed7s/zk-email-o1js/blob/main/src/utils.ts#L15
  */
 export function pkcs1v15Pad(sha256Digest: Bytes) {
   // Algorithm identifier (OID) for SHA-256 in PKCS#1 v1.5 padding
@@ -97,47 +97,15 @@ export function updateHash(
 }
 
 /**
- * Converts a Field element to an array of UInt8 values, assuming little endian representation by default.
- *
- * @param word - The Field element to be converted.
- * @param bytesPerWord - The number of bytes per word. Defaults to 8.
- * @param reverseEndianness - A boolean indicating whether to reverse the endianness. Defaults to false.
- * @returns An array of UInt8 representing the bytes of the input Field element.
- * @notice Copied from https://github.com/Shigoto-dev19/o1js-dynamic-sha256/blob/main/src/utils.ts
- */
-export function wordToBytes(
-  word: Field,
-  bytesPerWord = 8,
-  reverseEndianness = false
-): UInt8[] {
-  let bytes = Provable.witness(Provable.Array(UInt8, bytesPerWord), () => {
-    let w = word.toBigInt();
-    return Array.from({ length: bytesPerWord }, (_, k) => {
-      const shiftBits = reverseEndianness ? 3 - k : k;
-      return UInt8.from((w >> BigInt(8 * shiftBits)) & 0xffn);
-    });
-  });
-
-  // Verify the decomposition by converting the bytes back to a Field and comparing to the original word
-  bytesToWord(bytes, reverseEndianness).assertEquals(word);
-
-  return bytes;
-}
-
-/**
  * Converts an array of UInt8 to a Field element, assuming little endian representation by default.
  *
  * @param wordBytes - An array of UInt8 representing the bytes to be converted.
  * @param reverseEndianness - A boolean indicating whether to reverse the endianness. Defaults to false.
  * @returns A Field element representing the combined value of the input bytes.
- * @notice Copied from https://github.com/Shigoto-dev19/o1js-dynamic-sha256/blob/main/src/utils.ts
+ * @notice Copied from https://github.com/Shigoto-dev19/o1js-dynamic-sha256/blob/main/src/utils.ts#L118
  */
-function bytesToWord(wordBytes: UInt8[], reverseEndianness = false): Field {
-  return wordBytes.reduce((acc, byte, idx) => {
-    const shiftBits = reverseEndianness ? 3 - idx : idx;
-    const shift = 1n << BigInt(8 * shiftBits);
-    return acc.add(byte.value.mul(shift));
-  }, Field.from(0));
+function bytesToWord(wordBytes: UInt8[], reverseEndianness = false): UInt32 {
+  return UInt32.fromBytes(wordBytes);
 }
 
 /**
@@ -145,16 +113,16 @@ function bytesToWord(wordBytes: UInt8[], reverseEndianness = false): Field {
  *
  * @param paddedMessage - The input Bytes object representing the padded message.
  * @returns An array of 512-bit message blocks, each block containing 16 UInt32 words.
- * @notice - Copied from https://github.com/Shigoto-dev19/o1js-dynamic-sha256/blob/main/src/utils.ts
+ * @notice - Copied from https://github.com/Shigoto-dev19/o1js-dynamic-sha256/blob/main/src/utils.ts#L46
  */
-export function generateMessageBlocks(paddedMessage: Bytes): UInt32[][] {
+function generateMessageBlocks(paddedMessage: Bytes): UInt32[][] {
   // Split the message into 32-bit chunks
   const chunks: UInt32[] = [];
 
   for (let i = 0; i < paddedMessage.length; i += 4) {
     // Chunk 4 bytes into one UInt32, as expected by SHA-256
     // bytesToWord expects little endian, so we reverse the bytes
-    const chunk = UInt32.Unsafe.fromField(
+    const chunk = UInt32.from(
       bytesToWord(paddedMessage.bytes.slice(i, i + 4).reverse())
     );
     chunks.push(chunk);
@@ -172,7 +140,7 @@ export function generateMessageBlocks(paddedMessage: Bytes): UInt32[][] {
  * @param size - The size of each chunk.
  * @returns A 2D array where each sub-array is a chunk of the specified size.
  * @throws Will throw an error if the length of the array is not a multiple of the chunk size.
- * @notice Copied from https://github.com/o1-labs/o1js/blob/main/src/lib/util/arrays.ts
+ * @notice Copied from https://github.com/o1-labs/o1js/blob/main/src/lib/util/arrays.ts#L5
  */
 function chunk<T>(array: T[], size: number): T[][] {
   assert(
@@ -185,30 +153,6 @@ function chunk<T>(array: T[], size: number): T[][] {
 }
 
 /**
- * Converts a `bigint` value into a `Uint8Array` byte array representation.
- *
- * The conversion is done in little-endian order (least significant byte first),
- * and the resulting array is reversed to produce big-endian format (most significant byte first),
- * which is the conventional format for cryptographic and binary protocols.
- *
- * @param bigInt - The bigint value to convert into a byte array.
- * @returns A `Uint8Array` representing the input bigint in big-endian byte order.
- * @notice - Copied from https://github.com/anon-aadhaar/anon-aadhaar/blob/main/packages/core/src/utils.ts
- */
-export function convertBigIntToByteArray(bigInt: bigint): Uint8Array {
-  const byteLength = Math.max(1, Math.ceil(bigInt.toString(2).length / 8));
-
-  const result = new Uint8Array(byteLength);
-  let i = 0;
-  while (bigInt > 0) {
-    result[i] = Number(bigInt % BigInt(256));
-    bigInt = bigInt / BigInt(256);
-    i += 1;
-  }
-  return result.reverse();
-}
-
-/**
  * Decompresses a compressed byte array (e.g., gzip or deflate format) using the `pako` library.
  *
  * This function is typically used to decompress data that has been compressed using zlib/deflate,
@@ -216,7 +160,7 @@ export function convertBigIntToByteArray(bigInt: bigint): Uint8Array {
  *
  * @param byteArray - The compressed `Uint8Array` to decompress.
  * @returns A decompressed `Uint8Array` containing the original data.
- * @notice - Copied from https://github.com/anon-aadhaar/anon-aadhaar/blob/main/packages/core/src/utils.ts
+ * @notice - Copied from https://github.com/anon-aadhaar/anon-aadhaar/blob/main/packages/core/src/utils.ts#L115
  */
 export function decompressByteArray(byteArray: Uint8Array): Uint8Array {
   const decompressedArray = pako.inflate(byteArray);

@@ -7,7 +7,7 @@ import {
   SelfProof,
   Field,
 } from 'o1js';
-import { pkcs1v15Pad, updateHash, wordToBytes } from './utils.js';
+import { pkcs1v15Pad, updateHash } from './utils.js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
 
 /**
@@ -154,9 +154,7 @@ export const SignatureVerifier = ZkProgram({
         earlierProof.verify();
         const hashState = earlierProof.publicOutput.hashState;
 
-        const finalHash = Bytes32.from(
-          hashState.map((x) => wordToBytes(x.value, 4, true)).flat()
-        );
+        const finalHash = Bytes32.from(hashState.flatMap((x) => x.toBytesBE()));
 
         const paddedHash = pkcs1v15Pad(finalHash);
 

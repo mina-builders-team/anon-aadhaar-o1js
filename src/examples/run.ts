@@ -1,12 +1,8 @@
-import { Gadgets, UInt32, Bytes } from 'o1js';
+import { Gadgets, UInt32, Bytes, verify } from 'o1js';
 import { Bigint2048 } from '../rsa.js';
 import { bufferToHex } from '@zk-email/helpers';
 import { SignatureVerifier } from '../signatureVerifier.js';
-import {
-  convertBigIntToByteArray,
-  decompressByteArray,
-  BLOCK_SIZES,
-} from '../utils.js';
+import { decompressByteArray, BLOCK_SIZES } from '../utils.js';
 
 // Hard-coded public key and QR data that can be obtained from certiifcates.
 const publicKeyHex =
@@ -19,7 +15,7 @@ const QRData = BigInt(testQRData);
 
 // Parse qr data and convert it to decompressed bytes step by step (using Aadhaar SDK)
 // Convert QR data bigint to byte array and decompress it
-const qrDataBytes = convertBigIntToByteArray(QRData);
+const qrDataBytes = Bytes.fromHex(QRData.toString(16)).toBytes();
 const decodedData = decompressByteArray(qrDataBytes);
 
 // Split signature and signed data. Signature in aadhaar QR data is the last 256 bytes.
@@ -40,21 +36,21 @@ const signatureBigint = Bigint2048.from(
 );
 
 // Pad the blocks for SHA256 processes. Padding of the internla SHA256 function will be used here.
-const properlyPaddedBlocks = Gadgets.SHA2.padding(256, signedData);
+const paddedBlocks = Gadgets.SHA2.padding(256, signedData);
 
 // Get the initial state needed for SHA256.
 const initialValue: UInt32[] = Gadgets.SHA2.initialState(256);
 
 // Convert padded Data from blocks to bytes.
 let paddedData = Bytes.from(
-  properlyPaddedBlocks
+  paddedBlocks
     .flat()
     .map((word) => word.toBytesBE())
     .flat()
 );
 
 console.time('Compile');
-await SignatureVerifier.compile();
+const { verificationKey } = await SignatureVerifier.compile();
 console.timeEnd('Compile');
 
 // Now split at your desired boundaries (Should be a multiple of 64 bytes).
@@ -81,5 +77,5 @@ const { proof } = await SignatureVerifier.verifySignature(
 console.timeEnd('Proof generations');
 
 console.time('Verification');
-proof.verify();
+await verify(proof, verificationKey);
 console.timeEnd('Verification');
