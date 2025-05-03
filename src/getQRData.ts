@@ -73,5 +73,11 @@ function getQRData() {
       .flat()
   );
 
-  return { paddedData, initialValue, signatureBigint, publicKeyBigint };
+  return {
+    paddedData,
+    initialValue,
+    signatureBigint,
+    publicKeyBigint,
+    signedData,
+  };
 }

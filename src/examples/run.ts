@@ -3,7 +3,8 @@ import { SignatureVerifier } from '../signatureVerifier.js';
 import { BLOCK_SIZES } from '../utils.js';
 import { getQRData } from '../getQRData.js';
 
-const { paddedData, initialValue, signatureBigint, publicKeyBigint } = getQRData();
+const { paddedData, initialValue, signatureBigint, publicKeyBigint } =
+  getQRData();
 
 let proofsEnabled = false;
 
