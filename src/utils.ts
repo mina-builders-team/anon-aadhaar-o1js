@@ -1,4 +1,4 @@
-import { Bytes, UInt32, Gadgets, Provable, UInt8, assert } from 'o1js';
+import { Bytes, UInt32, Gadgets, Provable, UInt8, assert, Field } from 'o1js';
 import { Bigint2048 } from './rsa.js';
 import pako from 'pako';
 
@@ -164,3 +164,52 @@ export function decompressByteArray(byteArray: Uint8Array): Uint8Array {
   const decompressedArray = pako.inflate(byteArray);
   return decompressedArray;
 }
+
+export function getDelimiterIndices(paddedData: Uint8Array): number[] {
+  let delimiterIndices = [];
+  for (let i = 0; i < paddedData.length; i++) {
+    if (paddedData[i] === 255) {
+      delimiterIndices.push(i);
+    }
+    if (delimiterIndices.length === 18) {
+      break;
+    }
+  }
+
+  return delimiterIndices;
+}
+
+export function createPaddedQRData(inputData: Uint8Array): Field[] {
+  const dataArray: Field[] = [];
+
+  // Add actual data
+  for (let i = 0; i < inputData.length; i++) {
+    dataArray.push(Field.from(inputData[i]));
+  }
+
+  // Pad with zeros to reach exactly 1536 elements
+  for (let i = inputData.length; i < 1536; i++) {
+    dataArray.push(Field.from(0));
+  }
+
+  return dataArray;
+}
+
+export function createDelimitedData(paddedData: Field[], index: Field) {
+  let n255Filter = Field.from(0);
+  const twoFiftyFive = Field.from(255);
+
+  for (let i = 0; i < 1137; i++) {
+    const is255 = paddedData[i].equals(twoFiftyFive).toField();
+    const indexBeforePhoto = Field(i).lessThan(index).toField();
+    const is255AndIndexBeforePhoto = is255.mul(indexBeforePhoto);
+
+    n255Filter = is255AndIndexBeforePhoto.mul(255).add(n255Filter);
+
+    paddedData[i] = is255AndIndexBeforePhoto.mul(n255Filter).add(paddedData[i]);
+  }
+
+  return paddedData;
+}
+
+
