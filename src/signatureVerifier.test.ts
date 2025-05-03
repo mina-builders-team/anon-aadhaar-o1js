@@ -94,20 +94,6 @@ describe('Signature Verifier', () => {
     );
 
     it('should compute partial hashing with byte blocks split by 512-512-128.', async () => {
-      // Pad the blocks for SHA256 processes. Padding of the internal SHA256 function will be used here.
-      const paddedBlocks = Gadgets.SHA2.padding(256, signedData);
-
-      // Process these blocks in chunks if needed
-      const initialValue: UInt32[] = Gadgets.SHA2.initialState(256);
-
-      // If you want to split at specific byte boundaries, first convert blocks to bytes
-      let paddedData = Bytes.from(
-        paddedBlocks
-          .flat()
-          .map((word) => word.toBytesBE())
-          .flat()
-      );
-
       // Now split at your desired boundaries (multiple of 64 bytes)
       const pad1 = Bytes.from(
         paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
@@ -135,19 +121,6 @@ describe('Signature Verifier', () => {
 
   describe('Signature verification computations', () => {
     it('should verify rsa signature correctly', async () => {
-      // Pad the blocks for SHA256 processes. Padding of the internla SHA256 function will be used here.
-      const paddedBlocks = Gadgets.SHA2.padding(256, signedData);
-
-      // Process these blocks in chunks if needed
-      const initialValue: UInt32[] = Gadgets.SHA2.initialState(256);
-
-      // If you want to split at specific byte boundaries, first convert blocks to bytes
-      let paddedData = Bytes.from(
-        paddedBlocks
-          .flat()
-          .map((word) => word.toBytesBE())
-          .flat()
-      );
 
       // Now split at your desired boundaries (multiple of 64 bytes)
       const pad1 = Bytes.from(
@@ -171,6 +144,11 @@ describe('Signature Verifier', () => {
         publicKeyBigint
       );
     });
-    it('should reject verification with tampered signature', async () => {});
+
+    it('should reject verification with tampered signature', async () => {
+      
+
+
+    });
   });
 });
