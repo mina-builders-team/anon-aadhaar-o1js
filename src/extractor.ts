@@ -1,5 +1,6 @@
 import { ZkProgram, Provable, Field } from 'o1js';
 import {
+  charBytesToInt,
   digitBytesToInt,
   digitBytesToTimestamp,
   elementAtIndex,
@@ -168,6 +169,15 @@ export const DataExtractor = ZkProgram({
         const pincode = digitBytesToInt(selectedArray, 6);
 
         return { publicOutput: pincode };
+      },
+    },
+    state: {
+      privateInputs: [Provable.Array(Field, 1536), Field, Field],
+      async method(nDelimitedData: Field[], startIndex: Field, length: Field) {
+        const selectedSubArr = selectSubarray(nDelimitedData, startIndex, 5);
+
+        const state = charBytesToInt(selectedSubArr, 5);
+        return { publicOutput: state };
       },
     },
   },
