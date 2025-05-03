@@ -369,7 +369,9 @@ export function findElementAndReturnInteger(
 ): Field {
   let elements = [];
   for (let i = 0; i < len; i++) {
-    elements.push(elementAtIndex(nDelimitedData, dobIndex.add(dateIndex).add(i)));
+    elements.push(
+      elementAtIndex(nDelimitedData, dobIndex.add(dateIndex).add(i))
+    );
   }
   return digitBytesToInt(elements, len);
 }

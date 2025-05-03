@@ -2,6 +2,7 @@ import { ZkProgram, Provable, Field } from 'o1js';
 import {
   digitBytesToInt,
   digitBytesToTimestamp,
+  elementAtIndex,
   findElementAndReturnInteger,
 } from './utils.js';
 
@@ -147,6 +148,15 @@ export const DataExtractor = ZkProgram({
         const age = ageByYear.add(monthGt.add(isHigherDayOnSameMonth));
 
         return { publicOutput: age };
+      },
+    },
+    gender: {
+      privateInputs: [Provable.Array(Field, 1536), Field],
+
+      async method(nDelimitedData: Field[], startDelimiterIndex: Field) {
+        // No special order index needed.
+        const gender = elementAtIndex(nDelimitedData, startDelimiterIndex);
+        return { publicOutput: gender };
       },
     },
   },
