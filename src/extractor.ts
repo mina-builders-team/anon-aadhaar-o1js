@@ -4,6 +4,7 @@ import {
   digitBytesToTimestamp,
   elementAtIndex,
   findElementAndReturnInteger,
+  selectSubarray,
 } from './utils.js';
 
 /**
@@ -158,6 +159,17 @@ export const DataExtractor = ZkProgram({
         const gender = elementAtIndex(nDelimitedData, startDelimiterIndex);
         return { publicOutput: gender };
       },
+    },
+
+    pincode:{
+      privateInputs:[Provable.Array(Field,1536), Field],
+      async method(nDelimitedData: Field[], startIndex:Field){
+        
+        const selectedArray = selectSubarray(nDelimitedData, startIndex, 6);
+        const pincode = digitBytesToInt(selectedArray, 6);
+
+        return {publicOutput:pincode};
+      }
     },
   },
 });

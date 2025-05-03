@@ -402,3 +402,65 @@ export function elementAtIndex(intArray: Field[], index: Field): Field {
 
   return totalValues;
 }
+
+/**
+ * Provably select a subarray from an array of field elements.
+ *
+ * @notice The length of the output array can be reduced by setting `subarrayLength`.
+ * @notice Based on https://demo.hedgedoc.org/s/Le0R3xUhB.
+ * @notice Assumes field elements to be bytes in the input array.
+ *
+ * @param input - The input array of field elements.
+ * @param startIndex - The starting index for the subarray selection.
+ * @param subarrayLength - The length of the output subarray.
+ * 
+ * @notice - Taken from https://github.com/Shigoto-dev19/zk-email-o1js/blob/5f99c6555d5780aec18b61eacc289f4383f8c276/src/utils.ts#L189
+ * 
+ * @returns The selected subarray of bytes.
+ * @throws Will throw an error if `subarrayLength` is greater than the input array length.
+ */
+export function selectSubarray(
+  input: Field[],
+  startIndex: Field,
+  subarrayLength: number
+): Field[] {
+  const maxArrayLen = input.length;
+  assert(
+    subarrayLength <= maxArrayLen,
+    'Subarray length exceeds input array length!'
+  );
+
+  const bitLength = Math.ceil(Math.log2(maxArrayLen));
+  const shiftBits = startIndex.toBits(bitLength);
+  let tmp: Field[][] = Array.from({ length: bitLength }, () =>
+    Array.from({ length: maxArrayLen }, () => Field(0))
+  );
+
+  for (let j = 0; j < bitLength; j++) {
+    for (let i = 0; i < maxArrayLen; i++) {
+      let offset = (i + (1 << j)) % maxArrayLen;
+      // Shift left by 2^j indices if bit is 1
+      if (j === 0) {
+        tmp[j][i] = shiftBits[j]
+          .toField()
+          .mul(input[offset].sub(input[i]))
+          .add(input[i]);
+      } else {
+        tmp[j][i] = shiftBits[j]
+          .toField()
+          .mul(tmp[j - 1][offset].sub(tmp[j - 1][i]))
+          .add(tmp[j - 1][i]);
+      }
+    }
+  }
+
+  // Return last row
+  let subarray: Field[] = [];
+  for (let i = 0; i < subarrayLength; i++) {
+    const selectedByte = tmp[bitLength - 1][i];
+
+    subarray.push(selectedByte);
+  }
+
+  return subarray;
+}
