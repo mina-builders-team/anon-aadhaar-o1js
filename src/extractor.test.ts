@@ -1,5 +1,5 @@
 import { Field, Provable } from 'o1js';
-import { DOB_POSITION, PHOTO_POSITION } from './constants.js';
+import { DOB_POSITION, GENDER_POSITION, PHOTO_POSITION } from './constants.js';
 import { paddedData } from './data-utils.js';
 import { DataExtractor, DelimiterExtractor } from './extractor.js';
 import {
@@ -28,7 +28,7 @@ describe('Extractor circuit tests', () => {
     nDelimitedData = createDelimitedData(qrData, photoIndex);
   }),
     describe('Delimiter circuit tests', () => {
-      it.skip('should extract delimited data correctly', async () => {
+      it('should extract delimited data correctly', async () => {
         const photoIndex = delimiterIndices[PHOTO_POSITION - 1].add(1);
 
         const proof1 = await DelimiterExtractor.extractData(qrData, photoIndex);
@@ -42,34 +42,43 @@ describe('Extractor circuit tests', () => {
       });
     });
   describe('Extractor Circuit tests', () => {
-    describe('Timestamp Extractor tests', () => {
-      it('should extract timestamp correct', async () => {
-        const { proof } = await DataExtractor.timestamp(nDelimitedData);
-        const output = proof.publicOutput;
+    it('should extract timestamp correct', async () => {
+      const { proof } = await DataExtractor.timestamp(nDelimitedData);
+      const output = proof.publicOutput;
 
-        const date = new Date(Number(output) * 1000).getTime();
+      const date = new Date(Number(output) * 1000).getTime();
 
-        const expectedDate = new Date('2024-04-19T19:30:00.000Z').getTime();
+      const expectedDate = new Date('2024-04-19T19:30:00.000Z').getTime();
 
-        expect(date).toEqual(expectedDate);
-      });
-      it('should extract age correct', async () => {
-        const day = Field.from(1);
-        const month = Field.from(1);
-        const year = Field.from(2024);
-        const delimiterIndex = delimiterIndices[DOB_POSITION - 1];
-
-        const { proof } = await DataExtractor.age(
-          nDelimitedData,
-          delimiterIndex,
-          year,
-          month,
-          day
-        );
-        const output = proof.publicOutput;
-
-        expect(output.toBigInt()).toEqual(BigInt(40));
-      });
+      expect(date).toEqual(expectedDate);
     });
+    it('should extract age correct', async () => {
+      const day = Field.from(1);
+      const month = Field.from(1);
+      const year = Field.from(2024);
+      const delimiterIndex = delimiterIndices[DOB_POSITION - 1];
+
+      const { proof } = await DataExtractor.age(
+        nDelimitedData,
+        delimiterIndex,
+        year,
+        month,
+        day
+      );
+      const output = proof.publicOutput;
+
+      expect(output.toBigInt()).toEqual(BigInt(40));
+    }),
+      it('should find gender', async () => {
+        const genderIndex = delimiterIndices[GENDER_POSITION - 1].add(1);
+
+        const { proof } = await DataExtractor.gender(
+          nDelimitedData,
+          genderIndex
+        );
+
+        console.log(proof.publicOutput.toBigInt());
+        console.log(String.fromCharCode(Number(proof.publicOutput)) === 'M');
+      });
   });
 });
