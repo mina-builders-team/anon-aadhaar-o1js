@@ -1,15 +1,14 @@
 import { Bytes, verify } from 'o1js';
 import { SignatureVerifier } from '../signatureVerifier.js';
 import { BLOCK_SIZES } from '../utils.js';
-import {
-  initialValue,
-  paddedData,
-  publicKeyBigint,
-  signatureBigint,
-} from '../data-utils.js';
+import { getQRData } from '../getQRData.js';
+
+const { paddedData, initialValue, signatureBigint, publicKeyBigint } = getQRData();
+
+let proofsEnabled = false;
 
 console.time('Compile');
-const { verificationKey } = await SignatureVerifier.compile();
+const { verificationKey } = await SignatureVerifier.compile({ proofsEnabled });
 console.timeEnd('Compile');
 
 // Now split at your desired boundaries (Should be a multiple of 64 bytes).
