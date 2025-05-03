@@ -105,54 +105,48 @@ export const DataExtractor = ZkProgram({
 
         return { publicOutput: timestamp };
       },
-      age: {
-        privateInputs: [
-          Provable.Array(Field, 1536),
-          Field,
-          Field,
-          Field,
-          Field,
-        ],
-        async method(
-          nDelimitedData: Field[],
-          startDelimiterIndex: Field,
-          currentYear: Field,
-          currentMonth: Field,
-          currentDay: Field
-        ) {
-          const year = findElementAndReturnInteger(
-            nDelimitedData,
-            startDelimiterIndex,
-            4,
-            7
-          );
-          const month = findElementAndReturnInteger(
-            nDelimitedData,
-            startDelimiterIndex,
-            2,
-            4
-          );
-          const day = findElementAndReturnInteger(
-            nDelimitedData,
-            startDelimiterIndex,
-            2,
-            1
-          );
+    },
+    age: {
+      privateInputs: [Provable.Array(Field, 1536), Field, Field, Field, Field],
+      async method(
+        nDelimitedData: Field[],
+        startDelimiterIndex: Field,
+        currentYear: Field,
+        currentMonth: Field,
+        currentDay: Field
+      ) {
+        const year = findElementAndReturnInteger(
+          nDelimitedData,
+          startDelimiterIndex,
+          4,
+          7
+        );
+        const month = findElementAndReturnInteger(
+          nDelimitedData,
+          startDelimiterIndex,
+          2,
+          4
+        );
+        const day = findElementAndReturnInteger(
+          nDelimitedData,
+          startDelimiterIndex,
+          2,
+          1
+        );
 
-          // Calculate age based on year
-          const ageByYear = currentYear.sub(year).sub(Field(1));
+        // Calculate age based on year
+        const ageByYear = currentYear.sub(year).sub(Field(1));
 
-          // Check if current month > DOB month or if same month and current day >= DOB day
-          const monthGt = currentMonth.greaterThan(month).toField();
-          const monthEq = currentMonth.equals(month).toField();
-          const dayGt = currentDay.add(Field(1)).greaterThan(day).toField();
-          const isHigherDayOnSameMonth = monthEq.mul(dayGt);
+        // Check if current month > DOB month or if same month and current day >= DOB day
+        const monthGt = currentMonth.greaterThan(month).toField();
+        const monthEq = currentMonth.equals(month).toField();
+        const dayGt = currentDay.add(Field(1)).greaterThan(day).toField();
+        const isHigherDayOnSameMonth = monthEq.mul(dayGt);
 
-          // Final age calculation
-          const age = ageByYear.add(monthGt.add(isHigherDayOnSameMonth));
+        // Final age calculation
+        const age = ageByYear.add(monthGt.add(isHigherDayOnSameMonth));
 
-          return { publicOutput: age };
-        },
+        return { publicOutput: age };
       },
     },
   },
