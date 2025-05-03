@@ -4,6 +4,7 @@ import {
   GENDER_POSITION,
   PHOTO_POSITION,
   PINCODE_POSITION,
+  STATE_POSITION,
 } from './constants.js';
 import { paddedData } from './data-utils.js';
 import { DataExtractor, DelimiterExtractor } from './extractor.js';
@@ -11,6 +12,7 @@ import {
   getDelimiterIndices,
   createPaddedQRData,
   createDelimitedData,
+  intToCharString,
 } from './utils';
 
 const proofsEnabled = false;
@@ -37,10 +39,9 @@ describe('Extractor circuit tests', () => {
         const photoIndex = delimiterIndices[PHOTO_POSITION - 1].add(1);
 
         const proof1 = await DelimiterExtractor.extractData(qrData, photoIndex);
+        const delimitedData = proof1.proof.publicOutput;
 
-        const output1 = proof1.proof.publicOutput;
-
-        expect(output1).toEqual(nDelimitedData);
+        expect(delimitedData).toEqual(nDelimitedData);
 
         const summary = await DelimiterExtractor.analyzeMethods();
         console.log(summary);
@@ -79,8 +80,7 @@ describe('Extractor circuit tests', () => {
 
       const { proof } = await DataExtractor.gender(nDelimitedData, genderIndex);
 
-      console.log(proof.publicOutput.toBigInt());
-      console.log(String.fromCharCode(Number(proof.publicOutput)) === 'M');
+      expect(String.fromCharCode(Number(proof.publicOutput))).toEqual('M');
     });
     it('should get pincode ', async () => {
       const pincodeIndex = delimiterIndices[PINCODE_POSITION - 1].add(1);
@@ -90,8 +90,22 @@ describe('Extractor circuit tests', () => {
         pincodeIndex
       );
 
-      console.log(proof.publicOutput.toBigInt());
-      console.log(proof.publicOutput.toBigInt() === 110051n);
+      expect(proof.publicOutput.toBigInt()).toEqual(110051n);
+    });
+    it.only('should extract state', async () => {
+      const stateLength = delimiterIndices[STATE_POSITION].sub(
+        delimiterIndices[STATE_POSITION - 1]
+      );
+
+      const stateIndex = delimiterIndices[STATE_POSITION - 1].add(1);
+
+      const { proof } = await DataExtractor.state(
+        nDelimitedData,
+        stateIndex,
+        stateLength
+      );
+
+      expect(intToCharString(proof.publicOutput, 5)).toEqual('Delhi');
     });
   });
 });
