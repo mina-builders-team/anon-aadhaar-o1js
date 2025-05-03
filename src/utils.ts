@@ -2,7 +2,9 @@ import { Bytes, UInt32, Gadgets, Provable, UInt8, assert } from 'o1js';
 import { Bigint2048 } from './rsa.js';
 import pako from 'pako';
 
-export const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
+export { BLOCK_SIZES, pkcs1v15Pad, updateHash, decompressByteArray };
+
+const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
 
 /**
  * Creates a PKCS#1 v1.5 padded message for the given SHA-256 digest.
@@ -14,7 +16,7 @@ export const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
  * @returns The padded PKCS#1 v1.5 message.
  * @notice - Copied from https://github.com/mohammed7s/zk-email-o1js/blob/main/src/utils.ts#L15
  */
-export function pkcs1v15Pad(sha256Digest: Bytes) {
+function pkcs1v15Pad(sha256Digest: Bytes) {
   // Algorithm identifier (OID) for SHA-256 in PKCS#1 v1.5 padding
   const algorithmConstantBytes = Bytes.fromHex(
     '3031300d060960864801650304020105000420'
@@ -54,7 +56,7 @@ export function pkcs1v15Pad(sha256Digest: Bytes) {
  * @param paddedPreimage - The padded data to process (must be a multiple of 64 bytes)
  * @returns Object containing all intermediate states and the final hash state
  */
-export function updateHash(
+function updateHash(
   initialHashValue = Gadgets.SHA2.initialState(256) as UInt32[],
   paddedPreimage: Bytes
 ): { hashState: UInt32[] } {
@@ -80,9 +82,7 @@ export function updateHash(
   // Process each message block
   for (let i = 0; i < messageBlocks.length; i++) {
     // Create message schedule for current block
-    const messageSchedule = Gadgets.SHA2.messageSchedule(256,
-      messageBlocks[i]
-    );
+    const messageSchedule = Gadgets.SHA2.messageSchedule(256, messageBlocks[i]);
 
     // Update hash state using compression function
     hashValues[i + 1] = [
@@ -162,7 +162,7 @@ function chunk<T>(array: T[], size: number): T[][] {
  * @returns A decompressed `Uint8Array` containing the original data.
  * @notice - Copied from https://github.com/anon-aadhaar/anon-aadhaar/blob/main/packages/core/src/utils.ts#L115
  */
-export function decompressByteArray(byteArray: Uint8Array): Uint8Array {
+function decompressByteArray(byteArray: Uint8Array): Uint8Array {
   const decompressedArray = pako.inflate(byteArray);
   return decompressedArray;
 }
