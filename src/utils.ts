@@ -413,9 +413,9 @@ export function elementAtIndex(intArray: Field[], index: Field): Field {
  * @param input - The input array of field elements.
  * @param startIndex - The starting index for the subarray selection.
  * @param subarrayLength - The length of the output subarray.
- * 
+ *
  * @notice - Taken from https://github.com/Shigoto-dev19/zk-email-o1js/blob/5f99c6555d5780aec18b61eacc289f4383f8c276/src/utils.ts#L189
- * 
+ *
  * @returns The selected subarray of bytes.
  * @throws Will throw an error if `subarrayLength` is greater than the input array length.
  */
