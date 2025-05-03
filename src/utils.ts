@@ -80,9 +80,7 @@ export function updateHash(
   // Process each message block
   for (let i = 0; i < messageBlocks.length; i++) {
     // Create message schedule for current block
-    const messageSchedule = Gadgets.SHA2.messageSchedule(256,
-      messageBlocks[i]
-    );
+    const messageSchedule = Gadgets.SHA2.messageSchedule(256, messageBlocks[i]);
 
     // Update hash state using compression function
     hashValues[i + 1] = [
