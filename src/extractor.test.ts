@@ -1,7 +1,7 @@
 import { Field, Provable } from 'o1js';
 import { PHOTO_POSITION } from './constants.js';
 import { paddedData } from './data-utils.js';
-import { DelimiterExtractor } from './extractor.js';
+import { DataExtractor, DelimiterExtractor } from './extractor.js';
 import {
   getDelimiterIndices,
   createPaddedQRData,
@@ -17,6 +17,7 @@ describe('Extractor circuit tests', () => {
 
   beforeAll(async () => {
     await DelimiterExtractor.compile({ proofsEnabled });
+    await DataExtractor.compile({proofsEnabled});
 
     const qrDataPadded = paddedData.toBytes();
 
@@ -39,5 +40,19 @@ describe('Extractor circuit tests', () => {
         const summary = await DelimiterExtractor.analyzeMethods();
         console.log(summary);
       });
+  });
+  describe('Extractor Circuit tests', () => {
+    describe('Timestamp Extractor tests', () => {
+      it('Should extractor timestamp correcto', async () => {
+        const { proof } = await DataExtractor.timestamp(nDelimitedData);
+        const output = proof.publicOutput;
+
+        const date = new Date(Number(output) * 1000).getTime();
+
+        const expectedDate = new Date('2024-04-19T19:30:00.000Z').getTime();
+
+        expect(date).toEqual(expectedDate);
+      });
     });
+  })
 });

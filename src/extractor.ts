@@ -39,12 +39,24 @@ export const DelimiterExtractor = ZkProgram({
     },
   },
 });
-
+/**
+ * Extraction of data from delimited data.
+ * 
+ * @returns - A field element for obtaining data
+ */
 export const DataExtractor = ZkProgram({
   name: 'Extractor',
   publicOutput: Field,
 
   methods: {
+
+    /**
+     * 
+     * Takes delimited data as an input and extracts timestamp , which is issued in IST timezone.
+     * 
+     * Converts it to UNIX timestamp and returns it as a Field element.
+     * 
+     */
     timestamp: {
       privateInputs: [Provable.Array(Field, 1536)],
 
