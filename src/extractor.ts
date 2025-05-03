@@ -1,5 +1,9 @@
 import { ZkProgram, Provable, Field } from 'o1js';
-import { digitBytesToInt, digitBytesToTimestamp } from './utils';
+import {
+  digitBytesToInt,
+  digitBytesToTimestamp,
+  findElementAndReturnInteger,
+} from './utils.js';
 
 /**
  * ZkProgram for extracting and delimiting padded 1536-length Field data blocks.
@@ -41,7 +45,7 @@ export const DelimiterExtractor = ZkProgram({
 });
 /**
  * Extraction of data from delimited data.
- * 
+ *
  * @returns - A field element for obtaining data
  */
 export const DataExtractor = ZkProgram({
@@ -49,13 +53,12 @@ export const DataExtractor = ZkProgram({
   publicOutput: Field,
 
   methods: {
-
     /**
-     * 
+     *
      * Takes delimited data as an input and extracts timestamp , which is issued in IST timezone.
-     * 
+     *
      * Converts it to UNIX timestamp and returns it as a Field element.
-     * 
+     *
      */
     timestamp: {
       privateInputs: [Provable.Array(Field, 1536)],
@@ -101,6 +104,55 @@ export const DataExtractor = ZkProgram({
         const timestamp = unixTime.sub(Field(19800));
 
         return { publicOutput: timestamp };
+      },
+      age: {
+        privateInputs: [
+          Provable.Array(Field, 1536),
+          Field,
+          Field,
+          Field,
+          Field,
+        ],
+        async method(
+          nDelimitedData: Field[],
+          startDelimiterIndex: Field,
+          currentYear: Field,
+          currentMonth: Field,
+          currentDay: Field
+        ) {
+          const year = findElementAndReturnInteger(
+            nDelimitedData,
+            startDelimiterIndex,
+            4,
+            7
+          );
+          const month = findElementAndReturnInteger(
+            nDelimitedData,
+            startDelimiterIndex,
+            2,
+            4
+          );
+          const day = findElementAndReturnInteger(
+            nDelimitedData,
+            startDelimiterIndex,
+            2,
+            1
+          );
+
+          // Calculate age based on year
+          const ageByYear = currentYear.sub(year).sub(Field(1));
+
+          // Check if current month > DOB month or if same month and current day >= DOB day
+          const monthGt = currentMonth.greaterThan(month).toField();
+          const monthEq = currentMonth.equals(month).toField();
+          const dayGt = currentDay.add(Field(1)).greaterThan(day).toField();
+          const isHigherDayOnSameMonth = monthEq.mul(dayGt);
+
+          // Final age calculation
+          const age = ageByYear.add(monthGt.add(isHigherDayOnSameMonth));
+
+          return { publicOutput: age };
+        },
       },
     },
   },
