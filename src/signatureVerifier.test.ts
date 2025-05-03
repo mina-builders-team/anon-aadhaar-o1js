@@ -1,86 +1,31 @@
-import path from 'path';
-import fs from 'fs';
-import crypto from 'crypto';
-
-import { bufferToHex } from '@zk-email/helpers';
-
 import { SignatureVerifier } from './signatureVerifier.js';
 import { Bytes, Gadgets, UInt32 } from 'o1js';
 import { Bigint2048 } from './rsa.js';
-import { decompressByteArray } from './utils.js';
+
 import { BLOCK_SIZES } from './utils.js';
+import { getQRData } from './getQRData.js';
 
-// Path for QR and public key data files.
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
-const qrPath = path.resolve(__dirname, '../src/assets/test.json');
-const certPath = path.resolve(__dirname, '../src/assets/testPublicKey.pem');
-
-const proofsEnabled = true;
+const proofsEnabled = false;
 
 describe('Signature Verifier', () => {
-  let qrData: string;
-  let pkData: string;
-  let publicKey: crypto.KeyObject;
-  let testQRData: string;
-  let QRData: bigint;
-
-  let qrDataBytes: Uint8Array<ArrayBufferLike>;
-  let decodedData: Uint8Array<ArrayBufferLike>;
-
-  let signatureBytes: Uint8Array<ArrayBufferLike>;
-  let signedData: Uint8Array<ArrayBufferLike>;
+  let initialValue: UInt32[];
+  let paddedData: Bytes;
 
   let publicKeyBigint: Bigint2048;
   let signatureBigint: Bigint2048;
+  let signedData: Uint8Array;
+  let s: Bytes;
 
   beforeAll(async () => {
     await SignatureVerifier.compile({ proofsEnabled });
 
-    // Get QR data file
-    qrData = fs.readFileSync(qrPath, 'utf8');
+    const inputs = getQRData();
 
-    // Get public key data from certificate
-    pkData = fs.readFileSync(certPath, 'utf8');
-
-    // Generate public key from certificate.
-    publicKey = crypto.createPublicKey(pkData);
-
-    // Get the test QR data
-    testQRData = JSON.parse(qrData).testQRData;
-
-    // Convert QR data to bigint
-    QRData = BigInt(testQRData);
-
-    // Parse qr data and convert it to decompressed bytes step by step (using Aadhaar SDK)
-    // Convert QR data bigint to byte array and decompress it
-    qrDataBytes = Bytes.fromHex(QRData.toString(16)).toBytes();
-    decodedData = decompressByteArray(qrDataBytes);
-
-    // Split signature and signed data. Signature in aadhaar QR data is the last 256 bytes.
-    signatureBytes = decodedData.slice(
-      decodedData.length - 256,
-      decodedData.length
-    );
-
-    signedData = decodedData.slice(0, decodedData.length - 256);
-
-    // Convert pubkey from byte array to BigInt type.
-    publicKeyBigint = Bigint2048.from(
-      BigInt(
-        '0x' +
-          bufferToHex(
-            Buffer.from(
-              publicKey.export({ format: 'jwk' }).n as string,
-              'base64url'
-            )
-          )
-      )
-    );
-
-    // Convert signature from byte array to BigInt type.
-    signatureBigint = Bigint2048.from(
-      BigInt('0x' + bufferToHex(Buffer.from(signatureBytes)).toString())
-    );
+    publicKeyBigint = inputs.publicKeyBigint;
+    signatureBigint = inputs.signatureBigint;
+    paddedData = inputs.paddedData;
+    initialValue = inputs.initialValue;
+    signedData = inputs.signedData;
   });
 
   describe('Partial hashing computations', () => {
@@ -90,24 +35,10 @@ describe('Signature Verifier', () => {
     (!proofsEnabled ? it.skip : it)(
       'should compute partial hashing with 9 byte blocks of size 128 bytes.',
       async () => {
-        // Pad the blocks for SHA256 processes. Padding of the internal SHA256 function will be used here.
-        const paddedBlocks = Gadgets.SHA2.padding(256, signedData);
-
-        // Process these blocks in chunks if needed
-        const initialValue: UInt32[] = Gadgets.SHA2.initialState(256);
-
-        // If you want to split at specific byte boundaries, first convert blocks to bytes
-        let paddedData = Bytes.from(
-          paddedBlocks
-            .flat()
-            .map((word) => word.toBytesBE())
-            .flat()
-        );
-
         // Now split at your desired boundaries (multiple of 64 bytes)
-        const paddedBytes = [];
+        const paddedDataChunks = [];
         for (let i = 0; i < 9; i++) {
-          paddedBytes[i] = Bytes.from(
+          paddedDataChunks[i] = Bytes.from(
             paddedData
               .toBytes()
               .slice(i * BLOCK_SIZES.SMALL, BLOCK_SIZES.SMALL * (i + 1))
@@ -115,40 +46,40 @@ describe('Signature Verifier', () => {
         }
         // Compute proofs recursively
         const proof1 = await SignatureVerifier.baseCase128(
-          paddedBytes[0],
+          paddedDataChunks[0],
           initialValue
         );
         const proof2 = await SignatureVerifier.hashStep128(
           proof1.proof,
-          paddedBytes[1]
+          paddedDataChunks[1]
         );
         const proof3 = await SignatureVerifier.hashStep128(
           proof2.proof,
-          paddedBytes[2]
+          paddedDataChunks[2]
         );
         const proof4 = await SignatureVerifier.hashStep128(
           proof3.proof,
-          paddedBytes[3]
+          paddedDataChunks[3]
         );
         const proof5 = await SignatureVerifier.hashStep128(
           proof4.proof,
-          paddedBytes[4]
+          paddedDataChunks[4]
         );
         const proof6 = await SignatureVerifier.hashStep128(
           proof5.proof,
-          paddedBytes[5]
+          paddedDataChunks[5]
         );
         const proof7 = await SignatureVerifier.hashStep128(
           proof6.proof,
-          paddedBytes[6]
+          paddedDataChunks[6]
         );
         const proof8 = await SignatureVerifier.hashStep128(
           proof7.proof,
-          paddedBytes[7]
+          paddedDataChunks[7]
         );
         const proof9 = await SignatureVerifier.hashStep128(
           proof8.proof,
-          paddedBytes[8]
+          paddedDataChunks[8]
         );
 
         const result = proof9.proof.publicOutput;

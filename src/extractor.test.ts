@@ -12,7 +12,7 @@ import {
   createPaddedQRData,
   createDelimitedData,
   intToCharString,
-} from './utils';
+} from './utils.js';
 import { getQRData } from './getQRData.js';
 
 const proofsEnabled = false;
