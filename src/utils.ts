@@ -164,7 +164,12 @@ export function decompressByteArray(byteArray: Uint8Array): Uint8Array {
   const decompressedArray = pako.inflate(byteArray);
   return decompressedArray;
 }
-
+/**
+ * Finds the indices of delimiter bytes (255) in a padded data array.
+ *
+ * @param paddedData - A `Uint8Array` where delimiter bytes (value 255) are expected.
+ * @returns An array of indices where the delimiter bytes are located, capped at 18 elements.
+ */
 export function getDelimiterIndices(paddedData: Uint8Array): number[] {
   let delimiterIndices = [];
   for (let i = 0; i < paddedData.length; i++) {
@@ -179,6 +184,15 @@ export function getDelimiterIndices(paddedData: Uint8Array): number[] {
   return delimiterIndices;
 }
 
+/**
+ * Converts a `Uint8Array` into an array of `Field` elements and pads it to a fixed length of 1536.
+ *
+ * This ensures that the resulting data is always exactly 1536 `Field` elements long,
+ * which may be required for QR code or circuit constraints.
+ *
+ * @param inputData - The input `Uint8Array` to be converted and padded.
+ * @returns An array of `Field` elements with length 1536.
+ */
 export function createPaddedQRData(inputData: Uint8Array): Field[] {
   const dataArray: Field[] = [];
 
@@ -195,6 +209,16 @@ export function createPaddedQRData(inputData: Uint8Array): Field[] {
   return dataArray;
 }
 
+/**
+ * Processes a padded data array to selectively overwrite elements with 255
+ * based on their position relative to a given index.
+ *
+ * It replaces each occurrence of 255 before the given index with a cumulative filter value.
+ *
+ * @param paddedData - The padded data array of `Field` elements to modify in place.
+ * @param index - The cutoff `Field` index; only elements before this index are considered.
+ * @returns The modified `paddedData` array.
+ */
 export function createDelimitedData(paddedData: Field[], index: Field) {
   let n255Filter = Field.from(0);
   const twoFiftyFive = Field.from(255);
@@ -212,6 +236,15 @@ export function createDelimitedData(paddedData: Field[], index: Field) {
   return paddedData;
 }
 
+/**
+ * Converts an array of ASCII digit `Field` elements into a single integer `Field`.
+ *
+ * Each digit is assumed to be in ASCII format (e.g., '0' = 48, '1' = 49).
+ *
+ * @param digits - An array of `Field` elements representing ASCII digits.
+ * @param numDigits - The number of digits to process from the array.
+ * @returns A `Field` representing the full integer value.
+ */
 export function digitBytesToInt(digits: Field[], numDigits: number): Field {
   let result = Field.from(0);
   const asciiZero = Field.from(48);
@@ -223,7 +256,6 @@ export function digitBytesToInt(digits: Field[], numDigits: number): Field {
 
   for (let i = 0; i < numDigits; i++) {
     // Convert ASCII digit (e.g., '0' = 48, '1' = 49) to actual value
-    // by subtracting ASCII value of '0' (48)
     const digitValue = digits[i].sub(asciiZero);
 
     result = result.add(digitValue.mul(powersOfTen));
@@ -233,6 +265,21 @@ export function digitBytesToInt(digits: Field[], numDigits: number): Field {
   return result;
 }
 
+/**
+ * Constructs a UNIX timestamp from date and time components provided as `Field` elements.
+ *
+ * This includes handling leap years and correctly calculating the total number of days
+ * since the UNIX epoch (January 1, 1970).
+ *
+ * @param year - The year as a `Field` (e.g., 2024).
+ * @param month - The month as a `Field` (1-based: January = 1).
+ * @param day - The day of the month as a `Field`.
+ * @param hour - The hour of the day as a `Field`.
+ * @param minute - The minute of the hour as a `Field`.
+ * @param second - The second of the minute as a `Field`.
+ * @param maxYears - The maximum number of years to consider for leap year calculations.
+ * @returns A `Field` representing the UNIX timestamp (seconds since 1970-01-01 00:00:00 UTC).
+ */
 export function digitBytesToTimestamp(
   year: Field,
   month: Field,
@@ -276,8 +323,6 @@ export function digitBytesToTimestamp(
   daysPassed = daysPassed.add(daysFromPreviousMonths);
 
   // Calculate leap years
-  // First leap year after 1970 is 1972
-  // Would that be a problem?
   const maxLeapYears = Math.floor((maxYears - 1972) / 4) + 1;
 
   // Handle leap years before current year
@@ -301,4 +346,57 @@ export function digitBytesToTimestamp(
   timestamp = timestamp.add(second);
 
   return timestamp;
+}
+
+/**
+ * Extracts a sequence of `Field` elements from `nDelimitedData` starting at a computed index
+ * (based on `dobIndex` and `dateIndex`), converts the sequence of ASCII digit bytes to an integer.
+ *
+ * This is typically used to retrieve a specific numeric value (like a date component)
+ * from a delimited QR payload in circuit-friendly form.
+ *
+ * @param nDelimitedData - The full delimited data array of `Field` elements.
+ * @param dobIndex - The base index (from `delimiterIndices`) marking the Date of Birth delimiter.
+ * @param len - The number of digits to extract and convert.
+ * @param dateIndex - The relative offset from `dobIndex` to locate the desired field.
+ * @returns A `Field` representing the integer value parsed from the specified slice of data.
+ */
+export function findElementAndReturnInteger(
+  nDelimitedData: Field[],
+  dobIndex: Field,
+  len: number,
+  dateIndex: number
+): Field {
+  let elements = [];
+  for (let i = 0; i < len; i++) {
+    elements.push(elementAtIndex(nDelimitedData, dobIndex.add(dateIndex).add(i)));
+  }
+  return digitBytesToInt(elements, len);
+}
+
+/**
+ * Retrieves a `Field` element at a specific index from an array, using a circuit-compatible approach.
+ *
+ * This uses a fixed-size loop (1536 iterations) to make indexing work inside a SNARK-friendly circuit,
+ * avoiding dynamic indexing which is not allowed in circuit computations.
+ *
+ * @param intArray - The input array of `Field` elements (expected length: 1536).
+ * @param index - The `Field` index specifying which element to retrieve.
+ * @returns The `Field` element at the specified index.
+ */
+export function elementAtIndex(intArray: Field[], index: Field): Field {
+  let totalValues = Field.from(0);
+
+  let isIndex = Field.from(0);
+  let isValue = Field.from(0);
+
+  // Fixed-size loop for SNARK-friendly indexing (must match array size: 1536)
+  for (let i = 0; i < 1536; i++) {
+    isIndex = index.equals(i).toField();
+    isValue = isIndex.mul(intArray[i]);
+
+    totalValues = totalValues.add(isValue);
+  }
+
+  return totalValues;
 }
