@@ -1,9 +1,12 @@
 import { ZkProgram, Provable, Field } from 'o1js';
+import { digitBytesToInt, digitBytesToTimestamp } from './utils';
 
 /**
  * ZkProgram for extracting and delimiting padded 1536-length Field data blocks.
  * This program allows recursive processing of data chunks, tracking filtering
  * and indexing across recursive steps.
+ *
+ * Rows: 634,752
  */
 export const DelimiterExtractor = ZkProgram({
   name: 'DelimiterExtractor',
@@ -32,6 +35,60 @@ export const DelimiterExtractor = ZkProgram({
         }
 
         return { publicOutput: data };
+      },
+    },
+  },
+});
+
+export const DataExtractor = ZkProgram({
+  name: 'Extractor',
+  publicOutput: Field,
+
+  methods: {
+    timestamp: {
+      privateInputs: [Provable.Array(Field, 1536)],
+
+      async method(nDelimitedData: Field[]) {
+        const year = digitBytesToInt(
+          [
+            nDelimitedData[9],
+            nDelimitedData[10],
+            nDelimitedData[11],
+            nDelimitedData[12],
+          ],
+          4
+        );
+
+        const month = digitBytesToInt(
+          [nDelimitedData[13], nDelimitedData[14]],
+          2
+        );
+
+        const day = digitBytesToInt(
+          [nDelimitedData[15], nDelimitedData[16]],
+          2
+        );
+
+        const hour = digitBytesToInt(
+          [nDelimitedData[17], nDelimitedData[18]],
+          2
+        );
+
+        // Convert to Unix timestamp
+        const unixTime = digitBytesToTimestamp(
+          year,
+          month,
+          day,
+          hour,
+          Field(0),
+          Field(0),
+          2032
+        );
+
+        // Adjust for IST time zone (-19800 seconds)
+        const timestamp = unixTime.sub(Field(19800));
+
+        return { publicOutput: timestamp };
       },
     },
   },

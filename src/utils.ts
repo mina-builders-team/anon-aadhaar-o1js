@@ -212,4 +212,93 @@ export function createDelimitedData(paddedData: Field[], index: Field) {
   return paddedData;
 }
 
+export function digitBytesToInt(digits: Field[], numDigits: number): Field {
+  let result = Field.from(0);
+  const asciiZero = Field.from(48);
 
+  let powersOfTen = Field.from(1);
+  for (let i = 0; i < numDigits - 1; i++) {
+    powersOfTen = powersOfTen.mul(10);
+  }
+
+  for (let i = 0; i < numDigits; i++) {
+    // Convert ASCII digit (e.g., '0' = 48, '1' = 49) to actual value
+    // by subtracting ASCII value of '0' (48)
+    const digitValue = digits[i].sub(asciiZero);
+
+    result = result.add(digitValue.mul(powersOfTen));
+    powersOfTen = powersOfTen.div(10);
+  }
+
+  return result;
+}
+
+export function digitBytesToTimestamp(
+  year: Field,
+  month: Field,
+  day: Field,
+  hour: Field,
+  minute: Field,
+  second: Field,
+  maxYears: number
+): Field {
+  // Days till previous month (0-indexed month)
+  const daysTillPreviousMonth = [
+    Field(0),
+    Field(31),
+    Field(59),
+    Field(90),
+    Field(120),
+    Field(151),
+    Field(181),
+    Field(212),
+    Field(243),
+    Field(273),
+    Field(304),
+    Field(334),
+  ];
+
+  // Calculate days based on years since 1970
+  const yearsSinceEpoch = year.sub(Field(1970));
+  let daysPassed = yearsSinceEpoch.mul(Field(365));
+
+  // Add days in current month
+  daysPassed = daysPassed.add(day.sub(Field(1)));
+
+  // Add days from previous months in current year
+  let daysFromPreviousMonths = Field(0);
+  for (let i = 0; i < 12; i++) {
+    const isCurrentMonth = month.sub(Field(1)).equals(Field(i)).toField();
+    daysFromPreviousMonths = daysFromPreviousMonths.add(
+      isCurrentMonth.mul(daysTillPreviousMonth[i])
+    );
+  }
+  daysPassed = daysPassed.add(daysFromPreviousMonths);
+
+  // Calculate leap years
+  // First leap year after 1970 is 1972
+  // Would that be a problem?
+  const maxLeapYears = Math.floor((maxYears - 1972) / 4) + 1;
+
+  // Handle leap years before current year
+  let leapYearDays = Field(0);
+  for (let i = 0; i < maxLeapYears; i++) {
+    const leapYear = Field(1972 + i * 4);
+    const isLeapYearBeforeCurrent = year.greaterThan(leapYear).toField();
+    leapYearDays = leapYearDays.add(isLeapYearBeforeCurrent);
+
+    // Special case: if current year is a leap year and date is after February
+    const isCurrentLeapYear = year.equals(leapYear).toField();
+    const isAfterFebruary = month.greaterThan(Field(2)).toField();
+    leapYearDays = leapYearDays.add(isCurrentLeapYear.mul(isAfterFebruary));
+  }
+  daysPassed = daysPassed.add(leapYearDays);
+
+  // Convert days to seconds and add time components
+  let timestamp = daysPassed.mul(Field(86400)); // 86400 seconds in a day
+  timestamp = timestamp.add(hour.mul(Field(3600))); // 3600 seconds in an hour
+  timestamp = timestamp.add(minute.mul(Field(60))); // 60 seconds in a minute
+  timestamp = timestamp.add(second);
+
+  return timestamp;
+}
