@@ -1,4 +1,4 @@
-import { Field, Provable } from 'o1js';
+import { Field } from 'o1js';
 import {
   DOB_POSITION,
   GENDER_POSITION,
@@ -6,7 +6,6 @@ import {
   PINCODE_POSITION,
   STATE_POSITION,
 } from './constants.js';
-import { paddedData } from './data-utils.js';
 import { DataExtractor, DelimiterExtractor } from './extractor.js';
 import {
   getDelimiterIndices,
@@ -14,6 +13,7 @@ import {
   createDelimitedData,
   intToCharString,
 } from './utils';
+import { getQRData } from './getQRData.js';
 
 const proofsEnabled = false;
 
@@ -26,10 +26,11 @@ describe('Extractor circuit tests', () => {
     await DelimiterExtractor.compile({ proofsEnabled });
     await DataExtractor.compile({ proofsEnabled });
 
-    const qrDataPadded = paddedData.toBytes();
+    const inputs = getQRData();
+    const qrDataPadded = inputs.paddedData.toBytes();
 
     delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field);
-    qrData = createPaddedQRData(paddedData.toBytes());
+    qrData = createPaddedQRData(inputs.paddedData.toBytes());
 
     const photoIndex = delimiterIndices[PHOTO_POSITION - 1].add(1);
     nDelimitedData = createDelimitedData(qrData, photoIndex);
@@ -92,7 +93,7 @@ describe('Extractor circuit tests', () => {
 
       expect(proof.publicOutput.toBigInt()).toEqual(110051n);
     });
-    it.only('should extract state', async () => {
+    it('should extract state', async () => {
       const stateLength = delimiterIndices[STATE_POSITION].sub(
         delimiterIndices[STATE_POSITION - 1]
       );
