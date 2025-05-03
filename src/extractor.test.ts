@@ -1,5 +1,10 @@
 import { Field, Provable } from 'o1js';
-import { DOB_POSITION, GENDER_POSITION, PHOTO_POSITION } from './constants.js';
+import {
+  DOB_POSITION,
+  GENDER_POSITION,
+  PHOTO_POSITION,
+  PINCODE_POSITION,
+} from './constants.js';
 import { paddedData } from './data-utils.js';
 import { DataExtractor, DelimiterExtractor } from './extractor.js';
 import {
@@ -68,17 +73,25 @@ describe('Extractor circuit tests', () => {
       const output = proof.publicOutput;
 
       expect(output.toBigInt()).toEqual(BigInt(40));
-    }),
-      it('should find gender', async () => {
-        const genderIndex = delimiterIndices[GENDER_POSITION - 1].add(1);
+    });
+    it('should find gender', async () => {
+      const genderIndex = delimiterIndices[GENDER_POSITION - 1].add(1);
 
-        const { proof } = await DataExtractor.gender(
-          nDelimitedData,
-          genderIndex
-        );
+      const { proof } = await DataExtractor.gender(nDelimitedData, genderIndex);
 
-        console.log(proof.publicOutput.toBigInt());
-        console.log(String.fromCharCode(Number(proof.publicOutput)) === 'M');
-      });
+      console.log(proof.publicOutput.toBigInt());
+      console.log(String.fromCharCode(Number(proof.publicOutput)) === 'M');
+    });
+    it('should get pincode ', async () => {
+      const pincodeIndex = delimiterIndices[PINCODE_POSITION - 1].add(1);
+
+      const { proof } = await DataExtractor.pincode(
+        nDelimitedData,
+        pincodeIndex
+      );
+
+      console.log(proof.publicOutput.toBigInt());
+      console.log(proof.publicOutput.toBigInt() === 110051n);
+    });
   });
 });
