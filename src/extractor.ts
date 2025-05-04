@@ -7,11 +7,7 @@ import {
   findElementAndReturnInteger,
   selectSubarray,
 } from './utils.js';
-export{
-  DelimiterExtractor,
-  DataExtractor,
-  DataExtractorProof
-};
+export { DelimiterExtractor, DataExtractor, DataExtractorProof };
 
 class ExtractorOutputs extends Struct({
   TimeStamp: Field,
@@ -35,6 +31,18 @@ const DelimiterExtractor = ZkProgram({
   publicOutput: Provable.Array(Field, 1536),
 
   methods: {
+    /**
+     * Extracts and filters data from a 1536-length Field array based on a delimiter condition.
+     * For each element, checks if it equals 255 and if its index is less than the given `idx`.
+     * Updates the array accordingly to isolate the relevant part of the data.
+     *
+     * Rows: 634752
+     *
+     * @param data - The 1536-length Field array to process.
+     * @param idx - A Field element indicating the delimiter index.
+     * @returns The filtered 1536-length Field array as public output.
+     */
+
     extractData: {
       privateInputs: [Provable.Array(Field, 1536), Field],
 
@@ -61,9 +69,10 @@ const DelimiterExtractor = ZkProgram({
     },
   },
 });
+
 /**
- * Extraction of data from delimited data.
- *
+ * ZkProgram for extracting structured data (like timestamp, age, gender, pincode, and state)
+ * from a delimited Field array. It uses recursive proofs to incrementally build up the extracted data.
  * @returns - A field element for obtaining data
  */
 const DataExtractor = ZkProgram({
@@ -72,11 +81,11 @@ const DataExtractor = ZkProgram({
 
   methods: {
     /**
+     * Initializes the extractor proof with default values for all fields.
+     * Typically used as a starting point before applying extraction steps.
      *
-     * Takes delimited data as an input and extracts timestamp , which is issued in IST timezone.
-     *
-     * Converts it to UNIX timestamp and returns it as a Field element.
-     *
+     * Rows: 0 (Since there are no constraints)
+     * @returns An ExtractorOutputs object with default (zero) values for all fields.
      */
     createBaseProof: {
       privateInputs: [],
@@ -98,6 +107,17 @@ const DataExtractor = ZkProgram({
         };
       },
     },
+    /**
+     * Extracts the timestamp from the delimited data array.
+     * The timestamp is parsed from the data and converted to a UNIX timestamp (UTC),
+     * then adjusted to account for IST timezone (by subtracting 19800 seconds).
+     *
+     * Rows: 953
+     *
+     * @param earlierProof - The earlier extractor proof to build on.
+     * @param nDelimitedData - A 1536-length Field array containing the delimited data.
+     * @returns An updated ExtractorOutputs object with the timestamp field set.
+     */
     timestamp: {
       privateInputs: [SelfProof, Provable.Array(Field, 1536)],
 
@@ -154,6 +174,21 @@ const DataExtractor = ZkProgram({
         };
       },
     },
+    /**
+     * Extracts and calculates the age from the delimited data array.
+     * It computes age based on date of birth (found in the data) and compares it with the current date
+     * to determine age and whether the person is above 18.
+     *
+     * Rows: 38500
+     *
+     * @param earlierProof - The earlier extractor proof to build on.
+     * @param nDelimitedData - A 1536-length Field array containing the delimited data.
+     * @param startDelimiterIndex - Index in the array where the date of birth starts.
+     * @param currentYear - Current year as a Field element.
+     * @param currentMonth - Current month as a Field element.
+     * @param currentDay - Current day as a Field element.
+     * @returns An updated ExtractorOutputs object with age and age-above-18 fields set.
+     */
     age: {
       privateInputs: [
         SelfProof,
@@ -212,6 +247,16 @@ const DataExtractor = ZkProgram({
         };
       },
     },
+    /**
+     * Extracts gender information from the delimited data array.
+     *
+     * Rows: 3840
+     *
+     * @param earlierProof - The earlier extractor proof to build on.
+     * @param nDelimitedData - A 1536-length Field array containing the delimited data.
+     * @param startDelimiterIndex - Index in the array where gender info is located.
+     * @returns An updated ExtractorOutputs object with the gender field set.
+     */
     gender: {
       privateInputs: [SelfProof, Provable.Array(Field, 1536), Field],
 
@@ -231,7 +276,17 @@ const DataExtractor = ZkProgram({
         };
       },
     },
-
+    /**
+     * Extracts the pincode from the delimited data array.
+     * Reads 6-digit pincode from the specified start index and converts it to an integer.
+     *
+     * Rows: 101387
+     *
+     * @param earlierProof - The earlier extractor proof to build on.
+     * @param nDelimitedData - A 1536-length Field array containing the delimited data.
+     * @param startIndex - Index where the pincode starts in the array.
+     * @returns An updated ExtractorOutputs object with the pincode field set.
+     */
     pincode: {
       privateInputs: [SelfProof, Provable.Array(Field, 1536), Field],
       async method(
@@ -255,6 +310,18 @@ const DataExtractor = ZkProgram({
         };
       },
     },
+    /**
+     * Extracts the state code from the delimited data array.
+     * Reads a compressed state representation (up to 5 characters) from the specified start index
+     * and converts it into an integer representation.
+     *
+     * Rows: 101387
+     *
+     * @param earlierProof - The earlier extractor proof to build on.
+     * @param nDelimitedData - A 1536-length Field array containing the delimited data.
+     * @param startIndex - Index where the state info starts in the array.
+     * @returns An updated ExtractorOutputs object with the state field set.
+     */
     state: {
       privateInputs: [SelfProof, Provable.Array(Field, 1536), Field],
       async method(
@@ -262,6 +329,7 @@ const DataExtractor = ZkProgram({
         nDelimitedData: Field[],
         startIndex: Field
       ) {
+        earlierProof.verify();
         // Cant make properly dynamic
         const selectedSubArr = selectSubarray(
           nDelimitedData,
@@ -283,4 +351,4 @@ const DataExtractor = ZkProgram({
   },
 });
 
-class DataExtractorProof extends ZkProgram.Proof(DataExtractor){};
+class DataExtractorProof extends ZkProgram.Proof(DataExtractor) {}
