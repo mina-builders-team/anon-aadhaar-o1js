@@ -29,7 +29,8 @@ describe('Signature Verifier', () => {
 
   describe('Partial hashing computations', () => {
     //
-    // Warning: This step is used for testing 128-byte hashing. When set proofsEnabled = true, it
+    // Warning: This step tests 128-byte hashing with 9 chunks, which is computationally heavier than other tests, so it takes more time to complete.
+    // It is executed only when proofsEnabled = true.
     //
     (!proofsEnabled ? it.skip : it)(
       'should compute partial hashing with 9 byte blocks of size 128 bytes.',
