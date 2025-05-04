@@ -6,7 +6,11 @@ import {
   PINCODE_POSITION,
   STATE_POSITION,
 } from './constants.js';
-import { DataExtractor, DelimiterExtractor } from './extractor.js';
+import {
+  DataExtractor,
+  DelimiterExtractor,
+  DataExtractorProof,
+} from './extractor.js';
 import {
   getDelimiterIndices,
   createPaddedQRData,
@@ -21,6 +25,7 @@ describe('Extractor circuit tests', () => {
   let nDelimitedData: Field[];
   let qrData: Field[];
   let delimiterIndices: Field[];
+  let lastProof: DataExtractorProof;
 
   beforeAll(async () => {
     await DelimiterExtractor.compile({ proofsEnabled });
@@ -34,6 +39,8 @@ describe('Extractor circuit tests', () => {
 
     const photoIndex = delimiterIndices[PHOTO_POSITION - 1].add(1);
     nDelimitedData = createDelimitedData(qrData, photoIndex);
+
+    lastProof = (await DataExtractor.createBaseProof()).proof;
   }),
     describe('Delimiter circuit tests', () => {
       it('should extract delimited data correctly', async () => {
@@ -50,8 +57,11 @@ describe('Extractor circuit tests', () => {
     });
   describe('Extractor Circuit tests', () => {
     it('should extract timestamp correct', async () => {
-      const { proof } = await DataExtractor.timestamp(nDelimitedData);
-      const output = proof.publicOutput;
+      const { proof } = await DataExtractor.timestamp(
+        lastProof,
+        nDelimitedData
+      );
+      const output = proof.publicOutput.TimeStamp;
 
       const date = new Date(Number(output) * 1000).getTime();
 
@@ -66,32 +76,43 @@ describe('Extractor circuit tests', () => {
       const delimiterIndex = delimiterIndices[DOB_POSITION - 1];
 
       const { proof } = await DataExtractor.age(
+        lastProof,
         nDelimitedData,
         delimiterIndex,
         year,
         month,
         day
       );
-      const output = proof.publicOutput;
-
-      expect(output.toBigInt()).toEqual(BigInt(40));
+      const outputAge = proof.publicOutput.Age;
+      const outputAgeAbove18 = proof.publicOutput.AgeAbove18;
+      expect(outputAge.toBigInt()).toEqual(40n);
+      expect(outputAgeAbove18.toBigInt()).toEqual(1n);
     });
     it('should find gender', async () => {
       const genderIndex = delimiterIndices[GENDER_POSITION - 1].add(1);
 
-      const { proof } = await DataExtractor.gender(nDelimitedData, genderIndex);
+      const { proof } = await DataExtractor.gender(
+        lastProof,
+        nDelimitedData,
+        genderIndex
+      );  
 
-      expect(String.fromCharCode(Number(proof.publicOutput))).toEqual('M');
+      const outputGender = proof.publicOutput.Gender;
+
+      expect(String.fromCharCode(Number(outputGender))).toEqual('M');
     });
     it('should get pincode ', async () => {
       const pincodeIndex = delimiterIndices[PINCODE_POSITION - 1].add(1);
 
       const { proof } = await DataExtractor.pincode(
+        lastProof,
         nDelimitedData,
         pincodeIndex
       );
 
-      expect(proof.publicOutput.toBigInt()).toEqual(110051n);
+      const outputPincode = proof.publicOutput.Pincode;
+
+      expect(outputPincode.toBigInt()).toEqual(110051n);
     });
     it('should extract state', async () => {
       const stateLength = delimiterIndices[STATE_POSITION].sub(
@@ -101,12 +122,15 @@ describe('Extractor circuit tests', () => {
       const stateIndex = delimiterIndices[STATE_POSITION - 1].add(1);
 
       const { proof } = await DataExtractor.state(
+        lastProof,
         nDelimitedData,
         stateIndex,
-        stateLength
       );
 
-      expect(intToCharString(proof.publicOutput, 5)).toEqual('Delhi');
+      // Get the first array, which is the selected subarray
+      const outputState = proof.publicOutput.State[0];
+
+      expect(intToCharString(outputState, 5)).toEqual('Delhi');
     });
   });
 });
