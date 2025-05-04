@@ -303,5 +303,38 @@ describe('Signature Verifier', () => {
 
       await expect(isVerified).rejects.toThrow();
     });
+
+    it('should reject signatures with SHA-384 digests ', async () => {
+      const digest = Gadgets.SHA2.hash(384, signedData);
+
+      //Steps below are identical to the `verifySignature` method steps.
+
+      const paddedHash = pkcs1v15Pad(digest);
+      // First, try it with padded hash value.
+
+      const isVerified = async () => {
+        rsaVerify65537(paddedHash, signatureBigint, publicKeyBigint);
+      };
+
+      await expect(isVerified).rejects.toThrow(
+        'Field.assertEquals(): 31644031178026440823572775767911610 != 9188579551671412591472664553230141'
+      );
+    });
+    it('should reject signatures with SHA-512 digests ', async () => {
+      const digest = Gadgets.SHA2.hash(512, signedData);
+
+      //Steps below are identical to the `verifySignature` method steps.
+
+      const paddedHash = pkcs1v15Pad(digest);
+      // First, try it with padded hash value.
+
+      const isVerified = async () => {
+        rsaVerify65537(paddedHash, signatureBigint, publicKeyBigint);
+      };
+
+      await expect(isVerified).rejects.toThrow(
+        'Field.assertEquals(): 50469815090039084110515593114079551 != 9188579551671412591472664553230141'
+      );
+    });
   });
 });
