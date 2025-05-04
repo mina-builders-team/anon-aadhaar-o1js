@@ -115,6 +115,35 @@ describe('Signature Verifier', () => {
       const expectedDigest = Gadgets.SHA2.hash(256, signedData);
       expect(finalDigest.toHex()).toEqual(expectedDigest.toHex());
     });
+
+    it('should output different digest with wrong initial values', async () => {
+      const wrongInitialValue: UInt32[] = Gadgets.SHA2.initialState(224);
+
+      const pad1 = Bytes.from(
+        paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
+      );
+      const pad2 = Bytes.from(
+        paddedData.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
+      );
+      const pad3 = Bytes.from(paddedData.toBytes().slice(BLOCK_SIZES.LARGE));
+
+      const proof1 = await SignatureVerifier.baseCase512(
+        pad1,
+        wrongInitialValue
+      );
+      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
+      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
+
+      const result3 = proof3.proof.publicOutput;
+
+      // Get final digest
+      const finalDigest = Bytes.from(
+        result3.hashState.flatMap((w: UInt32) => w.toBytesBE())
+      );
+
+      const expectedDigest = Gadgets.SHA2.hash(256, signedData);
+      expect(finalDigest.toHex()).not.toEqual(expectedDigest.toHex());
+    });
   });
 
   describe('Signature verification computations', () => {
