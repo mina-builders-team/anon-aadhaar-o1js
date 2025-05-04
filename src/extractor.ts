@@ -9,7 +9,8 @@ import {
 } from './utils.js';
 export{
   DelimiterExtractor,
-  DataExtractor
+  DataExtractor,
+  DataExtractorProof
 };
 
 class ExtractorOutputs extends Struct({
@@ -281,3 +282,5 @@ const DataExtractor = ZkProgram({
     },
   },
 });
+
+class DataExtractorProof extends ZkProgram.Proof(DataExtractor){};
