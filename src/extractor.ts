@@ -63,7 +63,7 @@ export const DelimiterExtractor = ZkProgram({
  */
 export const DataExtractor = ZkProgram({
   name: 'Extractor',
-  publicOutput: Field,
+  publicOutput: ExtractorOutputs,
 
   methods: {
     /**
@@ -73,6 +73,26 @@ export const DataExtractor = ZkProgram({
      * Converts it to UNIX timestamp and returns it as a Field element.
      *
      */
+    createBaseProof: {
+      privateInputs: [],
+
+      async method() {
+        const stateArray = Array.from({ length: 24 }, () => Field(0));
+        const photoArray = Array.from({ length: 32 }, () => Field(0));
+
+        return {
+          publicOutput: new ExtractorOutputs({
+            TimeStamp: Field(0),
+            Age: Field(0),
+            AgeAbove18: Field(0),
+            Gender: Field(0),
+            Pincode: Field(0),
+            State: stateArray,
+            Photo: photoArray,
+          }),
+        };
+      },
+    },
     timestamp: {
       privateInputs: [Provable.Array(Field, 1536)],
 
