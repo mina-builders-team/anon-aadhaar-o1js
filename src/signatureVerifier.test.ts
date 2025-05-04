@@ -363,7 +363,7 @@ describe('Signature Verifier', () => {
       const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
       const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
       const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
-      
+
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
           proof3.proof,
@@ -386,14 +386,42 @@ describe('Signature Verifier', () => {
         paddedData.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
       );
 
-      const pad3 = Bytes.from(
-        paddedData.toBytes().slice(BLOCK_SIZES.LARGE)
-      );
+      const pad3 = Bytes.from(paddedData.toBytes().slice(BLOCK_SIZES.LARGE));
 
       const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
       const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
       const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
-      
+
+      const isVerified = async () => {
+        await SignatureVerifier.verifySignature(
+          proof3.proof,
+          otherSignature,
+          publicKeyBigint
+        );
+      };
+
+      await expect(isVerified).rejects.toThrow();
+    });
+    it('should reject signature verification of empty data', async () => {
+      const EMPTY_DATA = Bytes.fromString('');
+
+      const inputs = getQRData(TEST_DATA);
+      const otherSignature = inputs.signatureBigint;
+
+      const pad1 = Bytes.from(
+        EMPTY_DATA.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
+      );
+
+      const pad2 = Bytes.from(
+        EMPTY_DATA.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
+      );
+
+      const pad3 = Bytes.from(EMPTY_DATA.toBytes().slice(BLOCK_SIZES.LARGE));
+
+      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
+      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
+      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
+
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
           proof3.proof,
