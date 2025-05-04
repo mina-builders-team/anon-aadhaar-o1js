@@ -1,6 +1,6 @@
 import { SignatureVerifier } from './signatureVerifier.js';
 
-import { Bytes, Gadgets, UInt32, 
+import { Bytes, Gadgets, UInt32, UInt8, 
        } from 'o1js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
 
