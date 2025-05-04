@@ -1,4 +1,4 @@
-import { ZkProgram, Provable, Field } from 'o1js';
+import { ZkProgram, Provable, Field, Struct } from 'o1js';
 import {
   charBytesToInt,
   digitBytesToInt,
@@ -7,6 +7,16 @@ import {
   findElementAndReturnInteger,
   selectSubarray,
 } from './utils.js';
+
+class ExtractorOutputs extends Struct({
+  TimeStamp: Field,
+  Age: Field,
+  AgeAbove18: Field,
+  Gender: Field,
+  Pincode: Field,
+  State: Provable.Array(Field, 24), // Extend for 24 character long state names.
+  Photo: Provable.Array(Field, 992), // Photo is represented in an array of maximum size of PHOTO_PACK_SIZE * MAX_FIELD_BYTE_SIZE in big endian format
+}) {}
 
 /**
  * ZkProgram for extracting and delimiting padded 1536-length Field data blocks.
