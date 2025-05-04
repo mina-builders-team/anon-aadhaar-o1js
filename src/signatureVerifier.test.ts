@@ -233,11 +233,11 @@ describe('Signature Verifier', () => {
       );
     });
     it('should reject verification with made-up data', async () => {
-      // Change bytes with a random value. Make sure changed value is in the 8-bit range.
-      const incrementedData = paddedData.bytes.map(() =>
+      // Change bytes with a random value. Make sure changed value is in the 8-bit range by applying mod (%) operation.
+      const randomizedData = paddedData.bytes.map(() =>
         UInt8.from(Math.floor(Math.random() * 254))
       );
-      const distortedPaddedData = Bytes.from(incrementedData);
+      const distortedPaddedData = Bytes.from(randomizedData);
       console.log(distortedPaddedData.toHex().slice(0, 50));
       // Now split at your desired boundaries (multiple of 64 bytes)
       // This test should fail especially for distorted padded bytes
@@ -268,17 +268,8 @@ describe('Signature Verifier', () => {
 
       await expect(isVerified).rejects.toThrow();
     });
+
     it('should reject verification when hash data lacks PKCS#1 v1.5 padding ', async () => {
-      const pad1 = Bytes.from(
-        paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
-      );
-
-      const pad2 = Bytes.from(
-        paddedData.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
-      );
-
-      const pad3 = Bytes.from(paddedData.toBytes().slice(BLOCK_SIZES.LARGE));
-
       const digest = Gadgets.SHA2.hash(256, signedData);
 
       //Steps below are identical to the `verifySignature` method steps.
@@ -299,16 +290,6 @@ describe('Signature Verifier', () => {
     });
 
     it('should reject verification when hash data is padded with incorrect PKCS#1 v1.5 format ', async () => {
-      const pad1 = Bytes.from(
-        paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
-      );
-
-      const pad2 = Bytes.from(
-        paddedData.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
-      );
-
-      const pad3 = Bytes.from(paddedData.toBytes().slice(BLOCK_SIZES.LARGE));
-
       const digest = Gadgets.SHA2.hash(256, signedData);
 
       //Steps below are identical to the `verifySignature` method steps.
