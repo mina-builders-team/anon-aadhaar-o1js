@@ -17,7 +17,7 @@ import {
   createDelimitedData,
   intToCharString,
 } from './utils.js';
-import { getQRData } from './getQRData.js';
+import { getQRData, TEST_DATA } from './getQRData.js';
 
 const proofsEnabled = false;
 
@@ -31,7 +31,7 @@ describe('Extractor circuit tests', () => {
     await DelimiterExtractor.compile({ proofsEnabled });
     await DataExtractor.compile({ proofsEnabled });
 
-    const inputs = getQRData();
+    const inputs = getQRData(TEST_DATA);
     const qrDataPadded = inputs.paddedData.toBytes();
 
     delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field);
