@@ -251,12 +251,28 @@ export const DataExtractor = ZkProgram({
       },
     },
     state: {
-      privateInputs: [Provable.Array(Field, 1536), Field, Field],
-      async method(nDelimitedData: Field[], startIndex: Field, length: Field) {
-        const selectedSubArr = selectSubarray(nDelimitedData, startIndex, 5);
+      privateInputs: [SelfProof, Provable.Array(Field, 1536), Field],
+      async method(
+        earlierProof: SelfProof<unknown, ExtractorOutputs>,
+        nDelimitedData: Field[],
+        startIndex: Field
+      ) {
+        // Cant make properly dynamic
+        const selectedSubArr = selectSubarray(
+          nDelimitedData,
+          startIndex,
+          earlierProof.publicOutput.State.length
+        );
 
+        // State is compressed here, but now our real challenge starts.
         const state = charBytesToInt(selectedSubArr, 5);
-        return { publicOutput: state };
+
+        return {
+          publicOutput: new ExtractorOutputs({
+            ...earlierProof.publicOutput,
+            State: [state],
+          }),
+        };
       },
     },
   },
