@@ -1,10 +1,10 @@
 import { Bytes, verify } from 'o1js';
 import { SignatureVerifier } from '../signatureVerifier.js';
 import { BLOCK_SIZES } from '../utils.js';
-import { getQRData } from '../getQRData.js';
+import { getQRData,TEST_DATA } from '../getQRData.js';
 
 const { paddedData, initialValue, signatureBigint, publicKeyBigint } =
-  getQRData();
+  getQRData(TEST_DATA);
 
 let proofsEnabled = false;
 
