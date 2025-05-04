@@ -208,12 +208,22 @@ export const DataExtractor = ZkProgram({
       },
     },
     gender: {
-      privateInputs: [Provable.Array(Field, 1536), Field],
+      privateInputs: [SelfProof, Provable.Array(Field, 1536), Field],
 
-      async method(nDelimitedData: Field[], startDelimiterIndex: Field) {
+      async method(
+        earlierProof: SelfProof<unknown, ExtractorOutputs>,
+        nDelimitedData: Field[],
+        startDelimiterIndex: Field
+      ) {
+        earlierProof.verify();
         // No special order index needed.
         const gender = elementAtIndex(nDelimitedData, startDelimiterIndex);
-        return { publicOutput: gender };
+        return {
+          publicOutput: new ExtractorOutputs({
+            ...earlierProof.publicOutput,
+            Gender: gender,
+          }),
+        };
       },
     },
 
