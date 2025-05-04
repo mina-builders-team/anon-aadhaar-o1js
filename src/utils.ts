@@ -56,17 +56,22 @@ function pkcs1v15Pad(sha256Digest: Bytes) {
 }
 
 /**
- * Creates a wrong PKCS#1 v1.5 padded message for the given SHA-256 digest.
+ * Pads message using a wrong PKCS#1 v1.5 algorithm identifiers for the given SHA-256 digest.
  *
  * @notice Copied from above and modified the algorithm constants for obtaining wrongly padded data.
  */
 function pkcs1v15PadWrong(sha256Digest: Bytes) {
-  // Algorithm identifier (OID) for SHA-256 in PKCS#1 v1.5 padding
+  // Wrongly given algorithm identifier (OID) for SHA-256 in PKCS#1 v1.5 padding
   const algorithmConstantBytes = Bytes.fromHex(
     '3031301d060660864301650304020105000420'
   ).bytes;
 
   // Calculate the length of the padding string (PS)
+  // It is calculated with: modulusLength - sha256Digest.length - algorithmConstantBytes.length - 3;
+  // It is set to be 202, since values are constant:
+  // modulus length: 256 bytes (2048 bits)
+  // sha256 digest Length: 32 bytes
+  // algorithm constant bytes' length: 19 bytes
   const padLength = 202;
 
   // Create the padding string (PS) with 0xFF bytes based on padLength
