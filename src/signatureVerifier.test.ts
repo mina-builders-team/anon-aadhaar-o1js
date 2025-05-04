@@ -198,7 +198,7 @@ describe('Signature Verifier', () => {
         await SignatureVerifier.verifySignature(
           proof3.proof,
           signatureBigint,
-          publicKeyBigint
+          wrongPublicKey
         );
       };
 
