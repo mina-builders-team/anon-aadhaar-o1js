@@ -1,10 +1,9 @@
 import { SignatureVerifier } from './signatureVerifier.js';
-import { Bytes, Gadgets, UInt32 } from 'o1js';
-import { Bigint2048 } from './rsa.js';
+import { Bytes, Gadgets, UInt32, UInt8 } from 'o1js';
+import { Bigint2048, rsaVerify65537 } from './rsa.js';
 
-import { BLOCK_SIZES } from './utils.js';
+import { BLOCK_SIZES, pkcs1v15Pad } from './utils.js';
 import { getQRData } from './getQRData.js';
-import { sign } from 'o1js/dist/node/mina-signer/src/signature.js';
 
 const proofsEnabled = false;
 
@@ -122,7 +121,6 @@ describe('Signature Verifier', () => {
 
   describe('Signature verification computations', () => {
     it('should verify rsa signature correctly', async () => {
-
       // Now split at your desired boundaries (multiple of 64 bytes)
       const pad1 = Bytes.from(
         paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
@@ -147,9 +145,8 @@ describe('Signature Verifier', () => {
     });
 
     it('should reject verification with tampered signature', async () => {
-
       const wrongSignature = signatureBigint.modSquare(publicKeyBigint);
-        
+
       // Now split at your desired boundaries (multiple of 64 bytes)
       const pad1 = Bytes.from(
         paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
@@ -164,20 +161,25 @@ describe('Signature Verifier', () => {
       const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
       const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
       const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
-      await expect(async () => {
+
+      const isVerified = async () => {
         await SignatureVerifier.verifySignature(
           proof3.proof,
           wrongSignature,
           publicKeyBigint
-        )
-      }).rejects.toThrow('Field.assertEquals(): 9188579551671412591472664553230141 != 40899547542153145199703733613250199');
-    });
-    it.only('should reject verification with wrong public key', async () => {
+        );
+      };
 
+      await expect(isVerified).rejects.toThrow(
+        'Field.assertEquals(): 9188579551671412591472664553230141 != 40899547542153145199703733613250199'
+      );
+    });
+    it('should reject verification with wrong public key', async () => {
       // A completely different & weird value
-      const wrongPublicKeyHex = "94e81f7506595cc262addcfddd35d704055b2adf46dc619c56b48eee199995eca1a3254710620ac7801e976f44e3be454db0f190e3f7d4e3598972117344de52fcf7826f849488a959a7b3d21eb6dd03451662ea883eeeefde889a1499b9a47f9504c5f096c262b96d23d19750332d9e97eb6141d261de97994d4c4163ca9cbe3e077221b44253dcf81609428b68351ee3e9b60d2b351fdaa6ee8c28a845239f97de7cc0fe5d144e474813fb43ec583f81b4ee328c22167334898d210ba017a26ec68940f05df22bd9cc86bbc3a4354392372d566167769b735ba12ca3580f919c1bd8ba70c4c2ab0acf2b09bc2fae981f3c0295a6e1e9f248f50073094ffaf1";
+      const wrongPublicKeyHex =
+        '61e81f7506595cc262addcfddd35d704055b2adf46dc619c56b48eee199995eca1a3254710620ac7801e976f44e3be454db0f190e3f7d4e3598972117344de52fcf7826f849488a959a7b3d21eb6dd03451662ea883eeeefde889a1499b9a47f9504c5f096c262b96d23d19750332d9e97eb6141d261de97994d4c4163ca9cbe3e077221b44253dcf81609428b68351ee3e9b60d2b351fdaa6ee8c28a845239f97de7cc0fe5d144e474813fb43ec583f81b4ee328c22167334898d210ba017a26ec68940f05df22bd9cc86bbc3a4354392372d566167769b735ba12ca3580f919c1bd8ba70c4c2ab0acf2b09bc2fae981f3c0295a6e1e9f248f50073094ffaf1';
       const wrongPublicKey = Bigint2048.from(BigInt('0x' + wrongPublicKeyHex));
-        
+
       // Now split at your desired boundaries (multiple of 64 bytes)
       const pad1 = Bytes.from(
         paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
@@ -192,13 +194,51 @@ describe('Signature Verifier', () => {
       const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
       const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
       const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
-      await expect(async () => {
+      const isVerified = async () => {
         await SignatureVerifier.verifySignature(
           proof3.proof,
           signatureBigint,
-          wrongPublicKey
-        )
-      }).rejects.toThrow();
+          publicKeyBigint
+        );
+      };
+
+      await expect(isVerified).rejects.toThrow();
+    });
+    it('should reject verification with made-up data', async () => {
+      // Change bytes with a random value. Make sure changed value is in the 8-bit range.
+      const incrementedData = paddedData.bytes.map(() =>
+        UInt8.from(Math.floor(Math.random() * 254))
+      );
+      const distortedPaddedData = Bytes.from(incrementedData);
+      console.log(distortedPaddedData.toHex().slice(0, 50));
+      // Now split at your desired boundaries (multiple of 64 bytes)
+      // This test should fail especially for distorted padded bytes
+      const pad1 = Bytes.from(
+        distortedPaddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
+      );
+
+      const pad2 = Bytes.from(
+        distortedPaddedData
+          .toBytes()
+          .slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
+      );
+
+      const pad3 = Bytes.from(
+        distortedPaddedData.toBytes().slice(BLOCK_SIZES.LARGE)
+      );
+
+      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
+      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
+      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
+      const isVerified = async () => {
+        await SignatureVerifier.verifySignature(
+          proof3.proof,
+          signatureBigint,
+          publicKeyBigint
+        );
+      };
+
+      await expect(isVerified).rejects.toThrow();
     });
   });
 });
