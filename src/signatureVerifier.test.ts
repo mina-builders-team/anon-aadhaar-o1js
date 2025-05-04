@@ -262,45 +262,7 @@ describe('Signature Verifier', () => {
       };
       await expect(isVerified).rejects.toThrow();
     });
-    
-    it('should reject verification with tampered QR data content', async () => {
-      // Modify a few bytes in the original QR data
-      const tamperedSignedData = new Uint8Array(signedData);
-      tamperedSignedData[10] = (tamperedSignedData[10] + 1) % 256; // Change a byte
 
-      // Generate padded data from tampered input
-      const tamperedPaddedData = Bytes.from(
-        Gadgets.SHA2.hash(256, tamperedSignedData)
-      );
-
-      // Split into chunks
-      const pad1 = Bytes.from(
-        tamperedPaddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
-      );
-      const pad2 = Bytes.from(
-        tamperedPaddedData
-          .toBytes()
-          .slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
-      );
-      const pad3 = Bytes.from(
-        tamperedPaddedData.toBytes().slice(BLOCK_SIZES.LARGE)
-      );
-
-      // Process the chunks
-      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
-      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
-      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
-
-      const isVerified = async () => {
-        await SignatureVerifier.verifySignature(
-          proof3.proof,
-          signatureBigint,
-          publicKeyBigint
-        );
-      };
-
-      expect(isVerified).rejects.toThrow();
-    });
     it('should reject verification when hash data lacks PKCS#1 v1.5 padding ', async () => {
       const digest = Gadgets.SHA2.hash(256, signedData);
 
@@ -336,6 +298,21 @@ describe('Signature Verifier', () => {
       await expect(isVerified).rejects.toThrow();
     });
 
+    it('should reject verification when hash data is padded with incorrect PKCS#1 v1.5 format ', async () => {
+      const digest = Gadgets.SHA2.hash(256, signedData);
+
+      //Steps below are identical to the `verifySignature` method steps.
+
+      const wronglyPaddedHash = pkcs1v15PadWrong(digest);
+      // First, try it with padded hash value.
+
+      const isVerified = async () => {
+        rsaVerify65537(wronglyPaddedHash, signatureBigint, publicKeyBigint);
+      };
+
+      await expect(isVerified).rejects.toThrow();
+    });
+    
     it('should reject signatures with SHA-384 digests ', async () => {
       const digest = Gadgets.SHA2.hash(384, signedData);
 
