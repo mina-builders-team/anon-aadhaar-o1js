@@ -228,12 +228,26 @@ export const DataExtractor = ZkProgram({
     },
 
     pincode: {
-      privateInputs: [Provable.Array(Field, 1536), Field],
-      async method(nDelimitedData: Field[], startIndex: Field) {
-        const selectedArray = selectSubarray(nDelimitedData, startIndex, 6);
+      privateInputs: [SelfProof, Provable.Array(Field, 1536), Field],
+      async method(
+        earlierProof: SelfProof<unknown, ExtractorOutputs>,
+        nDelimitedData: Field[],
+        startIndex: Field
+      ) {
+        earlierProof.verify();
+        const selectedArray = selectSubarray(
+          nDelimitedData,
+          startIndex,
+          earlierProof.publicOutput.State.length
+        );
         const pincode = digitBytesToInt(selectedArray, 6);
 
-        return { publicOutput: pincode };
+        return {
+          publicOutput: new ExtractorOutputs({
+            ...earlierProof.publicOutput,
+            Pincode: pincode,
+          }),
+        };
       },
     },
     state: {
