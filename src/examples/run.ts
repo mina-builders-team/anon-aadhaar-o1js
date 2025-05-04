@@ -3,10 +3,9 @@ import { SignatureVerifier } from '../signatureVerifier.js';
 import { BLOCK_SIZES } from '../utils.js';
 import { getQRData,TEST_DATA } from '../getQRData.js';
 
-const { paddedData, initialValue, signatureBigint, publicKeyBigint } =
-  getQRData(TEST_DATA);
+const { paddedData, initialValue, signatureBigint, publicKeyBigint } = getQRData(TEST_DATA);
 
-let proofsEnabled = false;
+let proofsEnabled = true;
 
 console.time('Compile');
 const { verificationKey } = await SignatureVerifier.compile({ proofsEnabled });
