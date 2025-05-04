@@ -2,7 +2,7 @@ import { SignatureVerifier } from './signatureVerifier.js';
 import { Bytes, Gadgets, UInt32, UInt8 } from 'o1js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
 
-import { BLOCK_SIZES, pkcs1v15Pad } from './utils.js';
+import { BLOCK_SIZES, pkcs1v15Pad, pkcs1v15PadWrong } from './utils.js';
 import { getQRData } from './getQRData.js';
 
 const proofsEnabled = false;
@@ -117,6 +117,31 @@ describe('Signature Verifier', () => {
       const expectedDigest = Gadgets.SHA2.hash(256, signedData);
       expect(finalDigest.toHex()).toEqual(expectedDigest.toHex());
     });
+
+    it('should not compute partial hashing with byte blocks split by 512-512-128.', async () => {
+      // Now split at your desired boundaries (multiple of 64 bytes)
+      const pad1 = Bytes.from(
+        paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
+      );
+      const pad2 = Bytes.from(
+        paddedData.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
+      );
+      const pad3 = Bytes.from(paddedData.toBytes().slice(BLOCK_SIZES.LARGE));
+
+      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
+      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
+      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
+
+      const result3 = proof3.proof.publicOutput;
+
+      // Get final digest
+      const finalDigest = Bytes.from(
+        result3.hashState.flatMap((w: UInt32) => w.toBytesBE())
+      );
+
+      const expectedDigest = Gadgets.SHA2.hash(256, signedData);
+      expect(finalDigest.toHex()).toEqual(expectedDigest.toHex());
+    });
   });
 
   describe('Signature verification computations', () => {
@@ -194,6 +219,7 @@ describe('Signature Verifier', () => {
       const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
       const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
       const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
+
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
           proof3.proof,
@@ -202,7 +228,9 @@ describe('Signature Verifier', () => {
         );
       };
 
-      await expect(isVerified).rejects.toThrow();
+      await expect(isVerified).rejects.toThrow(
+        'Field.assertEquals(): 9188579551671412591472664553230141 != 19665786662882214150578387368928633'
+      );
     });
     it('should reject verification with made-up data', async () => {
       // Change bytes with a random value. Make sure changed value is in the 8-bit range.
@@ -240,7 +268,7 @@ describe('Signature Verifier', () => {
 
       await expect(isVerified).rejects.toThrow();
     });
-    it('should reject verification no pkcs1v15 padded hash data ', async () => {
+    it('should reject verification when hash data lacks PKCS#1 v1.5 padding ', async () => {
       const pad1 = Bytes.from(
         paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
       );
@@ -265,6 +293,31 @@ describe('Signature Verifier', () => {
 
       const isVerified = async () => {
         rsaVerify65537(nonPaddedHash, signatureBigint, publicKeyBigint);
+      };
+
+      await expect(isVerified).rejects.toThrow();
+    });
+
+    it('should reject verification when hash data is padded with incorrect PKCS#1 v1.5 format ', async () => {
+      const pad1 = Bytes.from(
+        paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
+      );
+
+      const pad2 = Bytes.from(
+        paddedData.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
+      );
+
+      const pad3 = Bytes.from(paddedData.toBytes().slice(BLOCK_SIZES.LARGE));
+
+      const digest = Gadgets.SHA2.hash(256, signedData);
+
+      //Steps below are identical to the `verifySignature` method steps.
+
+      const wronglyPaddedHash = pkcs1v15PadWrong(digest);
+      // First, try it with padded hash value.
+
+      const isVerified = async () => {
+        rsaVerify65537(wronglyPaddedHash, signatureBigint, publicKeyBigint);
       };
 
       await expect(isVerified).rejects.toThrow();
