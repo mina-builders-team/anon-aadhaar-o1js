@@ -2,7 +2,15 @@ import { Bytes, UInt32, Gadgets, Provable, UInt8, assert, Field } from 'o1js';
 import { Bigint2048 } from './rsa.js';
 import pako from 'pako';
 
-export const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
+export {
+  BLOCK_SIZES,
+  pkcs1v15Pad,
+  updateHash,
+  decompressByteArray,
+  pkcs1v15PadWrong,
+};
+
+const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
 
 /**
  * Creates a PKCS#1 v1.5 padded message for the given SHA-256 digest.
@@ -14,7 +22,7 @@ export const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
  * @returns The padded PKCS#1 v1.5 message.
  * @notice - Copied from https://github.com/mohammed7s/zk-email-o1js/blob/main/src/utils.ts#L15
  */
-export function pkcs1v15Pad(sha256Digest: Bytes) {
+function pkcs1v15Pad(sha256Digest: Bytes) {
   // Algorithm identifier (OID) for SHA-256 in PKCS#1 v1.5 padding
   const algorithmConstantBytes = Bytes.fromHex(
     '3031300d060960864801650304020105000420'
@@ -48,13 +56,56 @@ export function pkcs1v15Pad(sha256Digest: Bytes) {
 }
 
 /**
+ * Pads message using a wrong PKCS#1 v1.5 algorithm identifiers for the given SHA-256 digest.
+ *
+ * @notice Copied from above and modified the algorithm constants for obtaining wrongly padded data.
+ */
+function pkcs1v15PadWrong(sha256Digest: Bytes) {
+  // Wrongly given algorithm identifier (OID) for SHA-256 in PKCS#1 v1.5 padding
+  const algorithmConstantBytes = Bytes.fromHex(
+    '3031301d060660864301650304020105000420'
+  ).bytes;
+
+  // Calculate the length of the padding string (PS)
+  // It is calculated with: modulusLength - sha256Digest.length - algorithmConstantBytes.length - 3;
+  // It is set to be 202, since values are constant:
+  // modulus length: 256 bytes (2048 bits)
+  // sha256 digest Length: 32 bytes
+  // algorithm constant bytes' length: 19 bytes
+  const padLength = 202;
+
+  // Create the padding string (PS) with 0xFF bytes based on padLength
+  const paddingString = Bytes.from(new Array(padLength).fill(0xff));
+
+  // Assemble the PKCS#1 v1.5 padding components
+  const padding = [
+    ...Bytes.fromHex('0001').bytes, // Block type (BT) 00 01
+    ...paddingString.bytes, // Padding string (PS)
+    ...Bytes.fromHex('00').bytes, // Separator byte 00
+    ...algorithmConstantBytes, // Algorithm identifier (OID)
+    ...sha256Digest.bytes, // SHA-256 digest
+  ];
+
+  // Convert the padded message to a byte array
+  const paddedHash = Bytes.from(padding);
+
+  // Create a Bigint2048 witness from the padded hash
+  const message = Provable.witness(Bigint2048, () => {
+    const hexString = '0x' + paddedHash.toHex();
+    return Bigint2048.from(BigInt(hexString));
+  });
+
+  return message;
+}
+
+/**
  * Updates a SHA-256 hash with new data, starting from an initial hash state
  *
  * @param initialHashValue - The initial hash state (8 UInt32 values)
  * @param paddedPreimage - The padded data to process (must be a multiple of 64 bytes)
  * @returns Object containing all intermediate states and the final hash state
  */
-export function updateHash(
+function updateHash(
   initialHashValue = Gadgets.SHA2.initialState(256) as UInt32[],
   paddedPreimage: Bytes
 ): { hashState: UInt32[] } {
@@ -160,7 +211,7 @@ function chunk<T>(array: T[], size: number): T[][] {
  * @returns A decompressed `Uint8Array` containing the original data.
  * @notice - Copied from https://github.com/anon-aadhaar/anon-aadhaar/blob/main/packages/core/src/utils.ts#L115
  */
-export function decompressByteArray(byteArray: Uint8Array): Uint8Array {
+function decompressByteArray(byteArray: Uint8Array): Uint8Array {
   const decompressedArray = pako.inflate(byteArray);
   return decompressedArray;
 }

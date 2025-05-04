@@ -9,6 +9,7 @@ import {
 } from 'o1js';
 import { pkcs1v15Pad, updateHash } from './utils.js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
+export { SignatureVerifier };
 
 /**
  * Represents a 512-byte array, used for SHA256 block-wise hashing.
@@ -32,7 +33,7 @@ class HashOutputs extends Struct({
   hashState: Provable.Array(UInt32, 8),
 }) {}
 
-export const SignatureVerifier = ZkProgram({
+const SignatureVerifier = ZkProgram({
   name: 'SignatureVerifier',
   publicOutput: HashOutputs,
 
