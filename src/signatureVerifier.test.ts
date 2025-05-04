@@ -240,5 +240,34 @@ describe('Signature Verifier', () => {
 
       await expect(isVerified).rejects.toThrow();
     });
+    it('should reject verification no pkcs1v15 padded hash data ', async () => {
+      const pad1 = Bytes.from(
+        paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
+      );
+
+      const pad2 = Bytes.from(
+        paddedData.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
+      );
+
+      const pad3 = Bytes.from(paddedData.toBytes().slice(BLOCK_SIZES.LARGE));
+
+      const digest = Gadgets.SHA2.hash(256, signedData);
+
+      //Steps below are identical to the `verifySignature` method steps.
+
+      const paddedHash = pkcs1v15Pad(digest);
+      // First, try it with padded hash value.
+
+      rsaVerify65537(paddedHash, signatureBigint, publicKeyBigint);
+
+      // Now with non-padded hash.
+      const nonPaddedHash = Bigint2048.from(BigInt('0x' + digest.toHex()));
+
+      const isVerified = async () => {
+        rsaVerify65537(nonPaddedHash, signatureBigint, publicKeyBigint);
+      };
+
+      await expect(isVerified).rejects.toThrow();
+    });
   });
 });
