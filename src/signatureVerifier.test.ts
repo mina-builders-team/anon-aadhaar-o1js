@@ -94,7 +94,6 @@ describe('Signature Verifier', () => {
     );
 
     it('should compute partial hashing with byte blocks split by 512-512-128.', async () => {
-      // Now split at your desired boundaries (multiple of 64 bytes)
       const pad1 = Bytes.from(
         paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
       );
@@ -119,7 +118,6 @@ describe('Signature Verifier', () => {
     });
 
     it('should not compute partial hashing with byte blocks split by 512-512-128.', async () => {
-      // Now split at your desired boundaries (multiple of 64 bytes)
       const pad1 = Bytes.from(
         paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
       );
@@ -146,7 +144,6 @@ describe('Signature Verifier', () => {
 
   describe('Signature verification computations', () => {
     it('should verify rsa signature correctly', async () => {
-      // Now split at your desired boundaries (multiple of 64 bytes)
       const pad1 = Bytes.from(
         paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
       );
@@ -172,7 +169,6 @@ describe('Signature Verifier', () => {
     it('should reject verification with tampered signature', async () => {
       const wrongSignature = signatureBigint.modSquare(publicKeyBigint);
 
-      // Now split at your desired boundaries (multiple of 64 bytes)
       const pad1 = Bytes.from(
         paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
       );
