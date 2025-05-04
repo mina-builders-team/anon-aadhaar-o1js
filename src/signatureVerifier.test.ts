@@ -3,7 +3,7 @@ import { Bytes, Gadgets, UInt32, UInt8 } from 'o1js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
 
 import { BLOCK_SIZES, pkcs1v15Pad, pkcs1v15PadWrong } from './utils.js';
-import { getQRData } from './getQRData.js';
+import { getQRData, TEST_DATA, TEST_DATA_2 } from './getQRData.js';
 
 const proofsEnabled = false;
 
@@ -18,7 +18,7 @@ describe('Signature Verifier', () => {
   beforeAll(async () => {
     await SignatureVerifier.compile({ proofsEnabled });
 
-    const inputs = getQRData();
+    const inputs = getQRData(TEST_DATA);
 
     publicKeyBigint = inputs.publicKeyBigint;
     signatureBigint = inputs.signatureBigint;
@@ -91,7 +91,7 @@ describe('Signature Verifier', () => {
         expect(finalDigest.toHex()).toEqual(expectedDigest.toHex());
       }
     );
-    
+
     it('should compute partial hashing with byte blocks split by 512-512-128.', async () => {
       const pad1 = Bytes.from(
         paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
@@ -233,7 +233,6 @@ describe('Signature Verifier', () => {
         UInt8.from(Math.floor(Math.random() * 254))
       );
       const distortedPaddedData = Bytes.from(randomizedData);
-      console.log(distortedPaddedData.toHex().slice(0, 50));
       // Now split at your desired boundaries (multiple of 64 bytes)
       // This test should fail especially for distorted padded bytes
       const pad1 = Bytes.from(
@@ -312,7 +311,7 @@ describe('Signature Verifier', () => {
 
       await expect(isVerified).rejects.toThrow();
     });
-    
+
     it('should reject signatures with SHA-384 digests ', async () => {
       const digest = Gadgets.SHA2.hash(384, signedData);
 
@@ -344,6 +343,36 @@ describe('Signature Verifier', () => {
       await expect(isVerified).rejects.toThrow(
         'Field.assertEquals(): 50469815090039084110515593114079551 != 9188579551671412591472664553230141'
       );
+    });
+    it('should reject signature verification of a different data', async () => {
+      const inputs = getQRData(TEST_DATA_2);
+      const otherPaddedata = inputs.paddedData;
+
+      const pad1 = Bytes.from(
+        otherPaddedata.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
+      );
+
+      const pad2 = Bytes.from(
+        otherPaddedata.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
+      );
+
+      const pad3 = Bytes.from(
+        otherPaddedata.toBytes().slice(BLOCK_SIZES.LARGE)
+      );
+
+      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
+      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
+      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
+      
+      const isVerified = async () => {
+        await SignatureVerifier.verifySignature(
+          proof3.proof,
+          signatureBigint,
+          publicKeyBigint
+        );
+      };
+
+      await expect(isVerified).rejects.toThrow();
     });
   });
 });
