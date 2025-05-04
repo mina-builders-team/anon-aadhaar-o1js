@@ -150,14 +150,23 @@ export const DataExtractor = ZkProgram({
       },
     },
     age: {
-      privateInputs: [Provable.Array(Field, 1536), Field, Field, Field, Field],
+      privateInputs: [
+        SelfProof,
+        Provable.Array(Field, 1536),
+        Field,
+        Field,
+        Field,
+        Field,
+      ],
       async method(
+        earlierProof: SelfProof<unknown, ExtractorOutputs>,
         nDelimitedData: Field[],
         startDelimiterIndex: Field,
         currentYear: Field,
         currentMonth: Field,
         currentDay: Field
       ) {
+        earlierProof.verify();
         const year = findElementAndReturnInteger(
           nDelimitedData,
           startDelimiterIndex,
@@ -188,8 +197,14 @@ export const DataExtractor = ZkProgram({
 
         // Final age calculation
         const age = ageByYear.add(monthGt.add(isHigherDayOnSameMonth));
-
-        return { publicOutput: age };
+        const isAbove18 = age.greaterThan(18).toField();
+        return {
+          publicOutput: new ExtractorOutputs({
+            ...earlierProof.publicOutput,
+            Age: age,
+            AgeAbove18: isAbove18,
+          }),
+        };
       },
     },
     gender: {
