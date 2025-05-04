@@ -405,9 +405,6 @@ describe('Signature Verifier', () => {
     it('should reject signature verification of empty data', async () => {
       const EMPTY_DATA = Bytes.fromString('');
 
-      const inputs = getQRData(TEST_DATA);
-      const otherSignature = inputs.signatureBigint;
-
       const pad1 = Bytes.from(
         EMPTY_DATA.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
       );
@@ -425,7 +422,7 @@ describe('Signature Verifier', () => {
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
           proof3.proof,
-          otherSignature,
+          signatureBigint,
           publicKeyBigint
         );
       };
