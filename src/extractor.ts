@@ -7,6 +7,10 @@ import {
   findElementAndReturnInteger,
   selectSubarray,
 } from './utils.js';
+export{
+  DelimiterExtractor,
+  DataExtractor
+};
 
 class ExtractorOutputs extends Struct({
   TimeStamp: Field,
@@ -25,7 +29,7 @@ class ExtractorOutputs extends Struct({
  *
  * Rows: 634,752
  */
-export const DelimiterExtractor = ZkProgram({
+const DelimiterExtractor = ZkProgram({
   name: 'DelimiterExtractor',
   publicOutput: Provable.Array(Field, 1536),
 
@@ -61,7 +65,7 @@ export const DelimiterExtractor = ZkProgram({
  *
  * @returns - A field element for obtaining data
  */
-export const DataExtractor = ZkProgram({
+const DataExtractor = ZkProgram({
   name: 'Extractor',
   publicOutput: ExtractorOutputs,
 
