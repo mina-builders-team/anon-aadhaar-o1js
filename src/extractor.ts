@@ -1,4 +1,4 @@
-import { ZkProgram, Provable, Field, Struct } from 'o1js';
+import { ZkProgram, Provable, Field, Struct, SelfProof } from 'o1js';
 import {
   charBytesToInt,
   digitBytesToInt,
@@ -94,9 +94,14 @@ export const DataExtractor = ZkProgram({
       },
     },
     timestamp: {
-      privateInputs: [Provable.Array(Field, 1536)],
+      privateInputs: [SelfProof, Provable.Array(Field, 1536)],
 
-      async method(nDelimitedData: Field[]) {
+      async method(
+        earlierProof: SelfProof<unknown, ExtractorOutputs>,
+        nDelimitedData: Field[]
+      ) {
+        earlierProof.verify();
+
         const year = digitBytesToInt(
           [
             nDelimitedData[9],
@@ -136,7 +141,12 @@ export const DataExtractor = ZkProgram({
         // Adjust for IST time zone (-19800 seconds)
         const timestamp = unixTime.sub(Field(19800));
 
-        return { publicOutput: timestamp };
+        return {
+          publicOutput: new ExtractorOutputs({
+            ...earlierProof.publicOutput,
+            TimeStamp: timestamp,
+          }),
+        };
       },
     },
     age: {
