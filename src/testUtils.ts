@@ -1,9 +1,14 @@
 import { Bytes, UInt32 } from 'o1js';
 import { BLOCK_SIZES } from './utils.js';
 import { RecursiveHash, RecursiveHashProof } from './recursiveHash.js';
-export { computed512BasedHash, computeChained128Hash,compute512BasedHashDigest };
+export {
+  compute512BasedHash,
+  computeChained128Hash,
+  compute512BasedHashDigest,
+  computeChained128HashDigest,
+};
 
-async function computed512BasedHash(
+async function compute512BasedHash(
   paddedData: Bytes,
   initialValue: UInt32[]
 ): Promise<RecursiveHashProof> {
