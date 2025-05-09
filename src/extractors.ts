@@ -1,15 +1,20 @@
-import { assert, Field } from 'o1js';
+import { assert, Bool, Field, Gadgets, Provable } from 'o1js';
 import {
   digitBytesToInt,
   digitBytesToTimestamp,
   elementAtIndex,
 } from './utils.js';
-import { DOB_POSITION } from './constants.js';
+import {
+  DOB_POSITION,
+  MAX_FIELD_BYTE_SIZE,
+  STATE_POSITION,
+} from './constants.js';
 export {
   extractData,
   timestampExtractor,
   ageAndGenderExtractor,
   pincodeExtractor,
+  stateExtractor,
 };
 
 function extractData(paddedData: Field[], startIndex: Field) {
@@ -116,4 +121,25 @@ function pincodeExtractor(nDelimitedData: Field[], startIndex: Field) {
   const pincode = digitBytesToInt(pincodeArray, 6);
 
   return pincode;
+}
+
+function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
+  let stateArray = [];
+
+  const byteLength = MAX_FIELD_BYTE_SIZE + 1;
+
+  // start with first element.
+  const startIndex = delimiterIndices[STATE_POSITION - 1].add(1);
+  let is255 = Bool(false);
+  for (let i = 0; i < byteLength; i++) {
+    const pushValue = Gadgets.arrayGet(nDelimitedData, startIndex.add(i));
+
+    is255 = Bool.or(is255, pushValue.equals(255));
+
+    const toBePushed = Provable.if(is255.not(), pushValue, Field.from(0));
+
+    stateArray.push(toBePushed);
+  }
+
+  return stateArray;
 }
