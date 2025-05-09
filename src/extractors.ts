@@ -7,7 +7,7 @@ import {
 import {
   DOB_POSITION,
   MAX_FIELD_BYTE_SIZE,
-  PHOTO_PACK_SIZE,
+  PINCODE_POSITION,
   STATE_POSITION,
 } from './constants.js';
 export {
@@ -113,10 +113,14 @@ function ageAndGenderExtractor(
   return [age, gender];
 }
 
-function pincodeExtractor(nDelimitedData: Field[], startIndex: Field) {
+function pincodeExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
   let pincodeArray = [];
+
+  const startIndex = delimiterIndices[PINCODE_POSITION - 1].add(1);
+
+  // Pincode size is fixed.
   for (let i = 0; i < 6; i++) {
-    pincodeArray.push(elementAtIndex(nDelimitedData, startIndex.add(i)));
+    pincodeArray.push(Gadgets.arrayGet(nDelimitedData, startIndex.add(i)));
   }
 
   const pincode = digitBytesToInt(pincodeArray, 6);
