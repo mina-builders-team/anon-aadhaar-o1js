@@ -5,7 +5,12 @@ import {
   elementAtIndex,
 } from './utils.js';
 import { DOB_POSITION } from './constants.js';
-export { extractData, timestampExtractor, ageAndGenderExtractor };
+export {
+  extractData,
+  timestampExtractor,
+  ageAndGenderExtractor,
+  pincodeExtractor,
+};
 
 function extractData(paddedData: Field[], startIndex: Field) {
   let n255Filter = Field.from(0);
@@ -100,4 +105,15 @@ function ageAndGenderExtractor(
   // Final age calculation
   const age = ageByYear.add(monthGt.add(isHigherDayOnSameMonth));
   return [age, gender];
+}
+
+function pincodeExtractor(nDelimitedData: Field[], startIndex: Field) {
+  let pincodeArray = [];
+  for (let i = 0; i < 6; i++) {
+    pincodeArray.push(elementAtIndex(nDelimitedData, startIndex.add(i)));
+  }
+
+  const pincode = digitBytesToInt(pincodeArray, 6);
+
+  return pincode;
 }
