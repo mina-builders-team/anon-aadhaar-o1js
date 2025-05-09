@@ -7,7 +7,6 @@ export {
   pkcs1v15Pad,
   updateHash,
   decompressByteArray,
-  pkcs1v15PadWrong,
 };
 
 const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
@@ -29,49 +28,6 @@ function pkcs1v15Pad(sha256Digest: Bytes) {
   ).bytes;
 
   // Calculate the length of the padding string (PS)
-  const padLength = 202;
-
-  // Create the padding string (PS) with 0xFF bytes based on padLength
-  const paddingString = Bytes.from(new Array(padLength).fill(0xff));
-
-  // Assemble the PKCS#1 v1.5 padding components
-  const padding = [
-    ...Bytes.fromHex('0001').bytes, // Block type (BT) 00 01
-    ...paddingString.bytes, // Padding string (PS)
-    ...Bytes.fromHex('00').bytes, // Separator byte 00
-    ...algorithmConstantBytes, // Algorithm identifier (OID)
-    ...sha256Digest.bytes, // SHA-256 digest
-  ];
-
-  // Convert the padded message to a byte array
-  const paddedHash = Bytes.from(padding);
-
-  // Create a Bigint2048 witness from the padded hash
-  const message = Provable.witness(Bigint2048, () => {
-    const hexString = '0x' + paddedHash.toHex();
-    return Bigint2048.from(BigInt(hexString));
-  });
-
-  return message;
-}
-
-/**
- * Pads message using a wrong PKCS#1 v1.5 algorithm identifiers for the given SHA-256 digest.
- *
- * @notice Copied from above and modified the algorithm constants for obtaining wrongly padded data.
- */
-function pkcs1v15PadWrong(sha256Digest: Bytes) {
-  // Wrongly given algorithm identifier (OID) for SHA-256 in PKCS#1 v1.5 padding
-  const algorithmConstantBytes = Bytes.fromHex(
-    '3031301d060660864301650304020105000420'
-  ).bytes;
-
-  // Calculate the length of the padding string (PS)
-  // It is calculated with: modulusLength - sha256Digest.length - algorithmConstantBytes.length - 3;
-  // It is set to be 202, since values are constant:
-  // modulus length: 256 bytes (2048 bits)
-  // sha256 digest Length: 32 bytes
-  // algorithm constant bytes' length: 19 bytes
   const padLength = 202;
 
   // Create the padding string (PS) with 0xFF bytes based on padLength
