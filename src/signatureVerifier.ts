@@ -1,11 +1,4 @@
-import {
-  Provable,
-  UInt32,
-  ZkProgram,
-  Bytes,
-  Struct,
-  Field,
-} from 'o1js';
+import { Provable, UInt32, ZkProgram, Bytes, Struct, Field } from 'o1js';
 import { pkcs1v15Pad, updateHash } from './utils.js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
 import { RecursiveHashProof } from './recursiveHash.js';
@@ -16,16 +9,8 @@ export { SignatureVerifier };
  */
 class Bytes32 extends Bytes(32) {}
 
-/**
- * Structure holding the SHA256 state (digest) calculated so far as an array of 8 UInt32s.
- */
-class HashOutputs extends Struct({
-  hashState: Provable.Array(UInt32, 8),
-}) {}
-
 const SignatureVerifier = ZkProgram({
   name: 'SignatureVerifier',
-  publicOutput: HashOutputs,
 
   methods: {
     /**
@@ -55,12 +40,6 @@ const SignatureVerifier = ZkProgram({
         const paddedHash = pkcs1v15Pad(finalHash);
 
         rsaVerify65537(paddedHash, signature, publicKey);
-
-        return {
-          publicOutput: new HashOutputs({
-            hashState,
-          }),
-        };
       },
     },
   },
