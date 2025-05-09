@@ -1,9 +1,9 @@
 import { Bytes, UInt32 } from 'o1js';
 import { SignatureVerifier } from './signatureVerifier.js';
 import { BLOCK_SIZES } from './utils.js';
-export { generateHashInThreeSteps,computeChained128Hash };
+export { computed512BasedHash,computeChained128Hash };
 
-async function generateHashInThreeSteps(
+async function computed512BasedHash(
   paddedData: Bytes,
   initialValue: UInt32[]
 ) {
