@@ -1,4 +1,6 @@
 import { Field } from 'o1js';
+import { digitBytesToInt, digitBytesToTimestamp } from './utils.js';
+export { extractData, timestampExtractor };
 
 function extractData(paddedData: Field[], startIndex: Field) {
   let n255Filter = Field.from(0);
@@ -19,4 +21,38 @@ function extractData(paddedData: Field[], startIndex: Field) {
   }
 
   return paddedData;
+}
+
+function timestampExtractor(nDelimitedData: Field[]) {
+  const year = digitBytesToInt(
+    [
+      nDelimitedData[9],
+      nDelimitedData[10],
+      nDelimitedData[11],
+      nDelimitedData[12],
+    ],
+    4
+  );
+
+  const month = digitBytesToInt([nDelimitedData[13], nDelimitedData[14]], 2);
+
+  const day = digitBytesToInt([nDelimitedData[15], nDelimitedData[16]], 2);
+
+  const hour = digitBytesToInt([nDelimitedData[17], nDelimitedData[18]], 2);
+
+  // Convert to Unix timestamp
+  const unixTime = digitBytesToTimestamp(
+    year,
+    month,
+    day,
+    hour,
+    Field(0),
+    Field(0),
+    2032
+  );
+
+  // Adjust for IST time zone (-19800 seconds)
+  const timestamp = unixTime.sub(Field(19800));
+
+  return timestamp;
 }
