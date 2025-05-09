@@ -5,7 +5,6 @@ import {
   compute512BasedHashDigest,
   computeChained128HashDigest,
 } from './testUtils.js';
-import { BLOCK_SIZES } from './utils.js';
 
 let proofsEnabled = false;
 
