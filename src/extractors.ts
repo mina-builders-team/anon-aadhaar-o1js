@@ -1,4 +1,4 @@
-import { assert, Bool, Field, Gadgets, Provable } from 'o1js';
+import { assert, Bool, Field, Gadgets, Provable, UInt32 } from 'o1js';
 import {
   digitBytesToInt,
   digitBytesToTimestamp,
@@ -7,6 +7,7 @@ import {
 import {
   DOB_POSITION,
   MAX_FIELD_BYTE_SIZE,
+  PHOTO_PACK_SIZE,
   STATE_POSITION,
 } from './constants.js';
 export {
@@ -130,11 +131,14 @@ function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
 
   // start with first element.
   const startIndex = delimiterIndices[STATE_POSITION - 1].add(1);
+
+  // Ending delimiter of the state.
+  const endValue = (STATE_POSITION + 1) * 255;
   let is255 = Bool(false);
   for (let i = 0; i < byteLength; i++) {
     const pushValue = Gadgets.arrayGet(nDelimitedData, startIndex.add(i));
 
-    is255 = Bool.or(is255, pushValue.equals(255));
+    is255 = Bool.or(is255, pushValue.equals(endValue));
 
     const toBePushed = Provable.if(is255.not(), pushValue, Field.from(0));
 
