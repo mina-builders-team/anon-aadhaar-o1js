@@ -1,6 +1,11 @@
-import { Field } from 'o1js';
-import { digitBytesToInt, digitBytesToTimestamp } from './utils.js';
-export { extractData, timestampExtractor };
+import { assert, Field } from 'o1js';
+import {
+  digitBytesToInt,
+  digitBytesToTimestamp,
+  elementAtIndex,
+} from './utils.js';
+import { DOB_POSITION } from './constants.js';
+export { extractData, timestampExtractor, ageAndGenderExtractor };
 
 function extractData(paddedData: Field[], startIndex: Field) {
   let n255Filter = Field.from(0);
@@ -55,4 +60,44 @@ function timestampExtractor(nDelimitedData: Field[]) {
   const timestamp = unixTime.sub(Field(19800));
 
   return timestamp;
+}
+
+function ageAndGenderExtractor(
+  nDelimitedData: Field[],
+  startDelimiterIndex: Field,
+  currentYear: Field,
+  currentMonth: Field,
+  currentDay: Field
+) {
+  let ageData: Field[] = [];
+
+  // Date consist of 12 characters including delimiters.
+  for (let i = 0; i < 12; i++) {
+    ageData.push(elementAtIndex(nDelimitedData, startDelimiterIndex.add(i)));
+  }
+
+  const years = digitBytesToInt(
+    [ageData[7], ageData[8], ageData[9], ageData[10]],
+    4
+  );
+  const months = digitBytesToInt([ageData[4], ageData[5]], 2);
+  const days = digitBytesToInt([ageData[1], ageData[2]], 2);
+
+  assert(ageData[0].equals(Field(DOB_POSITION * 255)));
+  assert(ageData[11].equals(Field((DOB_POSITION + 1) * 255)));
+
+  let gender = elementAtIndex(nDelimitedData, startDelimiterIndex.add(12));
+
+  // Calculate age based on year
+  const ageByYear = currentYear.sub(years).sub(Field(1));
+
+  // Check if current month > DOB month or if same month and current day >= DOB day
+  const monthGt = currentMonth.greaterThan(months).toField();
+  const monthEq = currentMonth.equals(months).toField();
+  const dayGt = currentDay.add(Field(1)).greaterThan(days).toField();
+  const isHigherDayOnSameMonth = monthEq.mul(dayGt);
+
+  // Final age calculation
+  const age = ageByYear.add(monthGt.add(isHigherDayOnSameMonth));
+  return [age, gender];
 }
