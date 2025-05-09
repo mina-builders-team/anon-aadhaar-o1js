@@ -1,9 +1,12 @@
 import { Bytes, UInt32 } from 'o1js';
 import { BLOCK_SIZES } from './utils.js';
-import { RecursiveHash } from './recursiveHash.js';
+import { RecursiveHash, RecursiveHashProof } from './recursiveHash.js';
 export { computed512BasedHash, computeChained128Hash };
 
-async function computed512BasedHash(paddedData: Bytes, initialValue: UInt32[]) {
+async function computed512BasedHash(
+  paddedData: Bytes,
+  initialValue: UInt32[]
+): Promise<RecursiveHashProof> {
   const byteData = paddedData.toBytes();
 
   const pad1 = Bytes.from(byteData.slice(0, BLOCK_SIZES.MEDIUM));
@@ -17,20 +20,13 @@ async function computed512BasedHash(paddedData: Bytes, initialValue: UInt32[]) {
   const proof2 = await RecursiveHash.hashStep512(proof1.proof, pad2);
   const finalProof = await RecursiveHash.hashStep128(proof2.proof, pad3);
 
-  const result3 = finalProof.proof.publicOutput;
-
-  // Get final digest
-  const finalDigest = Bytes.from(
-    result3.hashState.flatMap((w: UInt32) => w.toBytesBE())
-  );
-
-  return [finalProof,finalDigest];
+  return finalProof.proof;
 }
 
 async function computeChained128Hash(
   paddedData: Bytes,
   initialValue: UInt32[]
-) {
+): Promise<RecursiveHashProof> {
   const paddedDataChunks = [];
   for (let i = 0; i < 9; i++) {
     paddedDataChunks[i] = Bytes.from(
@@ -77,12 +73,5 @@ async function computeChained128Hash(
     paddedDataChunks[8]
   );
 
-  const result = finalProof.proof.publicOutput;
-
-  // Get final digest
-  const finalDigest = Bytes.from(
-    result.hashState.flatMap((w: UInt32) => w.toBytesBE())
-  );
-
-  return [finalProof,finalDigest];
+  return finalProof.proof;
 }
