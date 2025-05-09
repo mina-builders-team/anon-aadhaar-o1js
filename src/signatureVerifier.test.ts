@@ -5,7 +5,7 @@ import { Bigint2048, rsaVerify65537 } from './rsa.js';
 
 import { BLOCK_SIZES, pkcs1v15Pad, pkcs1v15PadWrong } from './utils.js';
 import { getQRData, TEST_DATA, TEST_DATA_2 } from './getQRData.js';
-import { computeChained128Hash } from './testUtils.js';
+import { computed512BasedHash, computeChained128Hash } from './testUtils.js';
 
 const proofsEnabled = false;
 
@@ -31,23 +31,11 @@ describe('Signature Verifier', () => {
 
   describe('Signature verification computations', () => {
     it('should verify rsa signature correctly', async () => {
-      const pad1 = Bytes.from(
-        paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
-      );
-
-      const pad2 = Bytes.from(
-        paddedData.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
-      );
-
-      const pad3 = Bytes.from(paddedData.toBytes().slice(BLOCK_SIZES.LARGE));
-
-      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
-      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
-      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
+      const finalProof = await computed512BasedHash(paddedData, initialValue);
 
       // Should throw an error if verification fails.
-      const { proof } = await SignatureVerifier.verifySignature(
-        proof3.proof,
+      await SignatureVerifier.verifySignature(
+        finalProof,
         signatureBigint,
         publicKeyBigint
       );
@@ -55,24 +43,11 @@ describe('Signature Verifier', () => {
 
     it('should reject verification with tampered signature', async () => {
       const wrongSignature = signatureBigint.modSquare(publicKeyBigint);
-
-      const pad1 = Bytes.from(
-        paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
-      );
-
-      const pad2 = Bytes.from(
-        paddedData.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
-      );
-
-      const pad3 = Bytes.from(paddedData.toBytes().slice(BLOCK_SIZES.LARGE));
-
-      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
-      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
-      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
+      const finalProof = await computed512BasedHash(paddedData, initialValue);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
-          proof3.proof,
+          finalProof,
           wrongSignature,
           publicKeyBigint
         );
@@ -88,24 +63,11 @@ describe('Signature Verifier', () => {
         '61e81f7506595cc262addcfddd35d704055b2adf46dc619c56b48eee199995eca1a3254710620ac7801e976f44e3be454db0f190e3f7d4e3598972117344de52fcf7826f849488a959a7b3d21eb6dd03451662ea883eeeefde889a1499b9a47f9504c5f096c262b96d23d19750332d9e97eb6141d261de97994d4c4163ca9cbe3e077221b44253dcf81609428b68351ee3e9b60d2b351fdaa6ee8c28a845239f97de7cc0fe5d144e474813fb43ec583f81b4ee328c22167334898d210ba017a26ec68940f05df22bd9cc86bbc3a4354392372d566167769b735ba12ca3580f919c1bd8ba70c4c2ab0acf2b09bc2fae981f3c0295a6e1e9f248f50073094ffaf1';
       const wrongPublicKey = Bigint2048.from(BigInt('0x' + wrongPublicKeyHex));
 
-      // Now split at your desired boundaries (multiple of 64 bytes)
-      const pad1 = Bytes.from(
-        paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
-      );
-
-      const pad2 = Bytes.from(
-        paddedData.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
-      );
-
-      const pad3 = Bytes.from(paddedData.toBytes().slice(BLOCK_SIZES.LARGE));
-
-      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
-      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
-      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
+      const finalProof = await computed512BasedHash(paddedData, initialValue);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
-          proof3.proof,
+          finalProof,
           signatureBigint,
           wrongPublicKey
         );
@@ -121,28 +83,14 @@ describe('Signature Verifier', () => {
         UInt8.from(Math.floor(Math.random() * 254))
       );
       const distortedPaddedData = Bytes.from(randomizedData);
+
       // Now split at your desired boundaries (multiple of 64 bytes)
       // This test should fail especially for distorted padded bytes
-      const pad1 = Bytes.from(
-        distortedPaddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
-      );
+      const finalProof = await computed512BasedHash(paddedData, initialValue);
 
-      const pad2 = Bytes.from(
-        distortedPaddedData
-          .toBytes()
-          .slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
-      );
-
-      const pad3 = Bytes.from(
-        distortedPaddedData.toBytes().slice(BLOCK_SIZES.LARGE)
-      );
-
-      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
-      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
-      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
-          proof3.proof,
+          finalProof,
           signatureBigint,
           publicKeyBigint
         );
@@ -236,25 +184,11 @@ describe('Signature Verifier', () => {
       const inputs = getQRData(TEST_DATA_2);
       const otherPaddedata = inputs.paddedData;
 
-      const pad1 = Bytes.from(
-        otherPaddedata.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
-      );
-
-      const pad2 = Bytes.from(
-        otherPaddedata.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
-      );
-
-      const pad3 = Bytes.from(
-        otherPaddedata.toBytes().slice(BLOCK_SIZES.LARGE)
-      );
-
-      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
-      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
-      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
+      const finalProof = await computed512BasedHash(otherPaddedata, initialValue);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
-          proof3.proof,
+          finalProof,
           signatureBigint,
           publicKeyBigint
         );
@@ -266,23 +200,11 @@ describe('Signature Verifier', () => {
       const inputs = getQRData(TEST_DATA_2);
       const otherSignature = inputs.signatureBigint;
 
-      const pad1 = Bytes.from(
-        paddedData.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
-      );
-
-      const pad2 = Bytes.from(
-        paddedData.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
-      );
-
-      const pad3 = Bytes.from(paddedData.toBytes().slice(BLOCK_SIZES.LARGE));
-
-      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
-      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
-      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
+      const finalProof = await computed512BasedHash(paddedData, initialValue);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
-          proof3.proof,
+          finalProof,
           otherSignature,
           publicKeyBigint
         );
@@ -293,23 +215,11 @@ describe('Signature Verifier', () => {
     it('should reject signature verification of empty data', async () => {
       const EMPTY_DATA = Bytes.fromString('');
 
-      const pad1 = Bytes.from(
-        EMPTY_DATA.toBytes().slice(0, BLOCK_SIZES.MEDIUM)
-      );
-
-      const pad2 = Bytes.from(
-        EMPTY_DATA.toBytes().slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
-      );
-
-      const pad3 = Bytes.from(EMPTY_DATA.toBytes().slice(BLOCK_SIZES.LARGE));
-
-      const proof1 = await SignatureVerifier.baseCase512(pad1, initialValue);
-      const proof2 = await SignatureVerifier.hashStep512(proof1.proof, pad2);
-      const proof3 = await SignatureVerifier.hashStep128(proof2.proof, pad3);
+      const finalProof = await computed512BasedHash(EMPTY_DATA, initialValue);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
-          proof3.proof,
+          finalProof,
           signatureBigint,
           publicKeyBigint
         );
