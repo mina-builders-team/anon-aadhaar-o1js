@@ -6,6 +6,7 @@ import { Bigint2048, rsaVerify65537 } from './rsa.js';
 import { BLOCK_SIZES, pkcs1v15Pad, pkcs1v15PadWrong } from './utils.js';
 import { getQRData, TEST_DATA, TEST_DATA_2 } from './getQRData.js';
 import { computed512BasedHash, computeChained128Hash } from './testUtils.js';
+import { RecursiveHash } from './recursiveHash.js';
 
 const proofsEnabled = false;
 
@@ -19,6 +20,7 @@ describe('Signature Verifier', () => {
 
   beforeAll(async () => {
     await SignatureVerifier.compile({ proofsEnabled });
+    await RecursiveHash.compile({ proofsEnabled });
 
     const inputs = getQRData(TEST_DATA);
 
@@ -184,7 +186,10 @@ describe('Signature Verifier', () => {
       const inputs = getQRData(TEST_DATA_2);
       const otherPaddedata = inputs.paddedData;
 
-      const finalProof = await computed512BasedHash(otherPaddedata, initialValue);
+      const finalProof = await computed512BasedHash(
+        otherPaddedata,
+        initialValue
+      );
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
