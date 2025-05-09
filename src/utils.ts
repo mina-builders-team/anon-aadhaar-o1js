@@ -281,11 +281,11 @@ export function createDelimitedData(paddedData: Field[], index: Field) {
     const indexBeforePhoto = Field(i).lessThan(index).toField();
     const is255AndIndexBeforePhoto = is255.mul(indexBeforePhoto);
 
-    n255Filter = is255AndIndexBeforePhoto.mul(255).add(n255Filter);
-
     delimitedData[i] = is255AndIndexBeforePhoto
       .mul(n255Filter)
       .add(paddedData[i]);
+
+    n255Filter = is255AndIndexBeforePhoto.mul(255).add(n255Filter);
   }
 
   return delimitedData;
