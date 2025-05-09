@@ -4,22 +4,12 @@ import {
   ZkProgram,
   Bytes,
   Struct,
-  SelfProof,
   Field,
 } from 'o1js';
 import { pkcs1v15Pad, updateHash } from './utils.js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
+import { RecursiveHashProof } from './recursiveHash.js';
 export { SignatureVerifier };
-
-/**
- * Represents a 512-byte array, used for SHA256 block-wise hashing.
- */
-class Bytes512 extends Bytes(512) {}
-
-/**
- * Represents a 128-byte array, used for recursive smaller block hashing.
- */
-class Bytes128 extends Bytes(128) {}
 
 /**
  * Represents a 32-byte array, typically used to hold SHA256 digest.
@@ -50,15 +40,15 @@ const SignatureVerifier = ZkProgram({
      * @returns Outputs the final hash state if signature verification passes.
      */
     verifySignature: {
-      privateInputs: [SelfProof, Bigint2048, Bigint2048],
+      privateInputs: [RecursiveHashProof, Bigint2048, Bigint2048],
 
       async method(
-        earlierProof: SelfProof<unknown, HashOutputs>,
+        hashProof: RecursiveHashProof,
         signature: Bigint2048,
         publicKey: Bigint2048
       ) {
-        earlierProof.verify();
-        const hashState = earlierProof.publicOutput.hashState;
+        hashProof.verify();
+        const hashState = hashProof.publicOutput.hashState;
 
         const finalHash = Bytes32.from(hashState.flatMap((x) => x.toBytesBE()));
 
