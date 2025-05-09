@@ -15,16 +15,16 @@ async function computed512BasedHash(paddedData: Bytes, initialValue: UInt32[]) {
 
   const proof1 = await RecursiveHash.baseCase512(pad1, initialValue);
   const proof2 = await RecursiveHash.hashStep512(proof1.proof, pad2);
-  const proof3 = await RecursiveHash.hashStep128(proof2.proof, pad3);
+  const finalProof = await RecursiveHash.hashStep128(proof2.proof, pad3);
 
-  const result3 = proof3.proof.publicOutput;
+  const result3 = finalProof.proof.publicOutput;
 
   // Get final digest
   const finalDigest = Bytes.from(
     result3.hashState.flatMap((w: UInt32) => w.toBytesBE())
   );
 
-  return finalDigest;
+  return [finalProof,finalDigest];
 }
 
 async function computeChained128Hash(
@@ -72,17 +72,17 @@ async function computeChained128Hash(
     proof7.proof,
     paddedDataChunks[7]
   );
-  const proof9 = await RecursiveHash.hashStep128(
+  const finalProof = await RecursiveHash.hashStep128(
     proof8.proof,
     paddedDataChunks[8]
   );
 
-  const result = proof9.proof.publicOutput;
+  const result = finalProof.proof.publicOutput;
 
   // Get final digest
   const finalDigest = Bytes.from(
     result.hashState.flatMap((w: UInt32) => w.toBytesBE())
   );
 
-  return finalDigest;
+  return [finalProof,finalDigest];
 }
