@@ -113,7 +113,7 @@ function ageAndGenderExtractor(
   currentDay: Field
 ) {
   let ageData: Field[] = [];
-  const startIndex = delimiterIndices[DOB_POSITION - 1].add(1);
+  const startIndex = delimiterIndices[DOB_POSITION - 1];
 
   // Date consist of 12 characters including delimiters.
   for (let i = 0; i < 12; i++) {
