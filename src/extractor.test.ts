@@ -1,5 +1,5 @@
 import { Field } from 'o1js';
-import { DOB_POSITION, PHOTO_POSITION } from './constants.js';
+import { PHOTO_POSITION } from './constants.js';
 import {
   getDelimiterIndices,
   createPaddedQRData,
@@ -16,7 +16,6 @@ import {
   timestampExtractor,
 } from './extractors.js';
 
-const proofsEnabled = false;
 
 describe('Extractor circuit tests', () => {
   let nDelimitedData: Field[];
