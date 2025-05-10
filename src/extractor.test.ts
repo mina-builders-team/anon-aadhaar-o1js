@@ -1,5 +1,9 @@
 import { Field } from 'o1js';
-import { PHOTO_POSITION } from './constants.js';
+import {
+  MAX_FIELD_BYTE_SIZE,
+  PHOTO_PACK_SIZE,
+  PHOTO_POSITION,
+} from './constants.js';
 import {
   getDelimiterIndices,
   createPaddedQRData,
@@ -11,22 +15,24 @@ import { getQRData, TEST_DATA } from './getQRData.js';
 import {
   ageAndGenderExtractor,
   delimitData,
+  photoExtractor,
   pincodeExtractor,
   stateExtractor,
   timestampExtractor,
 } from './extractors.js';
-
 
 describe('Extractor circuit tests', () => {
   let nDelimitedData: Field[];
   let qrData: number[];
   let delimiterIndices: Field[];
   let photoIndex: Field;
+  let qrDataPaddedLength: Field;
 
   beforeAll(async () => {
     const inputs = getQRData(TEST_DATA);
     const qrDataPadded = inputs.paddedData.toBytes();
 
+    qrDataPaddedLength = Field.from(qrDataPadded.length);
     delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field);
 
     qrData = createPaddedQRData(qrDataPadded);
@@ -82,6 +88,23 @@ describe('Extractor circuit tests', () => {
       const stateValue = charBytesToInt(state.slice(0, 5), 5);
 
       expect(intToCharString(stateValue, 5)).toEqual('Delhi');
+    });
+    it('should extract photo', async () => {
+      const photoBytes = photoExtractor(nDelimitedData, delimiterIndices);
+
+      // we know photo bytes start at 185.
+      const byteLength = MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE;
+      const startIndex = Number(delimiterIndices[PHOTO_POSITION - 1]);
+      // Start with startIndex + 1 to omit the delimiter
+      const photoBytez = qrData.slice(
+        startIndex + 1,
+        startIndex + byteLength + 1
+      );
+      console.log(photoBytes.length);
+      console.log(photoBytez.length);
+
+      // Our state here is at length 5, so try:
+      expect(photoBytes.toString()).toEqual(photoBytez.toString());
     });
   });
 });
