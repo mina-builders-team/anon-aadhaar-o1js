@@ -96,15 +96,12 @@ describe('Extractor circuit tests', () => {
       const byteLength = MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE;
       const startIndex = Number(delimiterIndices[PHOTO_POSITION - 1]);
       // Start with startIndex + 1 to omit the delimiter
-      const photoBytez = qrData.slice(
+      const slicedPhotoBytes = qrData.slice(
         startIndex + 1,
         startIndex + byteLength + 1
       );
-      console.log(photoBytes.length);
-      console.log(photoBytez.length);
-
       // Our state here is at length 5, so try:
-      expect(photoBytes.toString()).toEqual(photoBytez.toString());
+      expect(photoBytes.toString()).toEqual(slicedPhotoBytes.toString());
     });
   });
 });
