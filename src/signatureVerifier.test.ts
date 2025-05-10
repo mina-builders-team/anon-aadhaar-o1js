@@ -88,7 +88,10 @@ describe('Signature Verifier', () => {
 
       // Now split at your desired boundaries (multiple of 64 bytes)
       // This test should fail especially for distorted padded bytes
-      const finalProof = await compute512BasedHash(paddedData, initialValue);
+      const finalProof = await compute512BasedHash(
+        distortedPaddedData,
+        initialValue
+      );
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
