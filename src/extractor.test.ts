@@ -1,12 +1,6 @@
 import { Field } from 'o1js';
-import {
-  DOB_POSITION,
-  PHOTO_POSITION,
-} from './constants.js';
-import {
-  DataExtractor,
-  DelimiterExtractor,
-} from './extractor.js';
+import { DOB_POSITION, PHOTO_POSITION } from './constants.js';
+import { DataExtractor, DelimiterExtractor } from './extractor.js';
 import {
   getDelimiterIndices,
   createPaddedQRData,

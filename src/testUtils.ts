@@ -7,7 +7,7 @@ export {
   computeChained128Hash,
   compute512BasedHashDigest,
   computeChained128HashDigest,
-  pkcs1v15PadWrong
+  pkcs1v15PadWrong,
 };
 
 async function compute512BasedHash(
