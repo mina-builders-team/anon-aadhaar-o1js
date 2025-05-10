@@ -10,7 +10,7 @@ import {
 import { getQRData, TEST_DATA } from './getQRData.js';
 import {
   ageAndGenderExtractor,
-  extractData,
+  delimitData,
   pincodeExtractor,
   stateExtractor,
   timestampExtractor,
@@ -23,10 +23,13 @@ describe('Extractor circuit tests', () => {
   let qrData: number[];
   let delimiterIndices: Field[];
   let photoIndex: Field;
+  let qrDataPaddedLength: number;
 
   beforeAll(async () => {
     const inputs = getQRData(TEST_DATA);
     const qrDataPadded = inputs.paddedData.toBytes();
+
+    qrDataPaddedLength = qrDataPadded.length;
 
     delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field);
 
@@ -40,7 +43,7 @@ describe('Extractor circuit tests', () => {
       it('should extract delimited data correctly', async () => {
         const qrDataField = qrData.map(Field);
 
-        const delimitedDataz = extractData(qrDataField, photoIndex);
+        const delimitedDataz = delimitData(qrDataField, photoIndex);
 
         expect(delimitedDataz).toEqual(nDelimitedData);
       });

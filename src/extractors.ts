@@ -18,7 +18,7 @@ export {
   stateExtractor,
 };
 
-function extractData(paddedData: Field[], photoIndex: Field) {
+function delimitData(paddedData: Field[], photoIndex: Field) {
   let delimitedData = [];
   let n255Filter = Field.from(0);
   const twoFiftyFive = Field.from(255);
@@ -153,4 +153,9 @@ function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
   }
 
   return stateArray;
+}
+
+function photoExtractor(nDelimitedData: Field[]){
+ 
+
 }
