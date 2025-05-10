@@ -7,6 +7,7 @@ export {
   pkcs1v15Pad,
   updateHash,
   decompressByteArray,
+  createDelimitedData,
 };
 
 const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
@@ -200,51 +201,34 @@ export function getDelimiterIndices(paddedData: Uint8Array): number[] {
  * @param inputData - The input `Uint8Array` to be converted and padded.
  * @returns An array of `Field` elements with length 1536.
  */
-export function createPaddedQRData(inputData: Uint8Array): Field[] {
-  const dataArray: Field[] = [];
+export function createPaddedQRData(inputData: Uint8Array) {
+  const dataArray = [];
 
   // Add actual data
   for (let i = 0; i < inputData.length; i++) {
-    dataArray.push(Field.from(inputData[i]));
+    dataArray.push(inputData[i]);
   }
 
   // Pad with zeros to reach exactly 1536 elements
   for (let i = inputData.length; i < 1536; i++) {
-    dataArray.push(Field.from(0));
+    dataArray.push(0);
   }
 
   return dataArray;
 }
 
-/**
- * Processes a padded data array to selectively overwrite elements with 255
- * based on their position relative to a given index.
- *
- * It replaces each occurrence of 255 before the given index with a cumulative filter value.
- *
- * @param paddedData - The padded data array of `Field` elements to modify in place.
- * @param index - The cutoff `Field` index; only elements before this index are considered.
- * @returns The modified `paddedData` array.
- */
-export function createDelimitedData(paddedData: Field[], index: Field) {
-  let delimitedData: Field[] = [];
+function createDelimitedData(data: number[], photoIndex: number): number[] {
+  // Started from one, we want first multiplier to be one and then proceed.
+  let n = 1;
 
-  let n255Filter = Field.from(0);
-  const twoFiftyFive = Field.from(255);
+  const result = data.map((value, i) => {
+    if (i < photoIndex && value === 255 && n <= 18) {
+      return 255 * n++;
+    }
+    return value;
+  });
 
-  for (let i = 0; i < 1536; i++) {
-    const is255 = paddedData[i].equals(twoFiftyFive).toField();
-    const indexBeforePhoto = Field(i).lessThan(index).toField();
-    const is255AndIndexBeforePhoto = is255.mul(indexBeforePhoto);
-
-    delimitedData[i] = is255AndIndexBeforePhoto
-      .mul(n255Filter)
-      .add(paddedData[i]);
-
-    n255Filter = is255AndIndexBeforePhoto.mul(255).add(n255Filter);
-  }
-
-  return delimitedData;
+  return result;
 }
 
 /**
