@@ -1,4 +1,4 @@
-import { assert, Bool, Field, Gadgets, Provable, UInt32 } from 'o1js';
+import { assert, Bool, Field, Gadgets, Provable } from 'o1js';
 import { digitBytesToInt, digitBytesToTimestamp } from './utils.js';
 import {
   DOB_POSITION,
