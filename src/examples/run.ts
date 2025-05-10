@@ -25,13 +25,13 @@ const finalProof = await compute512BasedHash(paddedData, initialValue);
 console.timeEnd('Proof generations');
 // Now you can verify the RSA65537 signature. Should throw an error if verification fails.
 
-
+console.time('Signature verification');
 const { proof } = await SignatureVerifier.verifySignature(
   finalProof,
   signatureBigint,
   publicKeyBigint
 );
-
+console.timeEnd('Signature verification');
 
 console.time('Verification');
 await verify(proof, verificationKey);
