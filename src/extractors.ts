@@ -19,6 +19,7 @@ export {
 };
 
 function extractData(paddedData: Field[], photoIndex: Field) {
+  let delimitedData = [];
   let n255Filter = Field.from(0);
   const twoFiftyFive = Field.from(255);
 
@@ -31,12 +32,14 @@ function extractData(paddedData: Field[], photoIndex: Field) {
     indexBeforePhoto = Field(i).lessThan(photoIndex).toField();
     is255AndIndexBeforePhoto = is255.mul(indexBeforePhoto);
 
-    n255Filter = is255AndIndexBeforePhoto.mul(255).add(n255Filter);
+    delimitedData[i] = is255AndIndexBeforePhoto
+      .mul(n255Filter)
+      .add(paddedData[i]);
 
-    paddedData[i] = is255AndIndexBeforePhoto.mul(n255Filter).add(paddedData[i]);
+    n255Filter = is255AndIndexBeforePhoto.mul(255).add(n255Filter);
   }
 
-  return paddedData;
+  return delimitedData;
 }
 
 function timestampExtractor(nDelimitedData: Field[]) {
