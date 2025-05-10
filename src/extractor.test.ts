@@ -1,6 +1,5 @@
 import { Field } from 'o1js';
 import { DOB_POSITION, PHOTO_POSITION } from './constants.js';
-import { DataExtractor, DelimiterExtractor } from './extractor.js';
 import {
   getDelimiterIndices,
   createPaddedQRData,
@@ -26,9 +25,6 @@ describe('Extractor circuit tests', () => {
   let photoIndex: Field;
 
   beforeAll(async () => {
-    await DelimiterExtractor.compile({ proofsEnabled });
-    await DataExtractor.compile({ proofsEnabled });
-
     const inputs = getQRData(TEST_DATA);
     const qrDataPadded = inputs.paddedData.toBytes();
 
