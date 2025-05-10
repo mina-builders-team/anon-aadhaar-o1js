@@ -213,14 +213,14 @@ function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
 
 /**
  * Extracts the photo data field from the delimited data.
- * 
- * The photo field spans a fixed-size byte block calculated by 
- * `MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE`. This function locates 
- * the start position using the delimiter indices and then selects 
+ *
+ * The photo field spans a fixed-size byte block calculated by
+ * `MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE`. This function locates
+ * the start position using the delimiter indices and then selects
  * the corresponding subarray.
- * 
+ *
  * Rows: ~100k
- * 
+ *
  * @param {Field[]} nDelimitedData - The delimited input data array.
  * @param {Field[]} delimiterIndices - Array of indices marking field positions.
  * @returns {Field[]} An array representing the extracted photo data bytes.
