@@ -66,7 +66,7 @@ describe('Extractor circuit tests', () => {
 
       const [age, gender] = ageAndGenderExtractor(
         nDelimitedData,
-        delimiterIndex,
+        delimiterIndices,
         year,
         month,
         day
