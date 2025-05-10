@@ -23,13 +23,10 @@ describe('Extractor circuit tests', () => {
   let qrData: number[];
   let delimiterIndices: Field[];
   let photoIndex: Field;
-  let qrDataPaddedLength: number;
 
   beforeAll(async () => {
     const inputs = getQRData(TEST_DATA);
     const qrDataPadded = inputs.paddedData.toBytes();
-
-    qrDataPaddedLength = qrDataPadded.length;
 
     delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field);
 
@@ -62,7 +59,6 @@ describe('Extractor circuit tests', () => {
       const day = Field.from(1);
       const month = Field.from(1);
       const year = Field.from(2024);
-      const delimiterIndex = delimiterIndices[DOB_POSITION - 1];
 
       const [age, gender] = ageAndGenderExtractor(
         nDelimitedData,
