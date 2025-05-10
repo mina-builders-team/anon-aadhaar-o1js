@@ -19,7 +19,7 @@ const SignatureVerifier = ZkProgram({
      * Converts the final hash state to a byte array, applies PKCS#1 v1.5 padding,
      * and then verifies against the provided RSA signature.
      *
-     * @param earlierProof - The final proof of recursive hashing.
+     * @param hashProof - The final proof of recursive hashing.
      * @param signature - RSA signature of the message.
      * @param publicKey - RSA-2048 public key used to verify the signature.
      * @returns Outputs the final hash state if signature verification passes.
