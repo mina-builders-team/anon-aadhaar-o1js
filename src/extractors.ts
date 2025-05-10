@@ -1,9 +1,5 @@
 import { assert, Bool, Field, Gadgets, Provable, UInt32 } from 'o1js';
-import {
-  digitBytesToInt,
-  digitBytesToTimestamp,
-  elementAtIndex,
-} from './utils.js';
+import { digitBytesToInt, digitBytesToTimestamp } from './utils.js';
 import {
   DOB_POSITION,
   MAX_FIELD_BYTE_SIZE,
