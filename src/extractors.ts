@@ -1,8 +1,14 @@
 import { assert, Bool, Field, Gadgets, Provable } from 'o1js';
-import { digitBytesToInt, digitBytesToTimestamp } from './utils.js';
+import {
+  digitBytesToInt,
+  digitBytesToTimestamp,
+  selectSubarray,
+} from './utils.js';
 import {
   DOB_POSITION,
   MAX_FIELD_BYTE_SIZE,
+  PHOTO_PACK_SIZE,
+  PHOTO_POSITION,
   PINCODE_POSITION,
   STATE_POSITION,
 } from './constants.js';
@@ -12,6 +18,7 @@ export {
   ageAndGenderExtractor,
   pincodeExtractor,
   stateExtractor,
+  photoExtractor,
 };
 
 /**
@@ -202,4 +209,28 @@ function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
   }
 
   return stateArray;
+}
+
+/**
+ * Extracts the photo data field from the delimited data.
+ * 
+ * The photo field spans a fixed-size byte block calculated by 
+ * `MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE`. This function locates 
+ * the start position using the delimiter indices and then selects 
+ * the corresponding subarray.
+ * 
+ * Rows: ~100k
+ * 
+ * @param {Field[]} nDelimitedData - The delimited input data array.
+ * @param {Field[]} delimiterIndices - Array of indices marking field positions.
+ * @returns {Field[]} An array representing the extracted photo data bytes.
+ */
+function photoExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
+  const byteLength = MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE;
+
+  const startIndex = delimiterIndices[PHOTO_POSITION - 1].add(1);
+
+  const selectedArray = selectSubarray(nDelimitedData, startIndex, byteLength);
+
+  return selectedArray;
 }
