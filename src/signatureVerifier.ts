@@ -1,5 +1,5 @@
-import { Provable, UInt32, ZkProgram, Bytes, Struct, Field } from 'o1js';
-import { pkcs1v15Pad, updateHash } from './utils.js';
+import { ZkProgram, Bytes, Field } from 'o1js';
+import { pkcs1v15Pad } from './utils.js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
 import { RecursiveHashProof } from './recursiveHash.js';
 export { SignatureVerifier };
