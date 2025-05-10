@@ -3,7 +3,7 @@ import { SignatureVerifier } from './signatureVerifier.js';
 import { Bytes, Gadgets, UInt32, UInt8 } from 'o1js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
 
-import { BLOCK_SIZES, pkcs1v15Pad } from './utils.js';
+import { pkcs1v15Pad } from './utils.js';
 import { getQRData, TEST_DATA, TEST_DATA_2 } from './getQRData.js';
 import { compute512BasedHash, pkcs1v15PadWrong } from './testUtils.js';
 import { RecursiveHash } from './recursiveHash.js';
