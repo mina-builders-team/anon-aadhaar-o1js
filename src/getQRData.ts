@@ -32,7 +32,6 @@ const TEST_DATA_2 =
  * - This is designed to work with Aadhaar QR code V2 data formats.
  * - The function assumes the last 256 bytes of the decompressed QR data represent the digital signature.
  */
-
 function getQRData(testQRData: string) {
   // Hard-coded public key and QR data that can be obtained from certiifcates.
   const publicKeyHex =
