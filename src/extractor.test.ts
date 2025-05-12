@@ -4,12 +4,7 @@ import {
   PHOTO_PACK_SIZE,
   PHOTO_POSITION,
 } from './constants.js';
-import {
-  getDelimiterIndices,
-  createPaddedQRData,
-  intToCharString,
-  charBytesToInt,
-} from './utils.js';
+import { getDelimiterIndices, createPaddedQRData } from './utils.js';
 import { getQRData, TEST_DATA } from './getQRData.js';
 import {
   ageAndGenderExtractor,
@@ -19,7 +14,11 @@ import {
   stateExtractor,
   timestampExtractor,
 } from './extractors.js';
-import { createDelimitedData } from './testUtils.js';
+import {
+  createDelimitedData,
+  intToCharString,
+  charBytesToInt,
+} from './testUtils.js';
 
 describe('Extractor circuit tests', () => {
   let nDelimitedData: Field[];
