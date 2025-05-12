@@ -8,6 +8,7 @@ export {
   compute512BasedHashDigest,
   computeChained128HashDigest,
   pkcs1v15PadWrong,
+  createDelimitedData,
 };
 
 async function compute512BasedHash(
@@ -211,4 +212,18 @@ function pkcs1v15PadWrong(sha256Digest: Bytes) {
   });
 
   return message;
+}
+
+function createDelimitedData(data: number[], photoIndex: number): number[] {
+  // Started from one, we want first multiplier to be one and then proceed.
+  let n = 1;
+
+  const result = data.map((value, i) => {
+    if (i < photoIndex && value === 255 && n <= 18) {
+      return 255 * n++;
+    }
+    return value;
+  });
+
+  return result;
 }

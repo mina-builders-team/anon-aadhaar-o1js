@@ -7,7 +7,6 @@ export {
   pkcs1v15Pad,
   updateHash,
   decompressByteArray,
-  createDelimitedData,
   getDelimiterIndices,
   selectSubarray,
   intToCharString,
@@ -223,20 +222,6 @@ function createPaddedQRData(inputData: Uint8Array) {
   }
 
   return dataArray;
-}
-
-function createDelimitedData(data: number[], photoIndex: number): number[] {
-  // Started from one, we want first multiplier to be one and then proceed.
-  let n = 1;
-
-  const result = data.map((value, i) => {
-    if (i < photoIndex && value === 255 && n <= 18) {
-      return 255 * n++;
-    }
-    return value;
-  });
-
-  return result;
 }
 
 /**
