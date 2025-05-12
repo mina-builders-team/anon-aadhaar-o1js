@@ -109,11 +109,10 @@ function updateHash(
  * Converts an array of UInt8 to a Field element, assuming little endian representation by default.
  *
  * @param wordBytes - An array of UInt8 representing the bytes to be converted.
- * @param reverseEndianness - A boolean indicating whether to reverse the endianness. Defaults to false.
  * @returns A Field element representing the combined value of the input bytes.
  * @notice Copied from https://github.com/Shigoto-dev19/o1js-dynamic-sha256/blob/main/src/utils.ts#L118
  */
-function bytesToWord(wordBytes: UInt8[], reverseEndianness = false): UInt32 {
+function bytesToWord(wordBytes: UInt8[]): UInt32 {
   return UInt32.fromBytes(wordBytes);
 }
 
