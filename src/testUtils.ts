@@ -14,6 +14,13 @@ export {
   createPaddedQRData,
 };
 
+/**
+ * Computes a 512-based recursive hash proof from the given padded data and initial value.
+ *
+ * @param paddedData - The padded input data as a `Bytes` object.
+ * @param initialValue - Initial UInt32 state for hashing.
+ * @returns A promise that resolves to a `RecursiveHashProof`.
+ */
 async function compute512BasedHash(
   paddedData: Bytes,
   initialValue: UInt32[]
@@ -34,6 +41,13 @@ async function compute512BasedHash(
   return finalProof.proof;
 }
 
+/**
+ * Computes the final digest from a 512-based recursive hash proof.
+ *
+ * @param paddedData - The padded input data as a `Bytes` object.
+ * @param initialValue - Initial UInt32 state for hashing.
+ * @returns A promise that resolves to the digest as a `Bytes` object.
+ */
 async function compute512BasedHashDigest(
   paddedData: Bytes,
   initialValue: UInt32[]
@@ -61,6 +75,13 @@ async function compute512BasedHashDigest(
   return finalDigest;
 }
 
+/**
+ * Computes a chained 128-bit recursive hash proof using the padded input and initial state.
+ *
+ * @param paddedData - The padded input data as a `Bytes` object.
+ * @param initialValue - Initial UInt32 state for hashing.
+ * @returns A promise that resolves to a `RecursiveHashProof`.
+ */
 async function computeChained128Hash(
   paddedData: Bytes,
   initialValue: UInt32[]
@@ -114,6 +135,13 @@ async function computeChained128Hash(
   return finalProof.proof;
 }
 
+/**
+ * Computes the final digest from a chained 128-bit recursive hash proof.
+ *
+ * @param paddedData - The padded input data as a `Bytes` object.
+ * @param initialValue - Initial UInt32 state for hashing.
+ * @returns A promise that resolves to the digest as a `Bytes` object.
+ */
 async function computeChained128HashDigest(
   paddedData: Bytes,
   initialValue: UInt32[]
@@ -175,7 +203,11 @@ async function computeChained128HashDigest(
 }
 
 /**
- * Pads message using a wrong PKCS#1 v1.5 algorithm identifiers for the given SHA-256 digest.
+ * Pads a SHA-256 digest using an intentionally incorrect PKCS#1 v1.5 padding scheme.
+ * This is useful for testing or invalid padding proofs.
+ *
+ * @param sha256Digest - SHA-256 digest to be padded.
+ * @returns A `Bigint2048` witness representing the padded digest.
  *
  * @notice Copied from above and modified the algorithm constants for obtaining wrongly padded data.
  */
@@ -217,6 +249,14 @@ function pkcs1v15PadWrong(sha256Digest: Bytes) {
   return message;
 }
 
+/**
+ * Marks a specific index in a numeric array using delimiter encoding.
+ * Values of `255` before the `photoIndex` are multiplied sequentially (255, 510, 765...).
+ *
+ * @param data - The original numeric data array.
+ * @param photoIndex - Index before which delimiters are applied.
+ * @returns A new array with delimited values.
+ */
 function createDelimitedData(data: number[], photoIndex: number): number[] {
   // Started from one, we want first multiplier to be one and then proceed.
   let n = 1;
@@ -286,13 +326,11 @@ function intToCharString(value: Field, numBytes: number): string {
 }
 
 /**
- * Converts a `Uint8Array` into an array of `Field` elements and pads it to a fixed length of 1536.
+ * Converts a `Uint8Array` into a fixed-length array of `Field` elements (length 1536).
+ * Useful for padding data to fit a circuit or QR data constraint.
  *
- * This ensures that the resulting data is always exactly 1536 `Field` elements long,
- * which may be required for QR code or circuit constraints.
- *
- * @param inputData - The input `Uint8Array` to be converted and padded.
- * @returns An array of `Field` elements with length 1536.
+ * @param inputData - The input byte array.
+ * @returns A padded array of numbers representing `Field` elements.
  */
 function createPaddedQRData(inputData: Uint8Array) {
   const dataArray = [];
