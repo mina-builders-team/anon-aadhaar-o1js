@@ -31,7 +31,6 @@ export {
  * @param {Field} photoIndex - The index marking where photo data begins.
  * @returns {Field[]} The delimited and filtered data array.
  */
-
 function delimitData(paddedData: Field[], photoIndex: Field) {
   let delimitedData = [];
   let n255Filter = Field.from(0);
