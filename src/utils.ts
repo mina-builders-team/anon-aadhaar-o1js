@@ -12,7 +12,6 @@ export {
   createPaddedQRData,
   digitBytesToTimestamp,
   digitBytesToInt,
-  findElementAndReturnInteger,
 };
 
 const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
@@ -332,34 +331,6 @@ function digitBytesToTimestamp(
   timestamp = timestamp.add(second);
 
   return timestamp;
-}
-
-/**
- * Extracts a sequence of `Field` elements from `nDelimitedData` starting at a computed index
- * (based on `dobIndex` and `dateIndex`), converts the sequence of ASCII digit bytes to an integer.
- *
- * This is typically used to retrieve a specific numeric value (like a date component)
- * from a delimited QR payload in circuit-friendly form.
- *
- * @param nDelimitedData - The full delimited data array of `Field` elements.
- * @param dobIndex - The base index (from `delimiterIndices`) marking the Date of Birth delimiter.
- * @param len - The number of digits to extract and convert.
- * @param dateIndex - The relative offset from `dobIndex` to locate the desired field.
- * @returns A `Field` representing the integer value parsed from the specified slice of data.
- */
-function findElementAndReturnInteger(
-  nDelimitedData: Field[],
-  dobIndex: Field,
-  len: number,
-  dateIndex: number
-): Field {
-  let elements = [];
-  for (let i = 0; i < len; i++) {
-    elements.push(
-      elementAtIndex(nDelimitedData, dobIndex.add(dateIndex).add(i))
-    );
-  }
-  return digitBytesToInt(elements, len);
 }
 
 /**
