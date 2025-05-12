@@ -26,13 +26,11 @@ describe('Extractor circuit tests', () => {
   let qrData: number[];
   let delimiterIndices: Field[];
   let photoIndex: Field;
-  let qrDataPaddedLength: Field;
 
   beforeAll(async () => {
     const inputs = getQRData(TEST_DATA);
     const qrDataPadded = inputs.paddedData.toBytes();
 
-    qrDataPaddedLength = Field.from(qrDataPadded.length);
     delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field);
 
     qrData = createPaddedQRData(qrDataPadded);
