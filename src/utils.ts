@@ -8,6 +8,14 @@ export {
   updateHash,
   decompressByteArray,
   createDelimitedData,
+  getDelimiterIndices,
+  selectSubarray,
+  intToCharString,
+  charBytesToInt,
+  createPaddedQRData,
+  digitBytesToTimestamp,
+  digitBytesToInt,
+  findElementAndReturnInteger,
 };
 
 const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
@@ -178,7 +186,7 @@ function decompressByteArray(byteArray: Uint8Array): Uint8Array {
  * @param paddedData - A `Uint8Array` where delimiter bytes (value 255) are expected.
  * @returns An array of indices where the delimiter bytes are located, capped at 18 elements.
  */
-export function getDelimiterIndices(paddedData: Uint8Array): number[] {
+function getDelimiterIndices(paddedData: Uint8Array): number[] {
   let delimiterIndices = [];
   for (let i = 0; i < paddedData.length; i++) {
     if (paddedData[i] === 255) {
@@ -201,7 +209,7 @@ export function getDelimiterIndices(paddedData: Uint8Array): number[] {
  * @param inputData - The input `Uint8Array` to be converted and padded.
  * @returns An array of `Field` elements with length 1536.
  */
-export function createPaddedQRData(inputData: Uint8Array) {
+function createPaddedQRData(inputData: Uint8Array) {
   const dataArray = [];
 
   // Add actual data
@@ -240,7 +248,7 @@ function createDelimitedData(data: number[], photoIndex: number): number[] {
  * @param numDigits - The number of digits to process from the array.
  * @returns A `Field` representing the full integer value.
  */
-export function digitBytesToInt(digits: Field[], numDigits: number): Field {
+function digitBytesToInt(digits: Field[], numDigits: number): Field {
   let result = Field.from(0);
   const asciiZero = Field.from(48);
 
@@ -275,7 +283,7 @@ export function digitBytesToInt(digits: Field[], numDigits: number): Field {
  * @param maxYears - The maximum number of years to consider for leap year calculations.
  * @returns A `Field` representing the UNIX timestamp (seconds since 1970-01-01 00:00:00 UTC).
  */
-export function digitBytesToTimestamp(
+function digitBytesToTimestamp(
   year: Field,
   month: Field,
   day: Field,
@@ -356,7 +364,7 @@ export function digitBytesToTimestamp(
  * @param dateIndex - The relative offset from `dobIndex` to locate the desired field.
  * @returns A `Field` representing the integer value parsed from the specified slice of data.
  */
-export function findElementAndReturnInteger(
+function findElementAndReturnInteger(
   nDelimitedData: Field[],
   dobIndex: Field,
   len: number,
@@ -381,7 +389,7 @@ export function findElementAndReturnInteger(
  * @param index - The `Field` index specifying which element to retrieve.
  * @returns The `Field` element at the specified index.
  */
-export function elementAtIndex(intArray: Field[], index: Field): Field {
+function elementAtIndex(intArray: Field[], index: Field): Field {
   let totalValues = Field.from(0);
 
   let isIndex = Field.from(0);
@@ -414,7 +422,7 @@ export function elementAtIndex(intArray: Field[], index: Field): Field {
  * @returns The selected subarray of bytes.
  * @throws Will throw an error if `subarrayLength` is greater than the input array length.
  */
-export function selectSubarray(
+function selectSubarray(
   input: Field[],
   startIndex: Field,
   subarrayLength: number
@@ -468,7 +476,7 @@ export function selectSubarray(
  * @param numBytes - Number of bytes to process
  * @returns Field containing the integer value
  */
-export function charBytesToInt(bytes: Field[], numBytes: number): Field {
+function charBytesToInt(bytes: Field[], numBytes: number): Field {
   let result = Field.from(0);
 
   // Process each byte and incorporate it into the result
@@ -491,7 +499,7 @@ export function charBytesToInt(bytes: Field[], numBytes: number): Field {
  * @param numBytes - Number of bytes/characters to output
  * @returns String representation of the character bytes
  */
-export function intToCharString(value: Field, numBytes: number): string {
+function intToCharString(value: Field, numBytes: number): string {
   // Create array for storing byte values
   const byteValues: number[] = new Array(numBytes).fill(0);
 
