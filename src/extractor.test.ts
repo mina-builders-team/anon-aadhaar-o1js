@@ -43,9 +43,9 @@ describe('Extractor circuit tests', () => {
       it('should extract delimited data correctly', async () => {
         const qrDataField = qrData.map(Field);
 
-        const delimitedDataz = delimitData(qrDataField, photoIndex);
+        const delimitedData = delimitData(qrDataField, photoIndex);
 
-        expect(delimitedDataz).toEqual(nDelimitedData);
+        expect(delimitedData).toEqual(nDelimitedData);
       });
     });
   describe('Extractor Circuit tests', () => {
