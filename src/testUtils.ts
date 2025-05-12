@@ -11,6 +11,7 @@ export {
   createDelimitedData,
   charBytesToInt,
   intToCharString,
+  createPaddedQRData,
 };
 
 async function compute512BasedHash(
@@ -230,7 +231,6 @@ function createDelimitedData(data: number[], photoIndex: number): number[] {
   return result;
 }
 
-
 /**
  * Converts character bytes to an integer
  * For example: Character 'A', 'B', 'C' becomes integer value based on ASCII codes
@@ -283,4 +283,29 @@ function intToCharString(value: Field, numBytes: number): string {
 
   // Convert byte values to characters and join them into a string
   return String.fromCharCode(...byteValues);
+}
+
+/**
+ * Converts a `Uint8Array` into an array of `Field` elements and pads it to a fixed length of 1536.
+ *
+ * This ensures that the resulting data is always exactly 1536 `Field` elements long,
+ * which may be required for QR code or circuit constraints.
+ *
+ * @param inputData - The input `Uint8Array` to be converted and padded.
+ * @returns An array of `Field` elements with length 1536.
+ */
+function createPaddedQRData(inputData: Uint8Array) {
+  const dataArray = [];
+
+  // Add actual data
+  for (let i = 0; i < inputData.length; i++) {
+    dataArray.push(inputData[i]);
+  }
+
+  // Pad with zeros to reach exactly 1536 elements
+  for (let i = inputData.length; i < 1536; i++) {
+    dataArray.push(0);
+  }
+
+  return dataArray;
 }
