@@ -9,8 +9,6 @@ export {
   decompressByteArray,
   getDelimiterIndices,
   selectSubarray,
-  intToCharString,
-  charBytesToInt,
   createPaddedQRData,
   digitBytesToTimestamp,
   digitBytesToInt,
@@ -451,58 +449,4 @@ function selectSubarray(
   }
 
   return subarray;
-}
-
-/**
- * Converts character bytes to an integer
- * For example: Character 'A', 'B', 'C' becomes integer value based on ASCII codes
- *
- * @param bytes - Array of Field values representing ASCII character codes
- * @param numBytes - Number of bytes to process
- * @returns Field containing the integer value
- */
-function charBytesToInt(bytes: Field[], numBytes: number): Field {
-  let result = Field.from(0);
-
-  // Process each byte and incorporate it into the result
-  for (let i = 0; i < numBytes; i++) {
-    // Shift the existing value left by 8 bits (multiply by 256)
-    result = result.mul(256);
-
-    // Add the new byte value
-    result = result.add(bytes[i]);
-  }
-
-  return result;
-}
-
-/**
- * Converts an integer to a character string
- * For example: Integer value is converted to ASCII characters
- *
- * @param value - The integer value to convert
- * @param numBytes - Number of bytes/characters to output
- * @returns String representation of the character bytes
- */
-function intToCharString(value: Field, numBytes: number): string {
-  // Create array for storing byte values
-  const byteValues: number[] = new Array(numBytes).fill(0);
-
-  // Convert Field to number (this happens outside the circuit)
-  let remainingValue = Number(value.toString());
-
-  // Extract bytes from right to left
-  for (let i = numBytes - 1; i >= 0; i--) {
-    // Get the rightmost byte (value % 256)
-    const byteValue = remainingValue % 256;
-
-    // Store the byte value as a number
-    byteValues[i] = byteValue;
-
-    // Remove the rightmost byte (value / 256)
-    remainingValue = Math.floor(remainingValue / 256);
-  }
-
-  // Convert byte values to characters and join them into a string
-  return String.fromCharCode(...byteValues);
 }
