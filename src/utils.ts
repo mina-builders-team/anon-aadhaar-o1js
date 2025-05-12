@@ -175,6 +175,7 @@ function decompressByteArray(byteArray: Uint8Array): Uint8Array {
   const decompressedArray = pako.inflate(byteArray);
   return decompressedArray;
 }
+
 /**
  * Finds the indices of delimiter bytes (255) in a padded data array.
  *
