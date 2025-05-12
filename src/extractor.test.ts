@@ -7,7 +7,6 @@ import {
 import {
   getDelimiterIndices,
   createPaddedQRData,
-  createDelimitedData,
   intToCharString,
   charBytesToInt,
 } from './utils.js';
@@ -20,6 +19,7 @@ import {
   stateExtractor,
   timestampExtractor,
 } from './extractors.js';
+import { createDelimitedData } from './testUtils.js';
 
 describe('Extractor circuit tests', () => {
   let nDelimitedData: Field[];
