@@ -31,7 +31,6 @@ describe('Recursive Hash tests', () => {
       'should compute partial hashing with 9 byte blocks of size 128 bytes.',
       async () => {
         // Now split at your desired boundaries (multiple of 64 bytes)
-
         const finalDigest = await computeChained128HashDigest(
           paddedData,
           initialValue
