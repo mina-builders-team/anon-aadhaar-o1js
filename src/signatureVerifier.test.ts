@@ -21,11 +21,10 @@ describe('Signature Verifier', () => {
   let signedData: Uint8Array;
 
   beforeAll(async () => {
-    await hashProgram.compile({proofsEnabled});
-    await recursiveHashProgram.compile({proofsEnabled});
-    await hashWrapper.compile({proofsEnabled});
+    await hashProgram.compile({ proofsEnabled });
+    await recursiveHashProgram.compile({ proofsEnabled });
+    await hashWrapper.compile({ proofsEnabled });
     await SignatureVerifier.compile({ proofsEnabled });
-
 
     const inputs = getQRData(TEST_DATA);
 
@@ -40,8 +39,8 @@ describe('Signature Verifier', () => {
     it('should verify rsa signature correctly', async () => {
       const blocks = prepareRecursiveHashData(signedData);
 
-      const {proof} = await hashWrapper.run(blocks);
-      
+      const { proof } = await hashWrapper.run(blocks);
+
       // Should throw an error if verification fails.
       await SignatureVerifier.verifySignature(
         proof,
@@ -54,7 +53,7 @@ describe('Signature Verifier', () => {
       const wrongSignature = signatureBigint.modSquare(publicKeyBigint);
       const blocks = prepareRecursiveHashData(signedData);
 
-      const {proof} = await hashWrapper.run(blocks);
+      const { proof } = await hashWrapper.run(blocks);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
@@ -76,7 +75,7 @@ describe('Signature Verifier', () => {
 
       const blocks = prepareRecursiveHashData(signedData);
 
-      const {proof} = await hashWrapper.run(blocks);
+      const { proof } = await hashWrapper.run(blocks);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
@@ -90,7 +89,7 @@ describe('Signature Verifier', () => {
         'Field.assertEquals(): 9188579551671412591472664553230141 != 19665786662882214150578387368928633'
       );
     });
-    
+
     it('should reject verification with made-up data', async () => {
       // Change bytes with a random value. Make sure changed value is in the 8-bit range by applying mod (%) operation.
       const randomizedData = signedData.map(() =>
@@ -102,8 +101,7 @@ describe('Signature Verifier', () => {
       // This test should fail especially for distorted padded bytes
       const blocks = prepareRecursiveHashData(distortedPaddedData);
 
-      const {proof} = await hashWrapper.run(blocks);
-
+      const { proof } = await hashWrapper.run(blocks);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
@@ -203,8 +201,7 @@ describe('Signature Verifier', () => {
 
       const blocks = prepareRecursiveHashData(otherData);
 
-      const {proof} = await hashWrapper.run(blocks);
-
+      const { proof } = await hashWrapper.run(blocks);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
@@ -222,7 +219,7 @@ describe('Signature Verifier', () => {
 
       const blocks = prepareRecursiveHashData(signedData);
 
-      const {proof} = await hashWrapper.run(blocks);
+      const { proof } = await hashWrapper.run(blocks);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
@@ -235,11 +232,11 @@ describe('Signature Verifier', () => {
       await expect(isVerified).rejects.toThrow();
     });
     it('should reject signature verification of empty data', async () => {
-      const EMPTY_DATA = signedData.slice(0,0);
+      const EMPTY_DATA = signedData.slice(0, 0);
 
       const blocks = prepareRecursiveHashData(EMPTY_DATA);
 
-      const {proof} = await hashWrapper.run(blocks);
+      const { proof } = await hashWrapper.run(blocks);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(

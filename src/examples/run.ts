@@ -4,19 +4,23 @@ import { SignatureVerifier } from '../signatureVerifier.js';
 import { getQRData, TEST_DATA } from '../getQRData.js';
 import { compute512BasedHash, prepareRecursiveHashData } from '../testUtils.js';
 import { RecursiveHash } from '../recursiveHash.js';
-import { hashProgram, hashRecursive, hashWrapper, recursiveHashProgram } from '../recursion.js';
+import {
+  hashProgram,
+  hashRecursive,
+  hashWrapper,
+  recursiveHashProgram,
+} from '../recursion.js';
 
-class Bytes32 extends Bytes(32){};
+class Bytes32 extends Bytes(32) {}
 
-const { signatureBigint, publicKeyBigint,signedData } =
-  getQRData(TEST_DATA);
+const { signatureBigint, publicKeyBigint, signedData } = getQRData(TEST_DATA);
 
 let proofsEnabled = false;
 
 console.time('Compile Hash Circuit');
-await hashProgram.compile({proofsEnabled});
-await recursiveHashProgram.compile({proofsEnabled});
-await hashWrapper.compile({proofsEnabled});
+await hashProgram.compile({ proofsEnabled });
+await recursiveHashProgram.compile({ proofsEnabled });
+await hashWrapper.compile({ proofsEnabled });
 console.timeEnd('Compile Hash Circuit');
 
 console.time('Compile Verifier Circuit');
@@ -24,9 +28,11 @@ const { verificationKey } = await SignatureVerifier.compile({ proofsEnabled });
 console.timeEnd('Compile Verifier Circuit');
 
 console.time('Proof generations');
-const preparedData = prepareRecursiveHashData(signedData)
+const preparedData = prepareRecursiveHashData(signedData);
 const finalProof = await hashWrapper.run(preparedData);
-const finalHash = Bytes32.from(finalProof.proof.publicOutput.array.flatMap((x) => x.toBytesBE()));
+const finalHash = Bytes32.from(
+  finalProof.proof.publicOutput.array.flatMap((x) => x.toBytesBE())
+);
 
 console.log(finalHash.toHex());
 console.timeEnd('Proof generations');

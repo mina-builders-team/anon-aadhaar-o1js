@@ -20,7 +20,7 @@ export {
   Block32,
   State32,
   RecursionProof,
-  hashWrapper
+  hashWrapper,
 };
 
 // 9 is on the high end, leads to 47k constraints
@@ -28,8 +28,8 @@ export {
 const BLOCKS_PER_RECURSIVE_PROOF = 5;
 const BLOCKS_PER_BASE_PROOF = 8;
 
-class Block32 extends StaticArray(UInt32, 16) {};
-class State32 extends StaticArray(UInt32, 8) {};
+class Block32 extends StaticArray(UInt32, 16) {}
+class State32 extends StaticArray(UInt32, 8) {}
 
 class MerkleBlocks extends MerkleList.create(Block32, commitBlock256) {
   /**
@@ -122,12 +122,11 @@ const hashWrapper = ZkProgram({
       privateInputs: [],
       async method(blocks: MerkleBlocks) {
         const state = await hashRecursive.run(blocks);
-        
-        return {publicOutput: state};
+
+        return { publicOutput: state };
       },
     },
   },
 });
 
 class RecursionProof extends ZkProgram.Proof(hashWrapper) {}
-

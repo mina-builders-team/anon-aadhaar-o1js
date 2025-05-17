@@ -17,7 +17,7 @@ import {
   hashProgram,
   MerkleBlocks,
   Block32,
-  State32
+  State32,
 } from './recursion.js';
 import { DynamicArray, StaticArray } from 'mina-attestations';
 
@@ -522,7 +522,6 @@ async function hashBlocks(
   // recursively hash the first, "remaining" part
   let proof = await Provable.witnessAsync(hashProgram.Proof, async () => {
     // optionally disable the inner proof
-    let originalProofsEnabled = hashProgram.proofsEnabled;
 
     // convert the blocks to constants
     let blocksForProof = Provable.toConstant(MerkleBlocks, remaining.clone());
@@ -538,7 +537,6 @@ async function hashBlocks(
       console.log({ nBlocksRemaining, method: 'hashRecursive' });
       ({ proof } = await hashProgram.hashRecursive(blocksForProof));
     }
-    hashProgram.setProofsEnabled(originalProofsEnabled);
     return proof;
   });
   proof.declare();
