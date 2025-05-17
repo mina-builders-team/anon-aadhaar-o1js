@@ -8,20 +8,26 @@ import {
   UInt32,
   ZkProgram,
 } from 'o1js';
-import { Block32, State32 } from './utils.js';
 import { commitBlock256, hashBlock256, hashBlocks } from './utils.js';
+import { StaticArray } from 'mina-attestations';
 export {
   MerkleBlocks,
-  hashProgram,
   BLOCKS_PER_BASE_PROOF,
   BLOCKS_PER_RECURSIVE_PROOF,
-  hashProgramRecursive,
+  hashProgram,
+  recursiveHashProgram,
+  hashRecursive,
+  Block32,
+  State32
 };
 
 // 9 is on the high end, leads to 47k constraints
 // By changing the numbers, we can obtain less or more constraints.
 const BLOCKS_PER_RECURSIVE_PROOF = 5;
 const BLOCKS_PER_BASE_PROOF = 8;
+
+class Block32 extends StaticArray(UInt32, 16) {};
+class State32 extends StaticArray(UInt32, 8) {};
 
 class MerkleBlocks extends MerkleList.create(Block32, commitBlock256) {
   /**
@@ -101,4 +107,4 @@ const recursiveHashProgram = ZkProgram({
   },
 });
 
-let hashProgramRecursive = Experimental.Recursive(recursiveHashProgram);
+let hashRecursive = Experimental.Recursive(recursiveHashProgram);

@@ -16,6 +16,8 @@ import {
   BLOCKS_PER_BASE_PROOF,
   hashProgram,
   MerkleBlocks,
+  Block32,
+  State32
 } from './recursion.js';
 import { DynamicArray, StaticArray } from 'mina-attestations';
 
@@ -31,14 +33,10 @@ export {
   commitBlock256,
   hashBlocks,
   hashBlock256,
-  Block32,
-  State32,
 };
 
 const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
 
-class Block32 extends StaticArray(UInt32, 16) {}
-class State32 extends StaticArray(UInt32, 8) {}
 class UInt8x4 extends StaticArray(UInt8, 4) {}
 class UInt8x64 extends StaticArray(UInt8, 64) {}
 
