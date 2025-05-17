@@ -19,6 +19,7 @@ import {
   MerkleBlocks,
   State32,
 } from './recursion.js';
+import { DynamicArray, StaticArray } from 'mina-attestations';
 
 export {
   BLOCK_SIZES,
@@ -35,6 +36,10 @@ export {
 };
 
 const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
+
+class UInt8x4 extends StaticArray(UInt8, 4) {}
+class UInt8x64 extends StaticArray(UInt8, 64) {}
+
 
 /**
  * Creates a PKCS#1 v1.5 padded message for the given SHA-256 digest.
@@ -562,4 +567,115 @@ async function hashBlocks(
 function hashBlock256(state: State32, block: Block32): State32 {
   let W = Gadgets.SHA2.messageSchedule(256, block.array);
   return State32.from(Gadgets.SHA2.compression(256, state.array, W));
+}
+
+
+/**
+ * Pads an array with a given value (or value generator) until it reaches the specified size.
+ *
+ * @template T The type of elements in the input array.
+ * @param {T[]} array - The array to pad.
+ * @param {number} size - The desired size after padding.
+ * @param {T | (() => T)} value - The padding value or a function to generate it.
+ * @returns {T[]} A new padded array.
+ * @throws Will throw if the input array is already larger than the target size.
+ */
+function pad<T>(array: T[], size: number, value: T | (() => T)): T[] {
+  assert(
+    array.length <= size,
+    `padding array of size ${array.length} larger than target size ${size}`
+  );
+  let cb: () => T =
+    typeof value === 'function' ? (value as () => T) : () => value;
+  return array.concat(Array.from({ length: size - array.length }, cb));
+}
+
+/**
+ * Splits a UInt32 index into three hierarchical parts for addressing within a padded SHA-2 message.
+ *
+ * @param {UInt32} index - The index to split.
+ * @returns {[Field, Field, Field]} A tuple representing [byteIndexInUInt32, uint32IndexInBlock, blockIndex].
+ */
+function splitMultiIndex(index: UInt32) {
+  let { rest: l0, quotient: l1 } = index.divMod(64);
+  let { rest: l00, quotient: l01 } = l0.divMod(4);
+  return [l00.value, l01.value, l1.value] as const;
+}
+
+/**
+ * Applies SHA-256 style padding to a dynamic-length byte array and chunks the result into 512-bit (64-byte) blocks.
+ *
+ * The padding scheme follows:
+ * - Appending a single `0x80` byte
+ * - Padding with `0x00` bytes to reach a length that is 8 bytes short of a multiple of 64
+ * - Appending the original message length (in bits) as an 8-byte big-endian integer
+ *
+ * @param {DynamicArray<UInt8>} message - The message to pad, with dynamic length.
+ * @returns {DynamicArray<StaticArray<UInt32>, bigint[]>} The padded message split into 16-UInt32 blocks.
+ */
+export function padding256(
+  message: DynamicArray<UInt8>
+): DynamicArray<StaticArray<UInt32>, bigint[]> {
+  /* padded message looks like this:
+    
+    M ... M 0x80 0x0 ... 0x0 L L L L L L L L
+  
+    where
+    - M is the original message
+    - the 8 L bytes encode the length of the original message, as a uint64
+    - padding always starts with a 0x80 byte (= big-endian encoding of 1)
+    - there are k 0x0 bytes, where k is the smallest number such that
+      the padded length (in bytes) is a multiple of 64
+  
+    Corollaries:
+    - the entire L section is always contained at the end of the last block
+    - the 0x80 byte might be in the last block or the one before that
+    - max number of blocks = ceil((M.maxLength + 9) / 64) 
+    - number of actual blocks = ceil((M.length + 9) / 64) = floor((M.length + 9 + 63) / 64) = floor((M.length + 8) / 64) + 1
+    - block number of L section = floor((M.length + 8) / 64)
+    - block number of 0x80 byte index = floor(M.length / 64)
+    */
+
+  // check that all message bytes beyond the actual length are 0, so that we get valid padding just by adding the 0x80 and L bytes
+  // this step creates most of the constraint overhead of dynamic sha2, but seems unavoidable :/
+  message.forEach((byte, isPadding) => {
+    Provable.assertEqualIf(isPadding, UInt8, byte, UInt8.from(0));
+  });
+
+  // create blocks of 64 bytes each
+  const maxBlocks = Math.ceil((message.maxLength + 9) / 64);
+  const BlocksOfBytes = DynamicArray(UInt8x64, { maxLength: maxBlocks });
+
+  let lastBlockIndex = UInt32.Unsafe.fromField(message.length.add(8)).div(64);
+  let numberOfBlocks = lastBlockIndex.value.add(1);
+  let padded = pad(message.array, maxBlocks * 64, UInt8.from(0));
+  let chunked = chunk(padded, 64).map(UInt8x64.from);
+  let blocksOfBytes = new BlocksOfBytes(chunked, numberOfBlocks);
+
+  // pack each block of 64 bytes into 16 uint32s (4 bytes each)
+  let blocks = blocksOfBytes.map(Block32, (block) =>
+    block.chunk(4).map(UInt32, (b) => UInt32.fromBytesBE(b.array))
+  );
+
+  // splice the length in the same way
+  // length = l0 + 4*l1 + 64*l2
+  // so that l2 is the block index, l1 the uint32 index in the block, and l0 the byte index in the uint32
+  let [l0, l1, l2] = splitMultiIndex(UInt32.Unsafe.fromField(message.length));
+
+  // hierarchically get byte at `length` and set to 0x80
+  // we can use unsafe get/set because the indices are in bounds by design
+  let block = blocks.getOrUnconstrained(l2);
+  let uint8x4 = UInt8x4.from(block.getOrUnconstrained(l1).toBytesBE());
+  uint8x4.setOrDoNothing(l0, UInt8.from(0x80));
+  block.setOrDoNothing(l1, UInt32.fromBytesBE(uint8x4.array));
+  blocks.setOrDoNothing(l2, block);
+
+  // set last 64 bits to encoded length (in bits, big-endian encoded)
+  // in fact, since dynamic array asserts that length fits in 16 bits, we can set the second to last uint32 to 0
+  let lastBlock = blocks.getOrUnconstrained(lastBlockIndex.value);
+  lastBlock.set(14, UInt32.from(0));
+  lastBlock.set(15, UInt32.Unsafe.fromField(message.length.mul(8))); // length in bits
+  blocks.setOrDoNothing(lastBlockIndex.value, lastBlock);
+
+  return blocks;
 }
