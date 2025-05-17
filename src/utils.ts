@@ -1,6 +1,7 @@
-import { Bytes, UInt32, Gadgets, Provable, UInt8, assert, Field } from 'o1js';
+import { Bytes, UInt32, Gadgets, Provable, UInt8, assert, Field, Poseidon, ProvableType } from 'o1js';
 import { Bigint2048 } from './rsa.js';
 import pako from 'pako';
+import { Block32 } from './recursion.js';
 
 export {
   BLOCK_SIZES,
@@ -11,6 +12,7 @@ export {
   selectSubarray,
   digitBytesToTimestamp,
   digitBytesToInt,
+  commitBlock256
 };
 
 const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
@@ -394,4 +396,92 @@ function selectSubarray(
   }
 
   return subarray;
+}
+
+/**
+ * Computes a Poseidon commitment to a block, combining a prior commitment with the packed hash of the block.
+ *
+ * @param {Field} commitment - The prior commitment.
+ * @param {Block32} block - The block to commit to.
+ * @returns {Field} The updated commitment.
+ */
+function commitBlock256(commitment: Field, block: Block32): Field {
+  let blockHash = hashSafe(toFieldsPacked(block));
+  return hashSafe([commitment, blockHash]);
+}
+
+/**
+ * Computes a Poseidon hash of an array of values, using a length-based prefix for domain separation.
+ *
+ * @param {(Field | number | bigint)[]} fields - The input fields to hash.
+ * @returns {Field} The resulting Poseidon hash.
+ */
+function hashSafe(fields: (Field | number | bigint)[]) {
+  let n = fields.length;
+  let prefix = n === 0 ? 'zero' : n % 2 === 0 ? 'even' : 'odd_';
+  return Poseidon.hashWithPrefix(prefix, fields.map(Field));
+}
+
+/**
+ * Converts a Block32 into a flat array of Fields, packing smaller values into fewer fields where possible.
+ *
+ * @param {Block32} block - The input block of 16 UInt32 elements.
+ * @returns {Field[]} An array of Fields representing the packed block.
+ */
+function toFieldsPacked(block: Block32): Field[] {
+  // Get the provable type for Block32
+  let type = ProvableType.get(Block32);
+
+  // If the type doesn't have a toInput method, just use toFields directly
+  if (type.toInput === undefined) return type.toFields(block);
+
+  // Convert the block to input format, which gives fields and packed values
+  let { fields = [], packed = [] } = toInput(block);
+
+  // Start with any direct fields
+  let result = [...fields];
+
+  // Initialize variables for packing
+  let current = Field(0);
+  let currentSize = 0;
+
+  // Process packed values
+  for (let [field, size] of packed) {
+    // If there's room in the current field, add this value
+    if (currentSize + size < Field.sizeInBits) {
+      // Multiply the field by 2^currentSize and add to current
+      current = current.add(field.mul(1n << BigInt(currentSize)));
+      currentSize += size;
+    } else {
+      // No more room - finalize the current field and start a new one
+      result.push(current.seal());
+      current = field;
+      currentSize = size;
+    }
+  }
+
+  // Add the last field if there's anything in it
+  if (currentSize > 0) result.push(current.seal());
+
+  return result;
+}
+
+/**
+ * Converts a Block32 into an input format suitable for hashing or other cryptographic operations.
+ *
+ * @param {Block32} block - The 16-element array of UInt32 values.
+ * @returns {{ fields: Field[] } | { fields: Field[], packed: [Field, number][] }} 
+ * The input representation, either with only fields or with both fields and packed values.
+ */
+function toInput(block: Block32) {
+  // Get the provable type for Block32
+  const type = ProvableType.get(Block32);
+
+  // If the type has a toInput method, use it
+  if (type.toInput !== undefined) {
+    return type.toInput(block);
+  }
+
+  // Otherwise, fall back to using toFields and wrap the result
+  return { fields: type.toFields(block) };
 }
