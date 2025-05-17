@@ -13,11 +13,9 @@ import {
 import { Bigint2048 } from './rsa.js';
 import pako from 'pako';
 import {
-  Block32,
   BLOCKS_PER_BASE_PROOF,
   hashProgram,
   MerkleBlocks,
-  State32,
 } from './recursion.js';
 import { DynamicArray, StaticArray } from 'mina-attestations';
 
@@ -33,13 +31,16 @@ export {
   commitBlock256,
   hashBlocks,
   hashBlock256,
+  Block32,
+  State32,
 };
 
 const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
 
+class Block32 extends StaticArray(UInt32, 16) {}
+class State32 extends StaticArray(UInt32, 8) {}
 class UInt8x4 extends StaticArray(UInt8, 4) {}
 class UInt8x64 extends StaticArray(UInt8, 64) {}
-
 
 /**
  * Creates a PKCS#1 v1.5 padded message for the given SHA-256 digest.
@@ -568,7 +569,6 @@ function hashBlock256(state: State32, block: Block32): State32 {
   let W = Gadgets.SHA2.messageSchedule(256, block.array);
   return State32.from(Gadgets.SHA2.compression(256, state.array, W));
 }
-
 
 /**
  * Pads an array with a given value (or value generator) until it reaches the specified size.

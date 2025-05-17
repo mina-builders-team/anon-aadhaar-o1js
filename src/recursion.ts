@@ -8,11 +8,9 @@ import {
   UInt32,
   ZkProgram,
 } from 'o1js';
-import { StaticArray } from 'mina-attestations';
+import { Block32, State32 } from './utils.js';
 import { commitBlock256, hashBlock256, hashBlocks } from './utils.js';
 export {
-  Block32,
-  State32,
   MerkleBlocks,
   hashProgram,
   BLOCKS_PER_BASE_PROOF,
@@ -24,9 +22,6 @@ export {
 // By changing the numbers, we can obtain less or more constraints.
 const BLOCKS_PER_RECURSIVE_PROOF = 5;
 const BLOCKS_PER_BASE_PROOF = 8;
-
-class Block32 extends StaticArray(UInt32, 16) {}
-class State32 extends StaticArray(UInt32, 8) {}
 
 class MerkleBlocks extends MerkleList.create(Block32, commitBlock256) {
   /**
