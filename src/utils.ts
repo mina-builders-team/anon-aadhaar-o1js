@@ -427,6 +427,7 @@ function selectSubarray(
  * @param {Field} commitment - The prior commitment.
  * @param {Block32} block - The block to commit to.
  * @returns {Field} The updated commitment.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-sha2.ts#L521
  */
 function commitBlock256(commitment: Field, block: Block32): Field {
   let blockHash = hashSafe(toFieldsPacked(block));
@@ -438,6 +439,7 @@ function commitBlock256(commitment: Field, block: Block32): Field {
  *
  * @param {(Field | number | bigint)[]} fields - The input fields to hash.
  * @returns {Field} The resulting Poseidon hash.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-hash.ts#L209
  */
 function hashSafe(fields: (Field | number | bigint)[]) {
   let n = fields.length;
@@ -450,6 +452,7 @@ function hashSafe(fields: (Field | number | bigint)[]) {
  *
  * @param {Block32} block - The input block of 16 UInt32 elements.
  * @returns {Field[]} An array of Fields representing the packed block.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/o1js-missing.ts#L175 and adapted from Block32.
  */
 function toFieldsPacked(block: Block32): Field[] {
   // Get the provable type for Block32
@@ -495,6 +498,7 @@ function toFieldsPacked(block: Block32): Field[] {
  * @param {Block32} block - The 16-element array of UInt32 values.
  * @returns {{ fields: Field[] } | { fields: Field[], packed: [Field, number][] }}
  * The input representation, either with only fields or with both fields and packed values.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/o1js-missing.ts#L319 and adapted for Block32
  */
 function toInput(block: Block32) {
   // Get the provable type for Block32
@@ -509,6 +513,20 @@ function toInput(block: Block32) {
   return { fields: type.toFields(block) };
 }
 
+/**
+ * Recursively hashes a sequence of Merkle blocks using a proof system.
+ *
+ * This function splits the input blocks into two parts:
+ * - A "tail" of blocks to be hashed directly.
+ * - A "remaining" prefix to be hashed recursively or using a base method.
+ *
+ * The result is a SHA-256 style hash after applying all block transformations.
+ *
+ * @param {MerkleBlocks} blocks - The full array of Merkle blocks to hash.
+ * @param {{ blocksInThisProof: number }} options - The number of blocks to include in the current proof.
+ * @returns {Promise<State32>} The resulting state after hashing all blocks.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/email/zkemail.ts#L210
+ */
 async function hashBlocks(
   blocks: MerkleBlocks,
   options: { blocksInThisProof: number }
@@ -560,6 +578,7 @@ async function hashBlocks(
  * @param {State32} state - The initial SHA-256 state (8 UInt32s).
  * @param {Block32} block - The message block to hash (16 UInt32s).
  * @returns {State32} The new SHA-256 state after compression.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/main/src/dynamic/dynamic-sha2.ts#L511
  */
 function hashBlock256(state: State32, block: Block32): State32 {
   let W = Gadgets.SHA2.messageSchedule(256, block.array);
@@ -575,6 +594,7 @@ function hashBlock256(state: State32, block: Block32): State32 {
  * @param {T | (() => T)} value - The padding value or a function to generate it.
  * @returns {T[]} A new padded array.
  * @throws Will throw if the input array is already larger than the target size.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/main/src/util.ts#L136
  */
 function pad<T>(array: T[], size: number, value: T | (() => T)): T[] {
   assert(
@@ -591,6 +611,7 @@ function pad<T>(array: T[], size: number, value: T | (() => T)): T[] {
  *
  * @param {UInt32} index - The index to split.
  * @returns {[Field, Field, Field]} A tuple representing [byteIndexInUInt32, uint32IndexInBlock, blockIndex].
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-sha2.ts#L239
  */
 function splitMultiIndex(index: UInt32) {
   let { rest: l0, quotient: l1 } = index.divMod(64);
@@ -608,6 +629,7 @@ function splitMultiIndex(index: UInt32) {
  *
  * @param {DynamicArray<UInt8>} message - The message to pad, with dynamic length.
  * @returns {DynamicArray<StaticArray<UInt32>, bigint[]>} The padded message split into 16-UInt32 blocks.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-sha2.ts#L172
  */
 export function padding256(
   message: DynamicArray<UInt8>
