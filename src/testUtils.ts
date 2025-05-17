@@ -1,7 +1,9 @@
 import { Bytes, Field, Provable, UInt32 } from 'o1js';
-import { BLOCK_SIZES } from './utils.js';
+import { BLOCK_SIZES, commitBlock256, padding256 } from './utils.js';
 import { RecursiveHash, RecursiveHashProof } from './recursiveHash.js';
 import { Bigint2048 } from './rsa.js';
+import { DynamicBytes } from 'mina-attestations';
+import { MerkleBlocks } from './recursion.js';
 export {
   compute512BasedHash,
   computeChained128Hash,
@@ -12,6 +14,7 @@ export {
   charBytesToInt,
   intToCharString,
   createPaddedQRData,
+  prepareRecursiveHashData
 };
 
 /**
@@ -346,4 +349,13 @@ function createPaddedQRData(inputData: Uint8Array) {
   }
 
   return dataArray;
+}
+
+function prepareRecursiveHashData(data: Uint8Array): MerkleBlocks{
+    
+  const dynamicData = DynamicBytes.from(data);
+    const dynamicDataPadded = padding256(dynamicData);
+    const dynamicDataBlocks = dynamicDataPadded.merkelize(commitBlock256);
+
+  return dynamicDataBlocks;
 }
