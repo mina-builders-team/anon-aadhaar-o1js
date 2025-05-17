@@ -18,7 +18,9 @@ export {
   recursiveHashProgram,
   hashRecursive,
   Block32,
-  State32
+  State32,
+  RecursionProof,
+  hashWrapper
 };
 
 // 9 is on the high end, leads to 47k constraints
@@ -53,7 +55,7 @@ class MerkleBlocks extends MerkleList.create(Block32, commitBlock256) {
 }
 
 const hashProgram = ZkProgram({
-  name: 'recursive-hash',
+  name: 'hash-program',
 
   publicInput: MerkleBlocks,
   publicOutput: State32,
@@ -87,7 +89,7 @@ const hashProgram = ZkProgram({
 });
 
 const recursiveHashProgram = ZkProgram({
-  name: 'header-and-body-hash',
+  name: 'recursive-hash',
 
   publicInput: MerkleBlocks,
   publicOutput: State32,
@@ -108,3 +110,24 @@ const recursiveHashProgram = ZkProgram({
 });
 
 let hashRecursive = Experimental.Recursive(recursiveHashProgram);
+
+const hashWrapper = ZkProgram({
+  name: 'hash-wrapper',
+
+  publicInput: MerkleBlocks,
+  publicOutput: State32,
+
+  methods: {
+    run: {
+      privateInputs: [],
+      async method(blocks: MerkleBlocks) {
+        const state = await hashRecursive.run(blocks);
+        
+        return {publicOutput: state};
+      },
+    },
+  },
+});
+
+class RecursionProof extends ZkProgram.Proof(hashWrapper) {}
+
