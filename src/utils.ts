@@ -1,7 +1,24 @@
-import { Bytes, UInt32, Gadgets, Provable, UInt8, assert, Field, Poseidon, ProvableType, Proof } from 'o1js';
+import {
+  Bytes,
+  UInt32,
+  Gadgets,
+  Provable,
+  UInt8,
+  assert,
+  Field,
+  Poseidon,
+  ProvableType,
+  Proof,
+} from 'o1js';
 import { Bigint2048 } from './rsa.js';
 import pako from 'pako';
-import { Block32, BLOCKS_PER_BASE_PROOF, hashProgram, MerkleBlocks, State32 } from './recursion.js';
+import {
+  Block32,
+  BLOCKS_PER_BASE_PROOF,
+  hashProgram,
+  MerkleBlocks,
+  State32,
+} from './recursion.js';
 
 export {
   BLOCK_SIZES,
@@ -14,7 +31,7 @@ export {
   digitBytesToInt,
   commitBlock256,
   hashBlocks,
-  hashBlock256
+  hashBlock256,
 };
 
 const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
@@ -472,7 +489,7 @@ function toFieldsPacked(block: Block32): Field[] {
  * Converts a Block32 into an input format suitable for hashing or other cryptographic operations.
  *
  * @param {Block32} block - The 16-element array of UInt32 values.
- * @returns {{ fields: Field[] } | { fields: Field[], packed: [Field, number][] }} 
+ * @returns {{ fields: Field[] } | { fields: Field[], packed: [Field, number][] }}
  * The input representation, either with only fields or with both fields and packed values.
  */
 function toInput(block: Block32) {
@@ -487,8 +504,6 @@ function toInput(block: Block32) {
   // Otherwise, fall back to using toFields and wrap the result
   return { fields: type.toFields(block) };
 }
-
-
 
 async function hashBlocks(
   blocks: MerkleBlocks,
@@ -536,7 +551,6 @@ async function hashBlocks(
   });
   return state;
 }
-
 
 /**
  * Computes the SHA-256 hash of a block using a given initial state.
