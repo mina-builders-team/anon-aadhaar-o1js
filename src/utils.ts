@@ -1,7 +1,7 @@
-import { Bytes, UInt32, Gadgets, Provable, UInt8, assert, Field, Poseidon, ProvableType } from 'o1js';
+import { Bytes, UInt32, Gadgets, Provable, UInt8, assert, Field, Poseidon, ProvableType, Proof } from 'o1js';
 import { Bigint2048 } from './rsa.js';
 import pako from 'pako';
-import { Block32 } from './recursion.js';
+import { Block32, BLOCKS_PER_BASE_PROOF, hashProgram, MerkleBlocks, State32 } from './recursion.js';
 
 export {
   BLOCK_SIZES,
@@ -12,7 +12,9 @@ export {
   selectSubarray,
   digitBytesToTimestamp,
   digitBytesToInt,
-  commitBlock256
+  commitBlock256,
+  hashBlocks,
+  hashBlock256
 };
 
 const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
@@ -484,4 +486,66 @@ function toInput(block: Block32) {
 
   // Otherwise, fall back to using toFields and wrap the result
   return { fields: type.toFields(block) };
+}
+
+
+
+async function hashBlocks(
+  blocks: MerkleBlocks,
+  options: { blocksInThisProof: number }
+): Promise<State32> {
+  let { blocksInThisProof } = options;
+
+  // split blocks into remaining part and final part
+  // the final part is done in this proof, the remaining part is done recursively
+  let { remaining, tail } = MerkleBlocks.popTail(blocks, blocksInThisProof);
+
+  // recursively hash the first, "remaining" part
+  let proof = await Provable.witnessAsync(hashProgram.Proof, async () => {
+    // optionally disable the inner proof
+    let originalProofsEnabled = hashProgram.proofsEnabled;
+
+    // convert the blocks to constants
+    let blocksForProof = Provable.toConstant(MerkleBlocks, remaining.clone());
+
+    // figure out if we can call the base method or need to recurse
+    let nBlocksRemaining = remaining.lengthUnconstrained().get();
+    let proof: Proof<MerkleBlocks, State32>;
+
+    if (nBlocksRemaining <= BLOCKS_PER_BASE_PROOF) {
+      console.log({ nBlocksRemaining, method: 'hashBase' });
+      ({ proof } = await hashProgram.hashBase(blocksForProof));
+    } else {
+      console.log({ nBlocksRemaining, method: 'hashRecursive' });
+      ({ proof } = await hashProgram.hashRecursive(blocksForProof));
+    }
+    hashProgram.setProofsEnabled(originalProofsEnabled);
+    return proof;
+  });
+  proof.declare();
+  proof.verify();
+
+  // constrain public input to match the remaining blocks
+  remaining.hash.assertEquals(proof.publicInput.hash);
+
+  // continue hashing the final part
+  let state = proof.publicOutput;
+  tail.forEach(({ isSome, value: block }) => {
+    let nextState = hashBlock256(state, block);
+    state = Provable.if(isSome, State32, nextState, state);
+  });
+  return state;
+}
+
+
+/**
+ * Computes the SHA-256 hash of a block using a given initial state.
+ *
+ * @param {State32} state - The initial SHA-256 state (8 UInt32s).
+ * @param {Block32} block - The message block to hash (16 UInt32s).
+ * @returns {State32} The new SHA-256 state after compression.
+ */
+function hashBlock256(state: State32, block: Block32): State32 {
+  let W = Gadgets.SHA2.messageSchedule(256, block.array);
+  return State32.from(Gadgets.SHA2.compression(256, state.array, W));
 }
