@@ -47,5 +47,15 @@ describe('Recursive Hash tests', () => {
     
       expect(finalDigest.toHex()).toEqual(expectedDigest.toHex());
     });
+    it('should correctly hash data not aligned to block size', async () => {
+      const weirdLengthData = signedData.slice(0, 45); // Example: not divisible by 64
+      const blocks = prepareRecursiveHashData(weirdLengthData);
+    
+      const digest = await hashRecursive.run(blocks);
+      const finalDigest = Bytes.from(digest.array.flatMap((x) => x.toBytesBE()));
+      const expectedDigest = Gadgets.SHA2.hash(256, weirdLengthData);
+
+      expect(finalDigest.toHex()).toEqual(expectedDigest.toHex());
+    });
   });
 });
