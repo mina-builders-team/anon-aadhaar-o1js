@@ -5,8 +5,10 @@ import { Bigint2048, rsaVerify65537 } from './rsa.js';
 
 import { pkcs1v15Pad } from './utils.js';
 import { getQRData, TEST_DATA, TEST_DATA_2 } from './getQRData.js';
-import { compute512BasedHash, pkcs1v15PadWrong } from './testUtils.js';
-import { RecursiveHash } from './recursiveHash.js';
+
+import { pkcs1v15PadWrong, prepareRecursiveHashData } from './testUtils.js';
+
+import { hashProgram, hashWrapper, recursiveHashProgram } from './recursion.js';
 
 const proofsEnabled = false;
 
@@ -19,8 +21,11 @@ describe('Signature Verifier', () => {
   let signedData: Uint8Array;
 
   beforeAll(async () => {
+    await hashProgram.compile({proofsEnabled});
+    await recursiveHashProgram.compile({proofsEnabled});
+    await hashWrapper.compile({proofsEnabled});
     await SignatureVerifier.compile({ proofsEnabled });
-    await RecursiveHash.compile({ proofsEnabled });
+
 
     const inputs = getQRData(TEST_DATA);
 
@@ -33,11 +38,13 @@ describe('Signature Verifier', () => {
 
   describe('Signature verification computations', () => {
     it('should verify rsa signature correctly', async () => {
-      const finalProof = await compute512BasedHash(paddedData, initialValue);
+      const blocks = prepareRecursiveHashData(signedData);
 
+      const {proof} = await hashWrapper.run(blocks);
+      
       // Should throw an error if verification fails.
       await SignatureVerifier.verifySignature(
-        finalProof,
+        proof,
         signatureBigint,
         publicKeyBigint
       );
@@ -45,11 +52,13 @@ describe('Signature Verifier', () => {
 
     it('should reject verification with tampered signature', async () => {
       const wrongSignature = signatureBigint.modSquare(publicKeyBigint);
-      const finalProof = await compute512BasedHash(paddedData, initialValue);
+      const blocks = prepareRecursiveHashData(signedData);
+
+      const {proof} = await hashWrapper.run(blocks);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
-          finalProof,
+          proof,
           wrongSignature,
           publicKeyBigint
         );
@@ -65,11 +74,13 @@ describe('Signature Verifier', () => {
         '61e81f7506595cc262addcfddd35d704055b2adf46dc619c56b48eee199995eca1a3254710620ac7801e976f44e3be454db0f190e3f7d4e3598972117344de52fcf7826f849488a959a7b3d21eb6dd03451662ea883eeeefde889a1499b9a47f9504c5f096c262b96d23d19750332d9e97eb6141d261de97994d4c4163ca9cbe3e077221b44253dcf81609428b68351ee3e9b60d2b351fdaa6ee8c28a845239f97de7cc0fe5d144e474813fb43ec583f81b4ee328c22167334898d210ba017a26ec68940f05df22bd9cc86bbc3a4354392372d566167769b735ba12ca3580f919c1bd8ba70c4c2ab0acf2b09bc2fae981f3c0295a6e1e9f248f50073094ffaf1';
       const wrongPublicKey = Bigint2048.from(BigInt('0x' + wrongPublicKeyHex));
 
-      const finalProof = await compute512BasedHash(paddedData, initialValue);
+      const blocks = prepareRecursiveHashData(signedData);
+
+      const {proof} = await hashWrapper.run(blocks);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
-          finalProof,
+          proof,
           signatureBigint,
           wrongPublicKey
         );
@@ -79,23 +90,24 @@ describe('Signature Verifier', () => {
         'Field.assertEquals(): 9188579551671412591472664553230141 != 19665786662882214150578387368928633'
       );
     });
+    
     it('should reject verification with made-up data', async () => {
       // Change bytes with a random value. Make sure changed value is in the 8-bit range by applying mod (%) operation.
-      const randomizedData = paddedData.bytes.map(() =>
-        UInt8.from(Math.floor(Math.random() * 254))
+      const randomizedData = signedData.map(() =>
+        Math.floor(Math.random() * 254)
       );
-      const distortedPaddedData = Bytes.from(randomizedData);
+      const distortedPaddedData = randomizedData;
 
       // Now split at your desired boundaries (multiple of 64 bytes)
       // This test should fail especially for distorted padded bytes
-      const finalProof = await compute512BasedHash(
-        distortedPaddedData,
-        initialValue
-      );
+      const blocks = prepareRecursiveHashData(distortedPaddedData);
+
+      const {proof} = await hashWrapper.run(blocks);
+
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
-          finalProof,
+          proof,
           signatureBigint,
           publicKeyBigint
         );
@@ -187,16 +199,16 @@ describe('Signature Verifier', () => {
     });
     it('should reject signature verification of a different data', async () => {
       const inputs = getQRData(TEST_DATA_2);
-      const otherPaddedata = inputs.paddedData;
+      const otherData = inputs.signedData;
 
-      const finalProof = await compute512BasedHash(
-        otherPaddedata,
-        initialValue
-      );
+      const blocks = prepareRecursiveHashData(otherData);
+
+      const {proof} = await hashWrapper.run(blocks);
+
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
-          finalProof,
+          proof,
           signatureBigint,
           publicKeyBigint
         );
@@ -208,11 +220,13 @@ describe('Signature Verifier', () => {
       const inputs = getQRData(TEST_DATA_2);
       const otherSignature = inputs.signatureBigint;
 
-      const finalProof = await compute512BasedHash(paddedData, initialValue);
+      const blocks = prepareRecursiveHashData(signedData);
+
+      const {proof} = await hashWrapper.run(blocks);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
-          finalProof,
+          proof,
           otherSignature,
           publicKeyBigint
         );
@@ -221,13 +235,15 @@ describe('Signature Verifier', () => {
       await expect(isVerified).rejects.toThrow();
     });
     it('should reject signature verification of empty data', async () => {
-      const EMPTY_DATA = Bytes.fromString('');
+      const EMPTY_DATA = signedData.slice(0,0);
 
-      const finalProof = await compute512BasedHash(EMPTY_DATA, initialValue);
+      const blocks = prepareRecursiveHashData(EMPTY_DATA);
+
+      const {proof} = await hashWrapper.run(blocks);
 
       const isVerified = async () => {
         await SignatureVerifier.verifySignature(
-          finalProof,
+          proof,
           signatureBigint,
           publicKeyBigint
         );
