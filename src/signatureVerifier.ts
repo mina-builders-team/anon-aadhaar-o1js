@@ -1,7 +1,7 @@
 import { ZkProgram, Bytes, Field } from 'o1js';
 import { pkcs1v15Pad } from './utils.js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
-import { RecursiveHashProof } from './recursiveHash.js';
+import { RecursionProof } from './recursion.js';
 export { SignatureVerifier };
 
 /**
@@ -25,15 +25,15 @@ const SignatureVerifier = ZkProgram({
      * @returns Outputs the final hash state if signature verification passes.
      */
     verifySignature: {
-      privateInputs: [RecursiveHashProof, Bigint2048, Bigint2048],
+      privateInputs: [RecursionProof, Bigint2048, Bigint2048],
 
       async method(
-        hashProof: RecursiveHashProof,
+        hashProof: RecursionProof,
         signature: Bigint2048,
         publicKey: Bigint2048
       ) {
         hashProof.verify();
-        const hashState = hashProof.publicOutput.hashState;
+        const hashState = hashProof.publicOutput.array;
 
         const finalHash = Bytes32.from(hashState.flatMap((x) => x.toBytesBE()));
 
