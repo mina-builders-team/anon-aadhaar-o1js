@@ -1,12 +1,10 @@
-import { Bytes, verify } from 'o1js';
+import { Bytes } from 'o1js';
 import { SignatureVerifier } from '../signatureVerifier.js';
 
 import { getQRData, TEST_DATA } from '../getQRData.js';
-import { compute512BasedHash, prepareRecursiveHashData } from '../testUtils.js';
-import { RecursiveHash } from '../recursiveHash.js';
+import { prepareRecursiveHashData } from '../testUtils.js';
 import {
   hashProgram,
-  hashRecursive,
   hashWrapper,
   recursiveHashProgram,
 } from '../recursion.js';
