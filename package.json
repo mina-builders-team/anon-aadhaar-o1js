@@ -35,7 +35,7 @@
     "eslint-plugin-o1js": "^0.4.0",
     "jest": "^29.7.0",
     "prettier": "^2.3.2",
-    "ts-jest": "^29.2.4", 
+    "ts-jest": "^29.2.4",
     "typescript": "^5.4.5"
   },
   "peerDependencies": {
@@ -45,6 +45,7 @@
     "node": ">=18.14.0"
   },
   "dependencies": {
-    "@zk-email/helpers": "^6.4.2"
+    "@zk-email/helpers": "^6.4.2",
+    "mina-attestations": "^0.5.0"
   }
 }
