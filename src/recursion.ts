@@ -1,19 +1,29 @@
-import { Gadgets, MerkleList, Option, Proof, Provable, UInt32, ZkProgram } from 'o1js';
+import {
+  Experimental,
+  Gadgets,
+  MerkleList,
+  Option,
+  Proof,
+  Provable,
+  UInt32,
+  ZkProgram,
+} from 'o1js';
 import { StaticArray } from 'mina-attestations';
-import { commitBlock256 } from './utils.js';
-export{ Block32,
-        State32,
-        MerkleBlocks,
-        hashProgram,
-        BLOCKS_PER_BASE_PROOF,
-        BLOCKS_PER_RECURSIVE_PROOF
- };
+import { commitBlock256, hashBlock256, hashBlocks } from './utils.js';
+export {
+  Block32,
+  State32,
+  MerkleBlocks,
+  hashProgram,
+  BLOCKS_PER_BASE_PROOF,
+  BLOCKS_PER_RECURSIVE_PROOF,
+  hashProgramRecursive,
+};
 
 // 9 is on the high end, leads to 47k constraints
-// By changing the numbers, we can obtain less or more constraints. 
+// By changing the numbers, we can obtain less or more constraints.
 const BLOCKS_PER_RECURSIVE_PROOF = 5;
 const BLOCKS_PER_BASE_PROOF = 8;
-
 
 class Block32 extends StaticArray(UInt32, 16) {}
 class State32 extends StaticArray(UInt32, 8) {}
@@ -75,5 +85,25 @@ const hashProgram = ZkProgram({
   },
 });
 
+const recursiveHashProgram = ZkProgram({
+  name: 'header-and-body-hash',
 
+  publicInput: MerkleBlocks,
+  publicOutput: State32,
 
+  methods: {
+    run: {
+      privateInputs: [],
+      async method(blocks: MerkleBlocks) {
+        // hash the header here, and the body recursively
+
+        let currentState = await hashBlocks(blocks, {
+          blocksInThisProof: 1,
+        });
+        return { publicOutput: currentState };
+      },
+    },
+  },
+});
+
+let hashProgramRecursive = Experimental.Recursive(recursiveHashProgram);
