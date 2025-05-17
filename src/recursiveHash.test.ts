@@ -1,4 +1,4 @@
-import { Bytes, Gadgets, UInt32 } from 'o1js';
+import { Bytes, Gadgets } from 'o1js';
 import { getQRData, TEST_DATA } from './getQRData.js';
 import { prepareRecursiveHashData } from './testUtils.js';
 import {
@@ -10,9 +10,6 @@ import {
 let proofsEnabled = false;
 
 describe('Recursive Hash tests', () => {
-  let initialValue: UInt32[];
-  let paddedData: Bytes;
-
   let signedData: Uint8Array;
 
   beforeAll(async () => {
@@ -21,8 +18,6 @@ describe('Recursive Hash tests', () => {
 
     const inputs = getQRData(TEST_DATA);
 
-    paddedData = inputs.paddedData;
-    initialValue = inputs.initialValue;
     signedData = inputs.signedData;
   });
 

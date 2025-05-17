@@ -65,9 +65,6 @@ function getQRData(testQRData: string) {
   // Pad the blocks for SHA256 processes. Padding of the internla SHA256 function will be used here.
   const paddedBlocks = Gadgets.SHA2.padding(256, signedData);
 
-  // Get the initial state needed for SHA256.
-  const initialValue: UInt32[] = Gadgets.SHA2.initialState(256);
-
   // Convert padded Data from blocks to bytes.
   let paddedData = Bytes.from(
     paddedBlocks
@@ -78,7 +75,6 @@ function getQRData(testQRData: string) {
 
   return {
     paddedData,
-    initialValue,
     signatureBigint,
     publicKeyBigint,
     signedData,

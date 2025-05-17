@@ -1,6 +1,6 @@
 import { SignatureVerifier } from './signatureVerifier.js';
 
-import { Bytes, Gadgets, UInt32, UInt8 } from 'o1js';
+import { Gadgets } from 'o1js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
 
 import { pkcs1v15Pad } from './utils.js';
@@ -13,9 +13,6 @@ import { hashProgram, hashWrapper, recursiveHashProgram } from './recursion.js';
 const proofsEnabled = false;
 
 describe('Signature Verifier', () => {
-  let initialValue: UInt32[];
-  let paddedData: Bytes;
-
   let publicKeyBigint: Bigint2048;
   let signatureBigint: Bigint2048;
   let signedData: Uint8Array;
@@ -30,8 +27,6 @@ describe('Signature Verifier', () => {
 
     publicKeyBigint = inputs.publicKeyBigint;
     signatureBigint = inputs.signatureBigint;
-    paddedData = inputs.paddedData;
-    initialValue = inputs.initialValue;
     signedData = inputs.signedData;
   });
 
@@ -95,11 +90,10 @@ describe('Signature Verifier', () => {
       const randomizedData = signedData.map(() =>
         Math.floor(Math.random() * 254)
       );
-      const distortedPaddedData = randomizedData;
 
       // Now split at your desired boundaries (multiple of 64 bytes)
       // This test should fail especially for distorted padded bytes
-      const blocks = prepareRecursiveHashData(distortedPaddedData);
+      const blocks = prepareRecursiveHashData(randomizedData);
 
       const { proof } = await hashWrapper.run(blocks);
 
