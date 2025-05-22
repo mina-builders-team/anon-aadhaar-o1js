@@ -332,33 +332,6 @@ function digitBytesToTimestamp(
 }
 
 /**
- * Retrieves a `Field` element at a specific index from an array, using a circuit-compatible approach.
- *
- * This uses a fixed-size loop (1536 iterations) to make indexing work inside a SNARK-friendly circuit,
- * avoiding dynamic indexing which is not allowed in circuit computations.
- *
- * @param intArray - The input array of `Field` elements (expected length: 1536).
- * @param index - The `Field` index specifying which element to retrieve.
- * @returns The `Field` element at the specified index.
- */
-function elementAtIndex(intArray: Field[], index: Field): Field {
-  let totalValues = Field.from(0);
-
-  let isIndex = Field.from(0);
-  let isValue = Field.from(0);
-
-  // Fixed-size loop for SNARK-friendly indexing (must match array size: 1536)
-  for (let i = 0; i < 1536; i++) {
-    isIndex = index.equals(i).toField();
-    isValue = isIndex.mul(intArray[i]);
-
-    totalValues = totalValues.add(isValue);
-  }
-
-  return totalValues;
-}
-
-/**
  * Provably select a subarray from an array of field elements.
  *
  * @notice The length of the output array can be reduced by setting `subarrayLength`.
