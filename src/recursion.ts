@@ -14,7 +14,7 @@ export {
   hashProgramWrapper,
   recursiveHash,
   hashBlocks,
-  hashBlock256
+  hashBlock256,
 };
 
 // 9 is on the high end, leads to 47k constraints
@@ -78,7 +78,6 @@ const hashProgramWrapper = ZkProgram({
 });
 
 let recursiveHash = Experimental.Recursive(hashProgramWrapper);
-
 
 /**
  * Recursively hashes a sequence of Merkle blocks using a proof system.

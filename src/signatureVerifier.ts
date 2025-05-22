@@ -22,15 +22,14 @@ const SignatureVerifier = ZkProgram({
      * @returns Outputs the final hash state if signature verification passes.
      */
     verifySignature: {
-      privateInputs: [ Bigint2048, Bigint2048],
+      privateInputs: [Bigint2048, Bigint2048],
 
       async method(
         blocks: MerkleBlocks,
         signature: Bigint2048,
         publicKey: Bigint2048
       ) {
-
-        const hashState = await hashBlocks(blocks, {blocksInThisProof: 1});
+        const hashState = await hashBlocks(blocks, { blocksInThisProof: 1 });
 
         const finalHash = state32ToBytes(hashState);
 

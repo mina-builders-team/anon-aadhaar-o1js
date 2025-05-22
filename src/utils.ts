@@ -12,12 +12,7 @@ import {
 import { Bigint2048 } from './rsa.js';
 import pako from 'pako';
 import { DynamicArray, StaticArray } from 'mina-attestations';
-import {
-  Block32,
-  BlockBytes,
-  State32,
-  WordBytes,
-} from './dataTypes.js';
+import { Block32, BlockBytes, State32, WordBytes } from './dataTypes.js';
 
 export {
   BLOCK_SIZES,
@@ -29,7 +24,7 @@ export {
   digitBytesToTimestamp,
   digitBytesToInt,
   commitBlock256,
-  state32ToBytes
+  state32ToBytes,
 };
 
 const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
@@ -593,6 +588,6 @@ export function padding256(
   return blocks;
 }
 
-function state32ToBytes(state: State32){
+function state32ToBytes(state: State32) {
   return Bytes.from(state.array.flatMap((x) => x.toBytesBE()));
 }

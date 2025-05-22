@@ -14,7 +14,7 @@ export {
   expectSignatureCircuitError,
   expectSignatureError,
   generateHashFromData,
-  prepareRecursiveHashData
+  prepareRecursiveHashData,
 };
 
 /**
@@ -163,15 +163,13 @@ function createPaddedQRData(inputData: Uint8Array) {
   return dataArray;
 }
 
-
-function prepareRecursiveHashData(data: Uint8Array): MerkleBlocks{
+function prepareRecursiveHashData(data: Uint8Array): MerkleBlocks {
   const dynamicData = DynamicBytes.from(data);
   const dynamicDataPadded = padding256(dynamicData);
   const dynamicDataBlocks = dynamicDataPadded.merkelize(commitBlock256);
 
   return dynamicDataBlocks;
 }
-
 
 async function generateHashFromData(data: Uint8Array): Promise<Bytes> {
   const dynamicData = DynamicBytes.from(data);

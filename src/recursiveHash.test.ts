@@ -1,10 +1,7 @@
 import { Gadgets } from 'o1js';
 import { getQRData, TEST_DATA } from './getQRData.js';
 import { generateHashFromData } from './testUtils.js';
-import {
-  hashProgram,
-  hashProgramWrapper,
-} from './recursion.js';
+import { hashProgram, hashProgramWrapper } from './recursion.js';
 
 let proofsEnabled = true;
 

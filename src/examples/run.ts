@@ -2,11 +2,8 @@ import { SignatureVerifier } from '../signatureVerifier.js';
 
 import { getQRData, TEST_DATA } from '../getQRData.js';
 import { prepareRecursiveHashData } from '../testUtils.js';
-import {
-  hashProgram,
-} from '../recursion.js';
+import { hashProgram } from '../recursion.js';
 import { verify } from 'o1js';
-
 
 const { signatureBigint, publicKeyBigint, signedData } = getQRData(TEST_DATA);
 
