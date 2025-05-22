@@ -3,7 +3,7 @@ import { getQRData, TEST_DATA } from './getQRData.js';
 import { generateHashFromData } from './testUtils.js';
 import {
   hashProgram,
-  recursiveHashProgram,
+  hashProgramWrapper,
 } from './recursion.js';
 
 let proofsEnabled = true;
@@ -13,7 +13,7 @@ describe('Recursive Hash tests', () => {
 
   beforeAll(async () => {
     await hashProgram.compile({ proofsEnabled });
-    await recursiveHashProgram.compile({ proofsEnabled });
+    await hashProgramWrapper.compile({ proofsEnabled });
 
     const inputs = getQRData(TEST_DATA);
 

@@ -4,7 +4,7 @@ import { Bigint2048, rsaVerify65537 } from './rsa.js';
 import { DynamicBytes } from 'mina-attestations';
 import { MerkleBlocks } from './dataTypes.js';
 import { SignatureVerifier } from './signatureVerifier.js';
-import { hashRecursive } from './recursion.js';
+import { recursiveHash } from './recursion.js';
 export {
   pkcs1v15PadWrong,
   createDelimitedData,
@@ -177,7 +177,7 @@ async function generateHashFromData(data: Uint8Array): Promise<Bytes> {
   const dynamicData = DynamicBytes.from(data);
   const dynamicDataPadded = padding256(dynamicData);
   const dynamicDataBlocks = dynamicDataPadded.merkelize(commitBlock256);
-  const hash = await hashRecursive.run(dynamicDataBlocks);
+  const hash = await recursiveHash.run(dynamicDataBlocks);
 
   const finalDigest = state32ToBytes(hash);
 

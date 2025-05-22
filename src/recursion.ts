@@ -11,8 +11,8 @@ export {
   BLOCKS_PER_BASE_PROOF,
   BLOCKS_PER_RECURSIVE_PROOF,
   hashProgram,
-  recursiveHashProgram,
-  hashRecursive,
+  hashProgramWrapper,
+  recursiveHash,
   hashBlocks,
   hashBlock256
 };
@@ -56,7 +56,7 @@ const hashProgram = ZkProgram({
   },
 });
 
-const recursiveHashProgram = ZkProgram({
+const hashProgramWrapper = ZkProgram({
   name: 'recursive-hash',
 
   publicInput: MerkleBlocks,
@@ -77,7 +77,7 @@ const recursiveHashProgram = ZkProgram({
   },
 });
 
-let hashRecursive = Experimental.Recursive(recursiveHashProgram);
+let recursiveHash = Experimental.Recursive(hashProgramWrapper);
 
 
 /**

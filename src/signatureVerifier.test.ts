@@ -13,7 +13,7 @@ import {
   expectSignatureCircuitError,
 } from './testUtils.js';
 
-import { hashProgram, recursiveHashProgram } from './recursion.js';
+import { hashProgram, hashProgramWrapper } from './recursion.js';
 
 const proofsEnabled = true;
 
@@ -24,7 +24,7 @@ describe('Signature Verifier', () => {
 
   beforeAll(async () => {
     await hashProgram.compile({ proofsEnabled });
-    await recursiveHashProgram.compile({ proofsEnabled });
+    await hashProgramWrapper.compile({ proofsEnabled });
     await SignatureVerifier.compile({ proofsEnabled });
 
     const inputs = getQRData(TEST_DATA);
