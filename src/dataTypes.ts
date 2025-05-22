@@ -1,6 +1,6 @@
 import { StaticArray } from 'mina-attestations';
 import { Bytes, MerkleList, Option, UInt32, UInt8 } from 'o1js';
-import { commitBlock256 } from './utils';
+import { commitBlock256 } from './utils.js';
 export { WordBytes, BlockBytes, Block32, State32, Bytes32, MerkleBlocks };
 
 /**

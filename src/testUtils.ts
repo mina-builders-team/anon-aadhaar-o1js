@@ -1,5 +1,5 @@
-import { Bytes, Field, Provable, UInt32 } from 'o1js';
-import { commitBlock256, padding256, pkcs1v15Pad, state32ToBytes } from './utils.js';
+import { Bytes, Field, Provable } from 'o1js';
+import { commitBlock256, padding256, state32ToBytes } from './utils.js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
 import { DynamicBytes } from 'mina-attestations';
 import { MerkleBlocks } from './dataTypes.js';

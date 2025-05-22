@@ -22,7 +22,7 @@ console.timeEnd('Compile Verifier Circuit');
 
 const preparedData = prepareRecursiveHashData(signedData);
 
-// // Now you can verify the RSA65537 signature. Should throw an error if verification fails.
+// Now you can verify the RSA65537 signature. Should throw an error if verification fails.
 console.time('Signature verification');
 
 const { proof } = await SignatureVerifier.verifySignature(

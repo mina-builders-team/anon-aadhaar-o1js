@@ -1,4 +1,4 @@
-import { Bytes, Gadgets, UInt32 } from 'o1js';
+import { Bytes, Gadgets } from 'o1js';
 import { decompressByteArray } from './utils.js';
 import { Bigint2048 } from './rsa.js';
 import { bufferToHex } from '@zk-email/helpers';
@@ -62,7 +62,7 @@ function getQRData(testQRData: string) {
     BigInt('0x' + bufferToHex(Buffer.from(signatureBytes)).toString())
   );
 
-  // Pad the blocks for SHA256 processes. Padding of the internla SHA256 function will be used here.
+  // Pad the blocks for SHA256 processes. Padding of the internal SHA256 function will be used here.
   const paddedBlocks = Gadgets.SHA2.padding(256, signedData);
 
   // Convert padded Data from blocks to bytes.
