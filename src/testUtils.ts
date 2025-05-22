@@ -1,8 +1,9 @@
 import { Bytes, Field, Provable, UInt32 } from 'o1js';
-import { BLOCK_SIZES, commitBlock256, padding256 } from './utils.js';
-import { Bigint2048 } from './rsa.js';
+import { commitBlock256, padding256, pkcs1v15Pad } from './utils.js';
+import { Bigint2048, rsaVerify65537 } from './rsa.js';
 import { DynamicBytes } from 'mina-attestations';
-import { MerkleBlocks } from './recursion.js';
+import { MerkleBlocks } from './dataTypes.js';
+import { SignatureVerifier } from './signatureVerifier.js';
 export {
   pkcs1v15PadWrong,
   createDelimitedData,
@@ -10,6 +11,8 @@ export {
   intToCharString,
   createPaddedQRData,
   prepareRecursiveHashData,
+  expectSignatureCircuitError,
+  expectSignatureError,
 };
 
 /**
@@ -164,4 +167,54 @@ function prepareRecursiveHashData(data: Uint8Array): MerkleBlocks {
   const dynamicDataBlocks = dynamicDataPadded.merkelize(commitBlock256);
 
   return dynamicDataBlocks;
+}
+
+async function expectSignatureCircuitError(
+  blocks: MerkleBlocks,
+  signature: Bigint2048,
+  publicKeyBigint: Bigint2048,
+  expectedMsgTrue: string,
+  expectedMsgFalse: string,
+  proofsEnabled: boolean
+) {
+  try {
+    await SignatureVerifier.verifySignature(blocks, signature, publicKeyBigint);
+    throw new Error(
+      'Expected isVerified to throw an error message, but it did not'
+    );
+  } catch (err) {
+    const msg = (err as Error).message;
+
+    if (proofsEnabled) {
+      expect(msg).toContain(expectedMsgTrue);
+      expect(msg).toContain('Constraint unsatisfied');
+    } else {
+      expect(msg).toContain(expectedMsgFalse);
+    }
+  }
+}
+
+async function expectSignatureError(
+  paddedHash: Bigint2048,
+  signature: Bigint2048,
+  publicKeyBigint: Bigint2048,
+  expectedMsgTrue: string,
+  expectedMsgFalse: string,
+  proofsEnabled: boolean
+) {
+  try {
+    rsaVerify65537(paddedHash, signature, publicKeyBigint);
+    throw new Error(
+      'Expected isVerified to throw an error message, but it did not'
+    );
+  } catch (err) {
+    const msg = (err as Error).message;
+
+    if (proofsEnabled) {
+      expect(msg).toContain(expectedMsgTrue);
+      expect(msg).toContain('Constraint unsatisfied');
+    } else {
+      expect(msg).toContain(expectedMsgFalse);
+    }
+  }
 }
