@@ -1,12 +1,12 @@
-import { ZkProgram, Bytes, Field } from 'o1js';
-import { pkcs1v15Pad } from './utils.js';
+import { ZkProgram, Field } from 'o1js';
+import { hashBlocks, pkcs1v15Pad, state32ToBytes } from './utils.js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
-import { RecursionProof } from './recursion.js';
-import { Bytes32 } from './dataTypes.js';
+import { MerkleBlocks } from './dataTypes.js';
 export { SignatureVerifier };
 
 const SignatureVerifier = ZkProgram({
   name: 'SignatureVerifier',
+  publicInput: MerkleBlocks,
 
   methods: {
     /**
@@ -21,17 +21,17 @@ const SignatureVerifier = ZkProgram({
      * @returns Outputs the final hash state if signature verification passes.
      */
     verifySignature: {
-      privateInputs: [RecursionProof, Bigint2048, Bigint2048],
+      privateInputs: [ Bigint2048, Bigint2048],
 
       async method(
-        hashProof: RecursionProof,
+        blocks: MerkleBlocks,
         signature: Bigint2048,
         publicKey: Bigint2048
       ) {
-        hashProof.verify();
-        const hashState = hashProof.publicOutput.array;
 
-        const finalHash = Bytes32.from(hashState.flatMap((x) => x.toBytesBE()));
+        const hashState = await hashBlocks(blocks, {blocksInThisProof: 1});
+
+        const finalHash = state32ToBytes(hashState);
 
         const paddedHash = pkcs1v15Pad(finalHash);
 
