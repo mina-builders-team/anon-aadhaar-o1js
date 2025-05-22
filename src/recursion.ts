@@ -116,10 +116,8 @@ async function hashBlocks(
     let proof: Proof<MerkleBlocks, State32>;
 
     if (nBlocksRemaining <= BLOCKS_PER_BASE_PROOF) {
-      console.log({ nBlocksRemaining, method: 'hashBase' });
       ({ proof } = await hashProgram.hashBase(blocksForProof));
     } else {
-      console.log({ nBlocksRemaining, method: 'hashRecursive' });
       ({ proof } = await hashProgram.hashRecursive(blocksForProof));
     }
     return proof;
