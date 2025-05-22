@@ -12,14 +12,15 @@ import {
 } from 'o1js';
 import { Bigint2048 } from './rsa.js';
 import pako from 'pako';
-import {
-  BLOCKS_PER_BASE_PROOF,
-  hashProgram,
-  MerkleBlocks,
-  Block32,
-  State32,
-} from './recursion.js';
+import { BLOCKS_PER_BASE_PROOF, hashProgram } from './recursion.js';
 import { DynamicArray, StaticArray } from 'mina-attestations';
+import {
+  Block32,
+  BlockBytes,
+  MerkleBlocks,
+  State32,
+  WordBytes,
+} from './dataTypes.js';
 
 export {
   BLOCK_SIZES,
@@ -36,9 +37,6 @@ export {
 };
 
 const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
-
-class UInt8x4 extends StaticArray(UInt8, 4) {}
-class UInt8x64 extends StaticArray(UInt8, 64) {}
 
 /**
  * Creates a PKCS#1 v1.5 padded message for the given SHA-256 digest.
@@ -662,12 +660,12 @@ export function padding256(
 
   // create blocks of 64 bytes each
   const maxBlocks = Math.ceil((message.maxLength + 9) / 64);
-  const BlocksOfBytes = DynamicArray(UInt8x64, { maxLength: maxBlocks });
+  const BlocksOfBytes = DynamicArray(BlockBytes, { maxLength: maxBlocks });
 
   let lastBlockIndex = UInt32.Unsafe.fromField(message.length.add(8)).div(64);
   let numberOfBlocks = lastBlockIndex.value.add(1);
   let padded = pad(message.array, maxBlocks * 64, UInt8.from(0));
-  let chunked = chunk(padded, 64).map(UInt8x64.from);
+  let chunked = chunk(padded, 64).map(BlockBytes.from);
   let blocksOfBytes = new BlocksOfBytes(chunked, numberOfBlocks);
 
   // pack each block of 64 bytes into 16 uint32s (4 bytes each)
@@ -683,7 +681,7 @@ export function padding256(
   // hierarchically get byte at `length` and set to 0x80
   // we can use unsafe get/set because the indices are in bounds by design
   let block = blocks.getOrUnconstrained(l2);
-  let uint8x4 = UInt8x4.from(block.getOrUnconstrained(l1).toBytesBE());
+  let uint8x4 = WordBytes.from(block.getOrUnconstrained(l1).toBytesBE());
   uint8x4.setOrDoNothing(l0, UInt8.from(0x80));
   block.setOrDoNothing(l1, UInt32.fromBytesBE(uint8x4.array));
   blocks.setOrDoNothing(l2, block);

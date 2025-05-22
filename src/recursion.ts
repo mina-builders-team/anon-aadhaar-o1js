@@ -1,24 +1,19 @@
 import {
   Experimental,
   Gadgets,
-  MerkleList,
-  Option,
   Proof,
   Provable,
   UInt32,
   ZkProgram,
 } from 'o1js';
-import { commitBlock256, hashBlock256, hashBlocks } from './utils.js';
-import { StaticArray } from 'mina-attestations';
+import { hashBlock256, hashBlocks } from './utils.js';
+import { MerkleBlocks, State32 } from './dataTypes.js';
 export {
-  MerkleBlocks,
   BLOCKS_PER_BASE_PROOF,
   BLOCKS_PER_RECURSIVE_PROOF,
   hashProgram,
   recursiveHashProgram,
   hashRecursive,
-  Block32,
-  State32,
   RecursionProof,
   hashWrapper,
 };
@@ -27,32 +22,6 @@ export {
 // By changing the numbers, we can obtain less or more constraints.
 const BLOCKS_PER_RECURSIVE_PROOF = 5;
 const BLOCKS_PER_BASE_PROOF = 8;
-
-class Block32 extends StaticArray(UInt32, 16) {}
-class State32 extends StaticArray(UInt32, 8) {}
-
-class MerkleBlocks extends MerkleList.create(Block32, commitBlock256) {
-  /**
-   * Pop off `n` elements from the end of the Merkle list. The return values are:
-   * - `remaining`: The new Merkle list with elements popped off (input list is not mutated)
-   * - `tail`: The removed elements, in their original order.
-   *   Since there might be less than `n` elements in the list, `tail` is an array of options.
-   *
-   * The method guarantees that pushing all the `Some` options back to `remaining` would result in the original list.
-   */
-  static popTail(
-    blocks: MerkleBlocks,
-    n: number
-  ): { remaining: MerkleBlocks; tail: Option<Block32>[] } {
-    blocks = blocks.clone();
-    let tail: Option<Block32>[] = Array(n);
-
-    for (let i = n - 1; i >= 0; i--) {
-      tail[i] = blocks.popOption();
-    }
-    return { remaining: blocks, tail };
-  }
-}
 
 const hashProgram = ZkProgram({
   name: 'hash-program',

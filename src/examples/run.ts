@@ -1,4 +1,4 @@
-import { Bytes } from 'o1js';
+import { Bytes32 } from '../dataTypes.js';
 import { SignatureVerifier } from '../signatureVerifier.js';
 
 import { getQRData, TEST_DATA } from '../getQRData.js';
@@ -9,7 +9,6 @@ import {
   recursiveHashProgram,
 } from '../recursion.js';
 
-class Bytes32 extends Bytes(32) {}
 
 const { signatureBigint, publicKeyBigint, signedData } = getQRData(TEST_DATA);
 

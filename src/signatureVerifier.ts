@@ -2,12 +2,8 @@ import { ZkProgram, Bytes, Field } from 'o1js';
 import { pkcs1v15Pad } from './utils.js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
 import { RecursionProof } from './recursion.js';
+import { Bytes32 } from './dataTypes.js';
 export { SignatureVerifier };
-
-/**
- * Represents a 32-byte array, typically used to hold SHA256 digest.
- */
-class Bytes32 extends Bytes(32) {}
 
 const SignatureVerifier = ZkProgram({
   name: 'SignatureVerifier',
