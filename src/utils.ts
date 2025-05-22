@@ -15,7 +15,6 @@ import { DynamicArray, StaticArray } from 'mina-attestations';
 import { Block32, BlockBytes, State32, WordBytes } from './dataTypes.js';
 
 export {
-  BLOCK_SIZES,
   pkcs1v15Pad,
   updateHash,
   decompressByteArray,
@@ -26,8 +25,6 @@ export {
   commitBlock256,
   state32ToBytes,
 };
-
-const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
 
 /**
  * Creates a PKCS#1 v1.5 padded message for the given SHA-256 digest.
