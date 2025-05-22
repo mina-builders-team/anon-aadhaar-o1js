@@ -24,7 +24,6 @@ describe('Signature Verifier', () => {
 
   beforeAll(async () => {
     await hashProgram.compile({ proofsEnabled });
-    await hashProgramWrapper.compile({ proofsEnabled });
     await SignatureVerifier.compile({ proofsEnabled });
 
     const inputs = getQRData(TEST_DATA);
