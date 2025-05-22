@@ -34,6 +34,7 @@ export {
   commitBlock256,
   hashBlocks,
   hashBlock256,
+  state32ToBytes
 };
 
 const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
@@ -694,4 +695,8 @@ export function padding256(
   blocks.setOrDoNothing(lastBlockIndex.value, lastBlock);
 
   return blocks;
+}
+
+function state32ToBytes(state: State32){
+  return Bytes.from(state.array.flatMap((x) => x.toBytesBE()));
 }
