@@ -1,18 +1,20 @@
 import { Bytes, Field, Provable, UInt32 } from 'o1js';
-import { commitBlock256, padding256, pkcs1v15Pad } from './utils.js';
+import { commitBlock256, padding256, pkcs1v15Pad, state32ToBytes } from './utils.js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
 import { DynamicBytes } from 'mina-attestations';
 import { MerkleBlocks } from './dataTypes.js';
 import { SignatureVerifier } from './signatureVerifier.js';
+import { hashRecursive } from './recursion.js';
 export {
   pkcs1v15PadWrong,
   createDelimitedData,
   charBytesToInt,
   intToCharString,
   createPaddedQRData,
-  prepareRecursiveHashData,
   expectSignatureCircuitError,
   expectSignatureError,
+  generateHashFromData,
+  prepareRecursiveHashData
 };
 
 /**
@@ -161,12 +163,25 @@ function createPaddedQRData(inputData: Uint8Array) {
   return dataArray;
 }
 
-function prepareRecursiveHashData(data: Uint8Array): MerkleBlocks {
+
+function prepareRecursiveHashData(data: Uint8Array): MerkleBlocks{
   const dynamicData = DynamicBytes.from(data);
   const dynamicDataPadded = padding256(dynamicData);
   const dynamicDataBlocks = dynamicDataPadded.merkelize(commitBlock256);
 
   return dynamicDataBlocks;
+}
+
+
+async function generateHashFromData(data: Uint8Array): Promise<Bytes> {
+  const dynamicData = DynamicBytes.from(data);
+  const dynamicDataPadded = padding256(dynamicData);
+  const dynamicDataBlocks = dynamicDataPadded.merkelize(commitBlock256);
+  const hash = await hashRecursive.run(dynamicDataBlocks);
+
+  const finalDigest = state32ToBytes(hash);
+
+  return finalDigest;
 }
 
 async function expectSignatureCircuitError(
