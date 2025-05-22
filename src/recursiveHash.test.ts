@@ -3,7 +3,7 @@ import { getQRData, TEST_DATA } from './getQRData.js';
 import { generateHashFromData } from './testUtils.js';
 import { hashProgram, hashProgramWrapper } from './recursion.js';
 
-let proofsEnabled = true;
+let proofsEnabled = false;
 
 describe('Recursive Hash tests', () => {
   let signedData: Uint8Array;

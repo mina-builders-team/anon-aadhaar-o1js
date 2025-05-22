@@ -24,6 +24,7 @@ export {
   digitBytesToInt,
   commitBlock256,
   state32ToBytes,
+  padding256
 };
 
 /**
@@ -518,7 +519,7 @@ function splitMultiIndex(index: UInt32) {
  * @returns {DynamicArray<StaticArray<UInt32>, bigint[]>} The padded message split into 16-UInt32 blocks.
  * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-sha2.ts#L172
  */
-export function padding256(
+function padding256(
   message: DynamicArray<UInt8>
 ): DynamicArray<StaticArray<UInt32>, bigint[]> {
   /* padded message looks like this:

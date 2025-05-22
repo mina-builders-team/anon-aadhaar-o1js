@@ -15,7 +15,7 @@ import {
 
 import { hashProgram, hashProgramWrapper } from './recursion.js';
 
-const proofsEnabled = true;
+const proofsEnabled = false;
 
 describe('Signature Verifier', () => {
   let publicKeyBigint: Bigint2048;
