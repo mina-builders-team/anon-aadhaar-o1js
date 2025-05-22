@@ -1,6 +1,7 @@
 import { ZkProgram, Field } from 'o1js';
-import { hashBlocks, pkcs1v15Pad, state32ToBytes } from './utils.js';
+import { pkcs1v15Pad, state32ToBytes } from './utils.js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
+import { hashBlocks } from './recursion.js';
 import { MerkleBlocks } from './dataTypes.js';
 export { SignatureVerifier };
 
