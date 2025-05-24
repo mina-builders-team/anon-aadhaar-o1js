@@ -142,7 +142,7 @@ async function hashBlocks(
  * @param {State32} state - The initial SHA-256 state (8 UInt32s).
  * @param {Block32} block - The message block to hash (16 UInt32s).
  * @returns {State32} The new SHA-256 state after compression.
- * @notice - Taken from https://github.com/zkse curity/mina-attestations/blob/main/src/dynamic/dynamic-sha2.ts#L511
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/main/src/dynamic/dynamic-sha2.ts#L511
  */
 function hashBlock256(state: State32, block: Block32): State32 {
   let W = Gadgets.SHA2.messageSchedule(256, block.array);
