@@ -1,9 +1,20 @@
-import { Bytes, UInt32, Gadgets, Provable, UInt8, assert, Field } from 'o1js';
+import {
+  Bytes,
+  UInt32,
+  Gadgets,
+  Provable,
+  UInt8,
+  assert,
+  Field,
+  Poseidon,
+  ProvableType,
+} from 'o1js';
 import { Bigint2048 } from './rsa.js';
 import pako from 'pako';
+import { DynamicArray, StaticArray } from 'mina-attestations';
+import { Block32, BlockBytes, State32, WordBytes } from './dataTypes.js';
 
 export {
-  BLOCK_SIZES,
   pkcs1v15Pad,
   updateHash,
   decompressByteArray,
@@ -11,9 +22,10 @@ export {
   selectSubarray,
   digitBytesToTimestamp,
   digitBytesToInt,
+  commitBlock256,
+  state32ToBytes,
+  padding256,
 };
-
-const BLOCK_SIZES = { LARGE: 1024, MEDIUM: 512, SMALL: 128 } as const;
 
 /**
  * Creates a PKCS#1 v1.5 padded message for the given SHA-256 digest.
@@ -308,33 +320,6 @@ function digitBytesToTimestamp(
 }
 
 /**
- * Retrieves a `Field` element at a specific index from an array, using a circuit-compatible approach.
- *
- * This uses a fixed-size loop (1536 iterations) to make indexing work inside a SNARK-friendly circuit,
- * avoiding dynamic indexing which is not allowed in circuit computations.
- *
- * @param intArray - The input array of `Field` elements (expected length: 1536).
- * @param index - The `Field` index specifying which element to retrieve.
- * @returns The `Field` element at the specified index.
- */
-function elementAtIndex(intArray: Field[], index: Field): Field {
-  let totalValues = Field.from(0);
-
-  let isIndex = Field.from(0);
-  let isValue = Field.from(0);
-
-  // Fixed-size loop for SNARK-friendly indexing (must match array size: 1536)
-  for (let i = 0; i < 1536; i++) {
-    isIndex = index.equals(i).toField();
-    isValue = isIndex.mul(intArray[i]);
-
-    totalValues = totalValues.add(isValue);
-  }
-
-  return totalValues;
-}
-
-/**
  * Provably select a subarray from an array of field elements.
  *
  * @notice The length of the output array can be reduced by setting `subarrayLength`.
@@ -394,4 +379,213 @@ function selectSubarray(
   }
 
   return subarray;
+}
+
+/**
+ * Computes a Poseidon commitment to a block, combining a prior commitment with the packed hash of the block.
+ *
+ * @param {Field} commitment - The prior commitment.
+ * @param {Block32} block - The block to commit to.
+ * @returns {Field} The updated commitment.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-sha2.ts#L521
+ */
+function commitBlock256(commitment: Field, block: Block32): Field {
+  let blockHash = hashSafe(toFieldsPacked(block));
+  return hashSafe([commitment, blockHash]);
+}
+
+/**
+ * Computes a Poseidon hash of an array of values, using a length-based prefix for domain separation.
+ *
+ * @param {(Field | number | bigint)[]} fields - The input fields to hash.
+ * @returns {Field} The resulting Poseidon hash.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-hash.ts#L209
+ */
+function hashSafe(fields: (Field | number | bigint)[]) {
+  let n = fields.length;
+  let prefix = n === 0 ? 'zero' : n % 2 === 0 ? 'even' : 'odd_';
+  return Poseidon.hashWithPrefix(prefix, fields.map(Field));
+}
+
+/**
+ * Converts a Block32 into a flat array of Fields, packing smaller values into fewer fields where possible.
+ *
+ * @param {Block32} block - The input block of 16 UInt32 elements.
+ * @returns {Field[]} An array of Fields representing the packed block.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/o1js-missing.ts#L175 and adapted from Block32.
+ */
+function toFieldsPacked(block: Block32): Field[] {
+  // Get the provable type for Block32
+  let type = ProvableType.get(Block32);
+
+  // If the type doesn't have a toInput method, just use toFields directly
+  if (type.toInput === undefined) return type.toFields(block);
+
+  // Convert the block to input format, which gives fields and packed values
+  let { fields = [], packed = [] } = toInput(block);
+
+  // Start with any direct fields
+  let result = [...fields];
+
+  // Initialize variables for packing
+  let current = Field(0);
+  let currentSize = 0;
+
+  // Process packed values
+  for (let [field, size] of packed) {
+    // If there's room in the current field, add this value
+    if (currentSize + size < Field.sizeInBits) {
+      // Multiply the field by 2^currentSize and add to current
+      current = current.add(field.mul(1n << BigInt(currentSize)));
+      currentSize += size;
+    } else {
+      // No more room - finalize the current field and start a new one
+      result.push(current.seal());
+      current = field;
+      currentSize = size;
+    }
+  }
+
+  // Add the last field if there's anything in it
+  if (currentSize > 0) result.push(current.seal());
+
+  return result;
+}
+
+/**
+ * Converts a Block32 into an input format suitable for hashing or other cryptographic operations.
+ *
+ * @param {Block32} block - The 16-element array of UInt32 values.
+ * @returns {{ fields: Field[] } | { fields: Field[], packed: [Field, number][] }}
+ * The input representation, either with only fields or with both fields and packed values.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/o1js-missing.ts#L319 and adapted for Block32
+ */
+function toInput(block: Block32) {
+  // Get the provable type for Block32
+  const type = ProvableType.get(Block32);
+
+  // If the type has a toInput method, use it
+  if (type.toInput !== undefined) {
+    return type.toInput(block);
+  }
+
+  // Otherwise, fall back to using toFields and wrap the result
+  return { fields: type.toFields(block) };
+}
+
+/**
+ * Pads an array with a given value (or value generator) until it reaches the specified size.
+ *
+ * @template T The type of elements in the input array.
+ * @param {T[]} array - The array to pad.
+ * @param {number} size - The desired size after padding.
+ * @param {T | (() => T)} value - The padding value or a function to generate it.
+ * @returns {T[]} A new padded array.
+ * @throws Will throw if the input array is already larger than the target size.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/main/src/util.ts#L136
+ */
+function pad<T>(array: T[], size: number, value: T | (() => T)): T[] {
+  assert(
+    array.length <= size,
+    `padding array of size ${array.length} larger than target size ${size}`
+  );
+  let cb: () => T =
+    typeof value === 'function' ? (value as () => T) : () => value;
+  return array.concat(Array.from({ length: size - array.length }, cb));
+}
+
+/**
+ * Splits a UInt32 index into three hierarchical parts for addressing within a padded SHA-2 message.
+ *
+ * @param {UInt32} index - The index to split.
+ * @returns {[Field, Field, Field]} A tuple representing [byteIndexInUInt32, uint32IndexInBlock, blockIndex].
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-sha2.ts#L239
+ */
+function splitMultiIndex(index: UInt32) {
+  let { rest: l0, quotient: l1 } = index.divMod(64);
+  let { rest: l00, quotient: l01 } = l0.divMod(4);
+  return [l00.value, l01.value, l1.value] as const;
+}
+
+/**
+ * Applies SHA-256 style padding to a dynamic-length byte array and chunks the result into 512-bit (64-byte) blocks.
+ *
+ * The padding scheme follows:
+ * - Appending a single `0x80` byte
+ * - Padding with `0x00` bytes to reach a length that is 8 bytes short of a multiple of 64
+ * - Appending the original message length (in bits) as an 8-byte big-endian integer
+ *
+ * @param {DynamicArray<UInt8>} message - The message to pad, with dynamic length.
+ * @returns {DynamicArray<StaticArray<UInt32>, bigint[]>} The padded message split into 16-UInt32 blocks.
+ * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-sha2.ts#L172
+ */
+function padding256(
+  message: DynamicArray<UInt8>
+): DynamicArray<StaticArray<UInt32>, bigint[]> {
+  /* padded message looks like this:
+    
+    M ... M 0x80 0x0 ... 0x0 L L L L L L L L
+  
+    where
+    - M is the original message
+    - the 8 L bytes encode the length of the original message, as a uint64
+    - padding always starts with a 0x80 byte (= big-endian encoding of 1)
+    - there are k 0x0 bytes, where k is the smallest number such that
+      the padded length (in bytes) is a multiple of 64
+  
+    Corollaries:
+    - the entire L section is always contained at the end of the last block
+    - the 0x80 byte might be in the last block or the one before that
+    - max number of blocks = ceil((M.maxLength + 9) / 64) 
+    - number of actual blocks = ceil((M.length + 9) / 64) = floor((M.length + 9 + 63) / 64) = floor((M.length + 8) / 64) + 1
+    - block number of L section = floor((M.length + 8) / 64)
+    - block number of 0x80 byte index = floor(M.length / 64)
+    */
+
+  // check that all message bytes beyond the actual length are 0, so that we get valid padding just by adding the 0x80 and L bytes
+  // this step creates most of the constraint overhead of dynamic sha2, but seems unavoidable :/
+  message.forEach((byte, isPadding) => {
+    Provable.assertEqualIf(isPadding, UInt8, byte, UInt8.from(0));
+  });
+
+  // create blocks of 64 bytes each
+  const maxBlocks = Math.ceil((message.maxLength + 9) / 64);
+  const BlocksOfBytes = DynamicArray(BlockBytes, { maxLength: maxBlocks });
+
+  let lastBlockIndex = UInt32.Unsafe.fromField(message.length.add(8)).div(64);
+  let numberOfBlocks = lastBlockIndex.value.add(1);
+  let padded = pad(message.array, maxBlocks * 64, UInt8.from(0));
+  let chunked = chunk(padded, 64).map(BlockBytes.from);
+  let blocksOfBytes = new BlocksOfBytes(chunked, numberOfBlocks);
+
+  // pack each block of 64 bytes into 16 uint32s (4 bytes each)
+  let blocks = blocksOfBytes.map(Block32, (block) =>
+    block.chunk(4).map(UInt32, (b) => UInt32.fromBytesBE(b.array))
+  );
+
+  // splice the length in the same way
+  // length = l0 + 4*l1 + 64*l2
+  // so that l2 is the block index, l1 the uint32 index in the block, and l0 the byte index in the uint32
+  let [l0, l1, l2] = splitMultiIndex(UInt32.Unsafe.fromField(message.length));
+
+  // hierarchically get byte at `length` and set to 0x80
+  // we can use unsafe get/set because the indices are in bounds by design
+  let block = blocks.getOrUnconstrained(l2);
+  let uint8x4 = WordBytes.from(block.getOrUnconstrained(l1).toBytesBE());
+  uint8x4.setOrDoNothing(l0, UInt8.from(0x80));
+  block.setOrDoNothing(l1, UInt32.fromBytesBE(uint8x4.array));
+  blocks.setOrDoNothing(l2, block);
+
+  // set last 64 bits to encoded length (in bits, big-endian encoded)
+  // in fact, since dynamic array asserts that length fits in 16 bits, we can set the second to last uint32 to 0
+  let lastBlock = blocks.getOrUnconstrained(lastBlockIndex.value);
+  lastBlock.set(14, UInt32.from(0));
+  lastBlock.set(15, UInt32.Unsafe.fromField(message.length.mul(8))); // length in bits
+  blocks.setOrDoNothing(lastBlockIndex.value, lastBlock);
+
+  return blocks;
+}
+
+function state32ToBytes(state: State32) {
+  return Bytes.from(state.array.flatMap((x) => x.toBytesBE()));
 }
