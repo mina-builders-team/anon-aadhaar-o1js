@@ -1,206 +1,21 @@
-import { Bytes, Field, Provable, UInt32 } from 'o1js';
-import { BLOCK_SIZES } from './utils.js';
-import { RecursiveHash, RecursiveHashProof } from './recursiveHash.js';
-import { Bigint2048 } from './rsa.js';
+import { Bytes, Field, Provable } from 'o1js';
+import { commitBlock256, padding256, state32ToBytes } from './utils.js';
+import { Bigint2048, rsaVerify65537 } from './rsa.js';
+import { DynamicBytes } from 'mina-attestations';
+import { MerkleBlocks } from './dataTypes.js';
+import { SignatureVerifier } from './signatureVerifier.js';
+import { recursiveHash } from './recursion.js';
 export {
-  compute512BasedHash,
-  computeChained128Hash,
-  compute512BasedHashDigest,
-  computeChained128HashDigest,
   pkcs1v15PadWrong,
   createDelimitedData,
   charBytesToInt,
   intToCharString,
   createPaddedQRData,
+  expectSignatureCircuitError,
+  expectSignatureError,
+  generateHashFromData,
+  prepareRecursiveHashData,
 };
-
-/**
- * Computes a 512-based recursive hash proof from the given padded data and initial value.
- *
- * @param paddedData - The padded input data as a `Bytes` object.
- * @param initialValue - Initial UInt32 state for hashing.
- * @returns A promise that resolves to a `RecursiveHashProof`.
- */
-async function compute512BasedHash(
-  paddedData: Bytes,
-  initialValue: UInt32[]
-): Promise<RecursiveHashProof> {
-  const byteData = paddedData.toBytes();
-
-  const pad1 = Bytes.from(byteData.slice(0, BLOCK_SIZES.MEDIUM));
-
-  const pad2 = Bytes.from(
-    byteData.slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
-  );
-  const pad3 = Bytes.from(byteData.slice(BLOCK_SIZES.LARGE));
-
-  const proof1 = await RecursiveHash.baseCase512(pad1, initialValue);
-  const proof2 = await RecursiveHash.hashStep512(proof1.proof, pad2);
-  const finalProof = await RecursiveHash.hashStep128(proof2.proof, pad3);
-
-  return finalProof.proof;
-}
-
-/**
- * Computes the final digest from a 512-based recursive hash proof.
- *
- * @param paddedData - The padded input data as a `Bytes` object.
- * @param initialValue - Initial UInt32 state for hashing.
- * @returns A promise that resolves to the digest as a `Bytes` object.
- */
-async function compute512BasedHashDigest(
-  paddedData: Bytes,
-  initialValue: UInt32[]
-): Promise<Bytes> {
-  const byteData = paddedData.toBytes();
-
-  const pad1 = Bytes.from(byteData.slice(0, BLOCK_SIZES.MEDIUM));
-
-  const pad2 = Bytes.from(
-    byteData.slice(BLOCK_SIZES.MEDIUM, BLOCK_SIZES.LARGE)
-  );
-  const pad3 = Bytes.from(byteData.slice(BLOCK_SIZES.LARGE));
-
-  const proof1 = await RecursiveHash.baseCase512(pad1, initialValue);
-  const proof2 = await RecursiveHash.hashStep512(proof1.proof, pad2);
-  const finalProof = await RecursiveHash.hashStep128(proof2.proof, pad3);
-
-  const result = finalProof.proof.publicOutput;
-
-  // Get final digest
-  const finalDigest = Bytes.from(
-    result.hashState.flatMap((w: UInt32) => w.toBytesBE())
-  );
-
-  return finalDigest;
-}
-
-/**
- * Computes a chained 128-bit recursive hash proof using the padded input and initial state.
- *
- * @param paddedData - The padded input data as a `Bytes` object.
- * @param initialValue - Initial UInt32 state for hashing.
- * @returns A promise that resolves to a `RecursiveHashProof`.
- */
-async function computeChained128Hash(
-  paddedData: Bytes,
-  initialValue: UInt32[]
-): Promise<RecursiveHashProof> {
-  const paddedDataChunks = [];
-  for (let i = 0; i < 9; i++) {
-    paddedDataChunks[i] = Bytes.from(
-      paddedData
-        .toBytes()
-        .slice(i * BLOCK_SIZES.SMALL, BLOCK_SIZES.SMALL * (i + 1))
-    );
-  }
-  // Compute proofs recursively
-  const proof1 = await RecursiveHash.baseCase128(
-    paddedDataChunks[0],
-    initialValue
-  );
-  const proof2 = await RecursiveHash.hashStep128(
-    proof1.proof,
-    paddedDataChunks[1]
-  );
-  const proof3 = await RecursiveHash.hashStep128(
-    proof2.proof,
-    paddedDataChunks[2]
-  );
-  const proof4 = await RecursiveHash.hashStep128(
-    proof3.proof,
-    paddedDataChunks[3]
-  );
-  const proof5 = await RecursiveHash.hashStep128(
-    proof4.proof,
-    paddedDataChunks[4]
-  );
-  const proof6 = await RecursiveHash.hashStep128(
-    proof5.proof,
-    paddedDataChunks[5]
-  );
-  const proof7 = await RecursiveHash.hashStep128(
-    proof6.proof,
-    paddedDataChunks[6]
-  );
-  const proof8 = await RecursiveHash.hashStep128(
-    proof7.proof,
-    paddedDataChunks[7]
-  );
-  const finalProof = await RecursiveHash.hashStep128(
-    proof8.proof,
-    paddedDataChunks[8]
-  );
-
-  return finalProof.proof;
-}
-
-/**
- * Computes the final digest from a chained 128-bit recursive hash proof.
- *
- * @param paddedData - The padded input data as a `Bytes` object.
- * @param initialValue - Initial UInt32 state for hashing.
- * @returns A promise that resolves to the digest as a `Bytes` object.
- */
-async function computeChained128HashDigest(
-  paddedData: Bytes,
-  initialValue: UInt32[]
-): Promise<Bytes> {
-  const paddedDataChunks = [];
-  for (let i = 0; i < 9; i++) {
-    paddedDataChunks[i] = Bytes.from(
-      paddedData
-        .toBytes()
-        .slice(i * BLOCK_SIZES.SMALL, BLOCK_SIZES.SMALL * (i + 1))
-    );
-  }
-  // Compute proofs recursively
-  const proof1 = await RecursiveHash.baseCase128(
-    paddedDataChunks[0],
-    initialValue
-  );
-  const proof2 = await RecursiveHash.hashStep128(
-    proof1.proof,
-    paddedDataChunks[1]
-  );
-  const proof3 = await RecursiveHash.hashStep128(
-    proof2.proof,
-    paddedDataChunks[2]
-  );
-  const proof4 = await RecursiveHash.hashStep128(
-    proof3.proof,
-    paddedDataChunks[3]
-  );
-  const proof5 = await RecursiveHash.hashStep128(
-    proof4.proof,
-    paddedDataChunks[4]
-  );
-  const proof6 = await RecursiveHash.hashStep128(
-    proof5.proof,
-    paddedDataChunks[5]
-  );
-  const proof7 = await RecursiveHash.hashStep128(
-    proof6.proof,
-    paddedDataChunks[6]
-  );
-  const proof8 = await RecursiveHash.hashStep128(
-    proof7.proof,
-    paddedDataChunks[7]
-  );
-  const finalProof = await RecursiveHash.hashStep128(
-    proof8.proof,
-    paddedDataChunks[8]
-  );
-
-  const result = finalProof.proof.publicOutput;
-
-  // Get final digest
-  const finalDigest = Bytes.from(
-    result.hashState.flatMap((w: UInt32) => w.toBytesBE())
-  );
-
-  return finalDigest;
-}
 
 /**
  * Pads a SHA-256 digest using an intentionally incorrect PKCS#1 v1.5 padding scheme.
@@ -346,4 +161,73 @@ function createPaddedQRData(inputData: Uint8Array) {
   }
 
   return dataArray;
+}
+
+function prepareRecursiveHashData(data: Uint8Array): MerkleBlocks {
+  const dynamicData = DynamicBytes.from(data);
+  const dynamicDataPadded = padding256(dynamicData);
+  const dynamicDataBlocks = dynamicDataPadded.merkelize(commitBlock256);
+
+  return dynamicDataBlocks;
+}
+
+async function generateHashFromData(data: Uint8Array): Promise<Bytes> {
+  const dynamicData = DynamicBytes.from(data);
+  const dynamicDataPadded = padding256(dynamicData);
+  const dynamicDataBlocks = dynamicDataPadded.merkelize(commitBlock256);
+  const hash = await recursiveHash.run(dynamicDataBlocks);
+
+  const finalDigest = state32ToBytes(hash);
+
+  return finalDigest;
+}
+
+async function expectSignatureCircuitError(
+  blocks: MerkleBlocks,
+  signature: Bigint2048,
+  publicKeyBigint: Bigint2048,
+  expectedMsgTrue: string,
+  expectedMsgFalse: string,
+  proofsEnabled: boolean
+) {
+  try {
+    await SignatureVerifier.verifySignature(blocks, signature, publicKeyBigint);
+    throw new Error(
+      'Expected isVerified to throw an error message, but it did not'
+    );
+  } catch (err) {
+    const msg = (err as Error).message;
+
+    if (proofsEnabled) {
+      expect(msg).toContain(expectedMsgTrue);
+      expect(msg).toContain('Constraint unsatisfied');
+    } else {
+      expect(msg).toContain(expectedMsgFalse);
+    }
+  }
+}
+
+async function expectSignatureError(
+  paddedHash: Bigint2048,
+  signature: Bigint2048,
+  publicKeyBigint: Bigint2048,
+  expectedMsgTrue: string,
+  expectedMsgFalse: string,
+  proofsEnabled: boolean
+) {
+  try {
+    rsaVerify65537(paddedHash, signature, publicKeyBigint);
+    throw new Error(
+      'Expected isVerified to throw an error message, but it did not'
+    );
+  } catch (err) {
+    const msg = (err as Error).message;
+
+    if (proofsEnabled) {
+      expect(msg).toContain(expectedMsgTrue);
+      expect(msg).toContain('Constraint unsatisfied');
+    } else {
+      expect(msg).toContain(expectedMsgFalse);
+    }
+  }
 }

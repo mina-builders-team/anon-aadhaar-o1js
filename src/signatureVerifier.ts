@@ -1,16 +1,13 @@
-import { ZkProgram, Bytes, Field } from 'o1js';
-import { pkcs1v15Pad } from './utils.js';
+import { ZkProgram, Field } from 'o1js';
+import { pkcs1v15Pad, state32ToBytes } from './utils.js';
 import { Bigint2048, rsaVerify65537 } from './rsa.js';
-import { RecursiveHashProof } from './recursiveHash.js';
+import { hashBlocks } from './recursion.js';
+import { MerkleBlocks } from './dataTypes.js';
 export { SignatureVerifier };
-
-/**
- * Represents a 32-byte array, typically used to hold SHA256 digest.
- */
-class Bytes32 extends Bytes(32) {}
 
 const SignatureVerifier = ZkProgram({
   name: 'SignatureVerifier',
+  publicInput: MerkleBlocks,
 
   methods: {
     /**
@@ -25,17 +22,16 @@ const SignatureVerifier = ZkProgram({
      * @returns Outputs the final hash state if signature verification passes.
      */
     verifySignature: {
-      privateInputs: [RecursiveHashProof, Bigint2048, Bigint2048],
+      privateInputs: [Bigint2048, Bigint2048],
 
       async method(
-        hashProof: RecursiveHashProof,
+        blocks: MerkleBlocks,
         signature: Bigint2048,
         publicKey: Bigint2048
       ) {
-        hashProof.verify();
-        const hashState = hashProof.publicOutput.hashState;
+        const hashState = await hashBlocks(blocks, { blocksInThisProof: 1 });
 
-        const finalHash = Bytes32.from(hashState.flatMap((x) => x.toBytesBE()));
+        const finalHash = state32ToBytes(hashState);
 
         const paddedHash = pkcs1v15Pad(finalHash);
 

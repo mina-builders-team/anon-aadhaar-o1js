@@ -1,33 +1,29 @@
-import { verify } from 'o1js';
 import { SignatureVerifier } from '../signatureVerifier.js';
 
 import { getQRData, TEST_DATA } from '../getQRData.js';
-import { compute512BasedHash } from '../testUtils.js';
-import { RecursiveHash } from '../recursiveHash.js';
+import { prepareRecursiveHashData } from '../testUtils.js';
+import { hashProgram } from '../recursion.js';
+import { verify } from 'o1js';
 
-const { paddedData, initialValue, signatureBigint, publicKeyBigint } =
-  getQRData(TEST_DATA);
+const { signatureBigint, publicKeyBigint, signedData } = getQRData(TEST_DATA);
 
 let proofsEnabled = true;
 
 console.time('Compile Hash Circuit');
-await RecursiveHash.compile({ proofsEnabled });
+await hashProgram.compile({ proofsEnabled });
 console.timeEnd('Compile Hash Circuit');
 
 console.time('Compile Verifier Circuit');
 const { verificationKey } = await SignatureVerifier.compile({ proofsEnabled });
 console.timeEnd('Compile Verifier Circuit');
 
-console.time('Proof generations');
+const preparedData = prepareRecursiveHashData(signedData);
 
-const finalProof = await compute512BasedHash(paddedData, initialValue);
-
-console.timeEnd('Proof generations');
 // Now you can verify the RSA65537 signature. Should throw an error if verification fails.
-
 console.time('Signature verification');
+
 const { proof } = await SignatureVerifier.verifySignature(
-  finalProof,
+  preparedData,
   signatureBigint,
   publicKeyBigint
 );
