@@ -29,7 +29,6 @@ const { proof } = await SignatureVerifier.verifySignature(
 );
 console.timeEnd('Signature verification');
 
-// When proofsEnabled:false, it throws an error. Problem solved, Yay!
 console.time('Verification');
 await verify(proof, verificationKey);
 console.timeEnd('Verification');
