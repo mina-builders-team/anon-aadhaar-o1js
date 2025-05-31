@@ -13,7 +13,7 @@ import {
   expectSignatureCircuitError,
 } from './testUtils.js';
 
-import { hashProgram, hashProgramWrapper } from './recursion.js';
+import { hashProgram } from './recursion.js';
 
 const proofsEnabled = false;
 
