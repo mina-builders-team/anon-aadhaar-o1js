@@ -25,6 +25,7 @@ export {
   commitBlock256,
   state32ToBytes,
   padding256,
+  generateMessageBlocks,
 };
 
 /**
@@ -167,6 +168,7 @@ function chunk<T>(array: T[], size: number): T[][] {
     array.length % size === 0,
     `Array length must be a multiple of ${size}`
   );
+  // Return data array by chunking it by 'size'.
   return Array.from({ length: array.length / size }, (_, i) =>
     array.slice(size * i, size * (i + 1))
   );
@@ -402,7 +404,10 @@ function commitBlock256(commitment: Field, block: Block32): Field {
  * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-hash.ts#L209
  */
 function hashSafe(fields: (Field | number | bigint)[]) {
+  // Get the length of the fields
   let n = fields.length;
+
+  // Add prefix depending on the length of the data fields
   let prefix = n === 0 ? 'zero' : n % 2 === 0 ? 'even' : 'odd_';
   return Poseidon.hashWithPrefix(prefix, fields.map(Field));
 }
@@ -552,9 +557,13 @@ function padding256(
   const maxBlocks = Math.ceil((message.maxLength + 9) / 64);
   const BlocksOfBytes = DynamicArray(BlockBytes, { maxLength: maxBlocks });
 
+  // Get the block index and determine the number of blocks
   let lastBlockIndex = UInt32.Unsafe.fromField(message.length.add(8)).div(64);
   let numberOfBlocks = lastBlockIndex.value.add(1);
+
+  // Apply padding
   let padded = pad(message.array, maxBlocks * 64, UInt8.from(0));
+  // Split padded byte blocks to arrays of 64 bytes.
   let chunked = chunk(padded, 64).map(BlockBytes.from);
   let blocksOfBytes = new BlocksOfBytes(chunked, numberOfBlocks);
 
@@ -563,18 +572,23 @@ function padding256(
     block.chunk(4).map(UInt32, (b) => UInt32.fromBytesBE(b.array))
   );
 
-  // splice the length in the same way
-  // length = l0 + 4*l1 + 64*l2
-  // so that l2 is the block index, l1 the uint32 index in the block, and l0 the byte index in the uint32
-  let [l0, l1, l2] = splitMultiIndex(UInt32.Unsafe.fromField(message.length));
+  // Splice the length in the same way
+  // Length = byteIndex + 4 * integerIndex + 64 * blockIndexx
+  // blockIndex is the block index, integerIndex is the uint32 index in the block, and byteIndex the byte index in the uint32
+  let [byteIndex, integerIndex, blockIndex] = splitMultiIndex(
+    UInt32.Unsafe.fromField(message.length)
+  );
 
   // hierarchically get byte at `length` and set to 0x80
   // we can use unsafe get/set because the indices are in bounds by design
-  let block = blocks.getOrUnconstrained(l2);
-  let uint8x4 = WordBytes.from(block.getOrUnconstrained(l1).toBytesBE());
-  uint8x4.setOrDoNothing(l0, UInt8.from(0x80));
-  block.setOrDoNothing(l1, UInt32.fromBytesBE(uint8x4.array));
-  blocks.setOrDoNothing(l2, block);
+  let block = blocks.getOrUnconstrained(blockIndex);
+  let wordBytes = WordBytes.from(
+    block.getOrUnconstrained(integerIndex).toBytesBE()
+  );
+
+  wordBytes.setOrDoNothing(byteIndex, UInt8.from(0x80));
+  block.setOrDoNothing(integerIndex, UInt32.fromBytesBE(wordBytes.array));
+  blocks.setOrDoNothing(blockIndex, block);
 
   // set last 64 bits to encoded length (in bits, big-endian encoded)
   // in fact, since dynamic array asserts that length fits in 16 bits, we can set the second to last uint32 to 0
@@ -586,6 +600,12 @@ function padding256(
   return blocks;
 }
 
+/**
+ * Converts a `State32` object (an array of 8 UInt32 values) into a flat byte array in big-endian format.
+ *
+ * @param {State32} state - A `State32` object, which consists of an array of 8 `UInt32` values.
+ * @returns {Bytes} A `Bytes` object representing the big-endian byte serialization of the state.
+ */
 function state32ToBytes(state: State32) {
   return Bytes.from(state.array.flatMap((x) => x.toBytesBE()));
 }
