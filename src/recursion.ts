@@ -29,12 +29,13 @@ const hashProgram = ZkProgram({
   publicOutput: State32,
 
   methods: {
-    // base method that starts hashing from the initial state and guarantees to process all input blocks
+    // Base method that starts hashing from the initial state and guarantees to process all input blocks
     hashBase: {
       privateInputs: [],
       async method(blocks: MerkleBlocks) {
         let state = State32.from(Gadgets.SHA2.initialState(256) as UInt32[]);
 
+        // Appl hash to each block. After hashing, state is updated conditionally if the hashing process is done with a non-dummy block.
         blocks.forEach(BLOCKS_PER_BASE_PROOF, (block, isDummy) => {
           let nextState = hashBlock256(state, block);
           state = Provable.if(isDummy, State32, state, nextState);
@@ -43,19 +44,24 @@ const hashProgram = ZkProgram({
       },
     },
 
-    // method that hashes recursively, handles arbitrarily many blocks
+    // Method that hashes recursively, handles arbitrarily many blocks
     hashRecursive: {
       privateInputs: [],
       async method(blocks: MerkleBlocks) {
-        let state = await hashBlocks(blocks, {
-          blocksInThisProof: BLOCKS_PER_RECURSIVE_PROOF,
-        });
+        let state = await hashBlocks(blocks, BLOCKS_PER_RECURSIVE_PROOF);
         return { publicOutput: state };
       },
     },
   },
 });
 
+/**
+ * A hash wrapper that can be used to get the output of hashBlocks along with a zk proof.
+ * hashBlocks can be used directly in any circuit - this wrapper method will wrap the output to a proof.
+ *
+ * @param {MerkleBlocks} blocks - The full array of Merkle blocks to hash.
+ * @returns {Proof} - Proof that contains the resulting hash after hashing all the blocks.
+ */
 const hashProgramWrapper = ZkProgram({
   name: 'recursive-hash',
 
@@ -66,11 +72,7 @@ const hashProgramWrapper = ZkProgram({
     run: {
       privateInputs: [],
       async method(blocks: MerkleBlocks) {
-        // hash the header here, and the body recursively
-
-        let currentState = await hashBlocks(blocks, {
-          blocksInThisProof: 1,
-        });
+        let currentState = await hashBlocks(blocks, BLOCKS_PER_RECURSIVE_PROOF);
         return { publicOutput: currentState };
       },
     },
@@ -95,40 +97,47 @@ let recursiveHash = Experimental.Recursive(hashProgramWrapper);
  */
 async function hashBlocks(
   blocks: MerkleBlocks,
-  options: { blocksInThisProof: number }
+  numberOfBlocks: number
 ): Promise<State32> {
-  let { blocksInThisProof } = options;
+  // Popping 'numberOfBlocks' amount of blocks from the MerkleBlocks
+  let { remaining, tail } = MerkleBlocks.popTail(blocks, numberOfBlocks);
 
-  // split blocks into remaining part and final part
-  // the final part is done in this proof, the remaining part is done recursively
-  let { remaining, tail } = MerkleBlocks.popTail(blocks, blocksInThisProof);
+  // Apply recursive hashing in witness blocks. Later on, remanining MerkleBlock's hash commitment can be checked with the recursionProof's output to see if correct blocks are used.
+  let recursionProof = await Provable.witnessAsync(
+    hashProgram.Proof,
+    async () => {
+      // convert the blocks to constants
+      let blocksForProof = Provable.toConstant(MerkleBlocks, remaining.clone());
 
-  // recursively hash the first, "remaining" part
-  let proof = await Provable.witnessAsync(hashProgram.Proof, async () => {
-    // optionally disable the inner proof
+      // If remaining blocks of recursive approach is less than a threshold (BLOCKS_PER_BASE_PROOF), a base hashing is applied.
+      let remainingBlocks = remaining.lengthUnconstrained().get();
 
-    // convert the blocks to constants
-    let blocksForProof = Provable.toConstant(MerkleBlocks, remaining.clone());
+      // Define the proof variable that will be returned.
+      let proof: Proof<MerkleBlocks, State32>;
 
-    // figure out if we can call the base method or need to recurse
-    let nBlocksRemaining = remaining.lengthUnconstrained().get();
-    let proof: Proof<MerkleBlocks, State32>;
-
-    if (nBlocksRemaining <= BLOCKS_PER_BASE_PROOF) {
-      ({ proof } = await hashProgram.hashBase(blocksForProof));
-    } else {
-      ({ proof } = await hashProgram.hashRecursive(blocksForProof));
+      // Choose which hashing method will be used depending on the remainingBlocks.
+      if (remainingBlocks <= BLOCKS_PER_BASE_PROOF) {
+        ({ proof } = await hashProgram.hashBase(blocksForProof));
+      } else {
+        ({ proof } = await hashProgram.hashRecursive(blocksForProof));
+      }
+      
+      return proof;
     }
-    return proof;
-  });
-  proof.declare();
-  proof.verify();
+  );
 
-  // constrain public input to match the remaining blocks
-  remaining.hash.assertEquals(proof.publicInput.hash);
+  // Use declare method to verify proof inside of ZkProgram as if it was an input to the circuit.
+  recursionProof.declare();
+  recursionProof.verify();
 
-  // continue hashing the final part
-  let state = proof.publicOutput;
+  // Constrain public input to match the remaining blocks
+  remaining.hash.assertEquals(recursionProof.publicInput.hash);
+
+  // Continue hashing the final part
+  let state = recursionProof.publicOutput;
+
+  // Apply hashing to every existing block. Blocks are returned as Option<Block32>, where it has a Bool 'isSome' indicates if there is a block in iterated element.
+  // isSome is used for reassigning the state with the updated hash
   tail.forEach(({ isSome, value: block }) => {
     let nextState = hashBlock256(state, block);
     state = Provable.if(isSome, State32, nextState, state);
