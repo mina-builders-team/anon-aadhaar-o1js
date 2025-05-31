@@ -121,7 +121,7 @@ async function hashBlocks(
       } else {
         ({ proof } = await hashProgram.hashRecursive(blocksForProof));
       }
-      
+
       return proof;
     }
   );
