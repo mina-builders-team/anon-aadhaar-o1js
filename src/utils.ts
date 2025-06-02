@@ -25,6 +25,7 @@ export {
   commitBlock256,
   state32ToBytes,
   padding256,
+  generateMessageBlocks,
 };
 
 /**
