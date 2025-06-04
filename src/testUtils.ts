@@ -163,6 +163,12 @@ function createPaddedQRData(inputData: Uint8Array) {
   return dataArray;
 }
 
+/**
+ * Prepares data for recursive hashing by converting it into a padded Merkle tree structure.
+ *
+ * @param {Uint8Array} data - Raw input data to be hashed.
+ * @returns {MerkleBlocks} - A Merkle tree representation of the padded input data.
+ */
 function prepareRecursiveHashData(data: Uint8Array): MerkleBlocks {
   const dynamicData = DynamicBytes.from(data);
   const dynamicDataPadded = padding256(dynamicData);
@@ -171,6 +177,12 @@ function prepareRecursiveHashData(data: Uint8Array): MerkleBlocks {
   return dynamicDataBlocks;
 }
 
+/**
+ * Generates a final SHA-256 hash digest using recursive hashing from the input data.
+ *
+ * @param {Uint8Array} data - Raw input data to hash.
+ * @returns {Promise<Bytes>} - The final hash digest as a byte array.
+ */
 async function generateHashFromData(data: Uint8Array): Promise<Bytes> {
   const dynamicData = DynamicBytes.from(data);
   const dynamicDataPadded = padding256(dynamicData);
@@ -182,6 +194,27 @@ async function generateHashFromData(data: Uint8Array): Promise<Bytes> {
   return finalDigest;
 }
 
+/**
+ * Asserts that the signature verification inside the circuit fails as expected,
+ * and checks that the appropriate error messages are thrown depending on proof settings.
+ * 
+ * @remarks
+ * This function differs from {@link expectSignatureError} by executing circuits rather than 
+ * RSA verification with off-circuit methods. It uses the `SignatureVerifier.verifySignature` 
+ * method, which relies on the ZkProgram circuit, whereas `expectSignatureError` checks it with 
+ * off- circuit function that is also used in `SignatureVerifier.verifySignature`.
+ *
+ * @see {@link expectSignatureError}
+ *
+ * @param {MerkleBlocks} blocks - Data in the form of MerkleBlocks.
+ * @param {Bigint2048} signature - RSA signature to verify.
+ * @param {Bigint2048} publicKeyBigint - Public key corresponding to the RSA signature.
+ * @param {string} expectedMsgTrue - Expected error message when proofs are enabled.
+ * @param {string} expectedMsgFalse - Expected error message when proofs are disabled.
+ * @param {boolean} proofsEnabled - Flag indicating whether proofsEnabled option of ZkProgam is set to false or true.
+ * @returns {Promise<void>}
+ * @throws Will throw if verification passes or the expected error messages do not match.
+ */
 async function expectSignatureCircuitError(
   blocks: MerkleBlocks,
   signature: Bigint2048,
@@ -207,6 +240,19 @@ async function expectSignatureCircuitError(
   }
 }
 
+/**
+ * Asserts that the native RSA signature verification fails as expected,
+ * and checks the appropriate error messages based on proof settings.
+ *
+ * @param {Bigint2048} paddedHash - Padded hash value to verify the signature against.
+ * @param {Bigint2048} signature - RSA signature to verify.
+ * @param {Bigint2048} publicKeyBigint - Public key corresponding to the RSA signature.
+ * @param {string} expectedMsgTrue - Expected error message when proofs are enabled.
+ * @param {string} expectedMsgFalse - Expected error message when proofs are disabled.
+ * @param {boolean} proofsEnabled - Flag indicating whether proofsEnabled option of ZkProgam is set to false or true.
+ * @returns {Promise<void>}
+ * @throws Will throw if verification passes or the expected error messages do not match.
+ */
 async function expectSignatureError(
   paddedHash: Bigint2048,
   signature: Bigint2048,
