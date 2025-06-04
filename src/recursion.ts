@@ -35,7 +35,7 @@ const hashProgram = ZkProgram({
       async method(blocks: MerkleBlocks) {
         let state = State32.from(Gadgets.SHA2.initialState(256) as UInt32[]);
 
-        // Appl hash to each block. After hashing, state is updated conditionally if the hashing process is done with a non-dummy block.
+        // Apply hash to each block. After hashing, state is updated conditionally if the hashing process is done with a non-dummy block.
         blocks.forEach(BLOCKS_PER_BASE_PROOF, (block, isDummy) => {
           let nextState = hashBlock256(state, block);
           state = Provable.if(isDummy, State32, state, nextState);
@@ -81,50 +81,49 @@ const hashProgramWrapper = ZkProgram({
 
 let recursiveHash = Experimental.Recursive(hashProgramWrapper);
 
-/**
- * Recursively hashes a sequence of Merkle blocks using a proof system.
- *
- * This function splits the input blocks into two parts:
- * - A "tail" of blocks to be hashed directly.
- * - A "remaining" prefix to be hashed recursively or using a base method.
- *
- * The result is a SHA-256 style hash after applying all block transformations.
- *
- * @param {MerkleBlocks} blocks - The full array of Merkle blocks to hash.
- * @param {{ blocksInThisProof: number }} options - The number of blocks to include in the current proof.
- * @returns {Promise<State32>} The resulting state after hashing all blocks.
- * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/email/zkemail.ts#L210
- */
-async function hashBlocks(
-  blocks: MerkleBlocks,
-  numberOfBlocks: number
-): Promise<State32> {
-  // Popping 'numberOfBlocks' amount of blocks from the MerkleBlocks
-  let { remaining, tail } = MerkleBlocks.popTail(blocks, numberOfBlocks);
+  /**
+   * Recursively hashes a sequence of Merkle blocks using a proof system.
+   *
+   * This function splits the input blocks into two parts:
+   * - A "tail" of blocks to be hashed directly.
+   * - A "remaining" prefix to be hashed recursively or using a base method.
+   *
+   * The result is a SHA-256 style hash after applying all block transformations.
+   *
+   * @param {MerkleBlocks} blocks - The full array of Merkle blocks to hash.
+   * @param {{ blocksInThisProof: number }} options - The number of blocks to include in the current proof.
+   * @returns {Promise<State32>} The resulting state after hashing all blocks.
+   * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/email/zkemail.ts#L210
+   */
+  async function hashBlocks(
+    blocks: MerkleBlocks,
+    numberOfBlocks: number
+  ): Promise<State32> {
+    // Popping `numberOfBlocks` amount of blocks from the MerkleBlocks
+    let { remaining, tail } = MerkleBlocks.popTail(blocks, numberOfBlocks);
 
-  // Apply recursive hashing in witness blocks. Later on, remanining MerkleBlock's hash commitment can be checked with the recursionProof's output to see if correct blocks are used.
-  let recursionProof = await Provable.witnessAsync(
-    hashProgram.Proof,
-    async () => {
-      // convert the blocks to constants
-      let blocksForProof = Provable.toConstant(MerkleBlocks, remaining.clone());
+    // Apply recursive hashing in witness blocks. Later on, remanining MerkleBlock's hash commitment can be checked with the recursionProof's output to see if correct blocks are used.
+    let recursionProof = await Provable.witnessAsync(
+      hashProgram.Proof,
+      async () => {
+        // convert the blocks to constants
+        let blocksForProof = Provable.toConstant(MerkleBlocks, remaining.clone());
 
-      // If remaining blocks of recursive approach is less than a threshold (BLOCKS_PER_BASE_PROOF), a base hashing is applied.
-      let remainingBlocks = remaining.lengthUnconstrained().get();
+        // If remaining blocks of recursive approach is less than a threshold (BLOCKS_PER_BASE_PROOF), a base hashing is applied.
+        let remainingBlocks = remaining.lengthUnconstrained().get();
 
-      // Define the proof variable that will be returned.
-      let proof: Proof<MerkleBlocks, State32>;
+        // Define the proof variable that will be returned.
+        let proof: Proof<MerkleBlocks, State32>;
 
-      // Choose which hashing method will be used depending on the remainingBlocks.
-      if (remainingBlocks <= BLOCKS_PER_BASE_PROOF) {
-        ({ proof } = await hashProgram.hashBase(blocksForProof));
-      } else {
-        ({ proof } = await hashProgram.hashRecursive(blocksForProof));
+        // Choose which hashing method will be used depending on the remainingBlocks.
+        if (remainingBlocks <= BLOCKS_PER_BASE_PROOF) {
+          ({ proof } = await hashProgram.hashBase(blocksForProof));
+        } else {
+          ({ proof } = await hashProgram.hashRecursive(blocksForProof));
+        }
+        return proof;
       }
-
-      return proof;
-    }
-  );
+    );
 
   // Use declare method to verify proof inside of ZkProgram as if it was an input to the circuit.
   recursionProof.declare();
