@@ -197,6 +197,14 @@ async function generateHashFromData(data: Uint8Array): Promise<Bytes> {
 /**
  * Asserts that the signature verification inside the circuit fails as expected,
  * and checks that the appropriate error messages are thrown depending on proof settings.
+ * 
+ * @remarks
+ * This function differs from {@link expectSignatureError} by executing circuits rather than 
+ * RSA verification with off-circuit methods. It uses the `SignatureVerifier.verifySignature` 
+ * method, which relies on the ZkProgram circuit, whereas `expectSignatureError` checks it with 
+ * off- circuit function that is also used in `SignatureVerifier.verifySignature`.
+ *
+ * @see {@link expectSignatureError}
  *
  * @param {MerkleBlocks} blocks - Data in the form of MerkleBlocks.
  * @param {Bigint2048} signature - RSA signature to verify.
