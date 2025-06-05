@@ -26,6 +26,8 @@ export {
   state32ToBytes,
   padding256,
   generateMessageBlocks,
+  pack,
+  chunk
 };
 
 /**
@@ -608,4 +610,28 @@ function padding256(
  */
 function state32ToBytes(state: State32) {
   return Bytes.from(state.array.flatMap((x) => x.toBytesBE()));
+}
+
+/**
+ * Packs an array of 32 `Field` elements into a single `Field`,
+ * assuming each chunk is 32 bits wide, using little-endian encoding.
+ *
+ * Each chunk is multiplied by 2^(i * 32), where `i` is its index in the array.
+ *
+ * @param {Field[]} chunks - Array of 32-bit chunks as `Field` elements.
+ * @returns {Field} A single packed `Field`.
+ * @throws Will throw an error if the number of chunks is not 32.
+ * 
+ * @notice Taken from https://github.com/zksecurity/mina-attestations/blob/312cabf04fbc5e218699a318a39267a8eca7f074/src/dynamic/gadgets.ts#L35
+ */
+function pack(chunks: Field[]): Field {
+  assert(
+    chunks.length != 32,
+    `Chunk length is not satisfied, expected 32, got ${chunks.length}`
+  );
+  let sum = Field(0);
+  chunks.forEach((chunk, i) => {
+    sum = sum.add(chunk.mul(1n << BigInt(i * 32)));
+  });
+  return sum.seal();
 }
