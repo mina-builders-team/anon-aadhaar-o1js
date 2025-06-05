@@ -21,7 +21,7 @@ export {
   pincodeExtractor,
   stateExtractor,
   photoExtractor,
-  photoExtractorChunked
+  photoExtractorChunked,
 };
 
 /**
@@ -233,7 +233,7 @@ function photoExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
   const startIndex = delimiterIndices[PHOTO_POSITION - 1].add(1);
 
   const selectedArray = selectSubarray(nDelimitedData, startIndex, byteLength);
-  
+
   return selectedArray;
 }
 
@@ -250,15 +250,17 @@ function photoExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
  * @param {Field[]} delimiterIndices - Array of Fields marking the start of each field.
  * @returns {Field[]} A 32-element array of packed Fields representing the photo.
  */
-function photoExtractorChunked(nDelimitedData: Field[], delimiterIndices: Field[]) {
-
+function photoExtractorChunked(
+  nDelimitedData: Field[],
+  delimiterIndices: Field[]
+) {
   let selectedArray = photoExtractor(nDelimitedData, delimiterIndices);
 
   let byteChunks = chunk(selectedArray, 31);
 
   let photoArray = [];
 
-  for(let i = 0; i < 32; i ++){
+  for (let i = 0; i < 32; i++) {
     const packedData = pack(byteChunks[i]);
 
     photoArray.push(packedData);

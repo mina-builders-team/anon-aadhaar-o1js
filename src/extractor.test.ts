@@ -13,7 +13,7 @@ import {
   stateExtractor,
   timestampExtractor,
   photoExtractor,
-  photoExtractorChunked
+  photoExtractorChunked,
 } from './extractors.js';
 import {
   createDelimitedData,
@@ -104,13 +104,17 @@ describe('Extractor circuit tests', () => {
       expect(photoBytes.toString()).toEqual(slicedPhotoBytes.toString());
     });
     it('should extract photo', async () => {
-
-      const photoChunks = photoExtractorChunked(nDelimitedData, delimiterIndices);
+      const photoChunks = photoExtractorChunked(
+        nDelimitedData,
+        delimiterIndices
+      );
 
       // const nullifierSeed = Field.random();
       const nullifierHash = nullifier(Field.from(0), photoChunks);
 
-      expect(nullifierHash.toBigInt()).toEqual(10925948596859628672570915913938655172287655450674278034619273873192962315293n);
+      expect(nullifierHash.toBigInt()).toEqual(
+        10925948596859628672570915913938655172287655450674278034619273873192962315293n
+      );
     });
   });
 });

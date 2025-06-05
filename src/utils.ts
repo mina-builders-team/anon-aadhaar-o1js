@@ -27,7 +27,7 @@ export {
   padding256,
   generateMessageBlocks,
   pack,
-  chunk
+  chunk,
 };
 
 /**
@@ -621,7 +621,7 @@ function state32ToBytes(state: State32) {
  * @param {Field[]} chunks - Array of 32-bit chunks as `Field` elements.
  * @returns {Field} A single packed `Field`.
  * @throws Will throw an error if the number of chunks is not 32.
- * 
+ *
  * @notice Taken from https://github.com/zksecurity/mina-attestations/blob/312cabf04fbc5e218699a318a39267a8eca7f074/src/dynamic/gadgets.ts#L35
  */
 function pack(chunks: Field[]): Field {
