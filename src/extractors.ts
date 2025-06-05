@@ -213,18 +213,18 @@ function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
 }
 
 /**
- * Extracts the photo data field from the delimited data.
+ * Extracts the photo data field from the delimited input.
  *
- * The photo field spans a fixed-size byte block calculated by
- * `MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE`. This function locates
- * the start position using the delimiter indices and then selects
- * the corresponding subarray.
+ * The photo field spans a fixed-size byte block determined by
+ * `MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE`. This function calculates
+ * the start position using the `delimiterIndices` and selects the
+ * corresponding subarray of photo bytes.
  *
  * Rows: ~100k
  *
- * @param {Field[]} nDelimitedData - The delimited input data array.
- * @param {Field[]} delimiterIndices - Array of indices marking field positions.
- * @returns {Field[]} An array representing the extracted photo data bytes.
+ * @param {Field[]} nDelimitedData - The full delimited input data as an array of Fields.
+ * @param {Field[]} delimiterIndices - Array of Fields marking the start of each field.
+ * @returns {Field[]} An array of Fields representing the extracted photo data bytes.
  */
 function photoExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
   const byteLength = MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE;
@@ -237,18 +237,17 @@ function photoExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
 }
 
 /**
- * Extracts the photo data field from the delimited data and packs data to an array of length 32. 
+ * Extracts and packs the photo data field into an array of 32 `Field` values.
  *
- * The photo field spans a fixed-size byte block calculated by
- * `MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE`. This function locates
- * the start position using the delimiter indices and then selects
- * the corresponding subarray.
+ * First, the raw photo byte data is extracted using `photoExtractor`. Then,
+ * it is split into 32 chunks of 31 bytes each, and each chunk is packed into
+ * a single `Field` using the `pack` function.
  *
- * Rows: ~100k
+ * The result is a compact representation of the photo suitable for ZK circuits.
  *
- * @param {Field[]} nDelimitedData - The delimited input data array.
- * @param {Field[]} delimiterIndices - Array of indices marking field positions.
- * @returns {Field[]} An array representing the extracted photo data bytes.
+ * @param {Field[]} nDelimitedData - The full delimited input data as an array of Fields.
+ * @param {Field[]} delimiterIndices - Array of Fields marking the start of each field.
+ * @returns {Field[]} A 32-element array of packed Fields representing the photo.
  */
 function photoExtractorChunked(nDelimitedData: Field[], delimiterIndices: Field[]) {
 
