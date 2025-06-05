@@ -20,6 +20,7 @@ export {
   ageAndGenderExtractor,
   pincodeExtractor,
   stateExtractor,
+  photoExtractor,
   photoExtractorChunked
 };
 
