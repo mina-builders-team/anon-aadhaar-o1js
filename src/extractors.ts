@@ -1,7 +1,9 @@
 import { assert, Bool, Field, Gadgets, Provable } from 'o1js';
 import {
+  chunk,
   digitBytesToInt,
   digitBytesToTimestamp,
+  pack,
   selectSubarray,
 } from './utils.js';
 import {
@@ -18,7 +20,7 @@ export {
   ageAndGenderExtractor,
   pincodeExtractor,
   stateExtractor,
-  photoExtractor,
+  photoExtractorChunked
 };
 
 /**
@@ -230,6 +232,37 @@ function photoExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
   const startIndex = delimiterIndices[PHOTO_POSITION - 1].add(1);
 
   const selectedArray = selectSubarray(nDelimitedData, startIndex, byteLength);
-
+  
   return selectedArray;
+}
+
+/**
+ * Extracts the photo data field from the delimited data and packs data to an array of length 32. 
+ *
+ * The photo field spans a fixed-size byte block calculated by
+ * `MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE`. This function locates
+ * the start position using the delimiter indices and then selects
+ * the corresponding subarray.
+ *
+ * Rows: ~100k
+ *
+ * @param {Field[]} nDelimitedData - The delimited input data array.
+ * @param {Field[]} delimiterIndices - Array of indices marking field positions.
+ * @returns {Field[]} An array representing the extracted photo data bytes.
+ */
+function photoExtractorChunked(nDelimitedData: Field[], delimiterIndices: Field[]) {
+
+  let selectedArray = photoExtractor(nDelimitedData, delimiterIndices);
+
+  let byteChunks = chunk(selectedArray, 31);
+
+  let photoArray = [];
+
+  for(let i = 0; i < 32; i ++){
+    const packedData = pack(byteChunks[i]);
+
+    photoArray.push(packedData);
+  }
+
+  return photoArray;
 }
