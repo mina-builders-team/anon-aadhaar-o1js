@@ -9,10 +9,11 @@ import { getQRData, TEST_DATA } from './getQRData.js';
 import {
   ageAndGenderExtractor,
   delimitData,
-  photoExtractor,
   pincodeExtractor,
   stateExtractor,
   timestampExtractor,
+  photoExtractor,
+  photoExtractorChunked
 } from './extractors.js';
 import {
   createDelimitedData,
@@ -20,6 +21,7 @@ import {
   charBytesToInt,
   createPaddedQRData,
 } from './testUtils.js';
+import { nullifier } from './nullifier.js';
 
 describe('Extractor circuit tests', () => {
   let nDelimitedData: Field[];
@@ -100,6 +102,15 @@ describe('Extractor circuit tests', () => {
       );
       // Our state here is at length 5, so try:
       expect(photoBytes.toString()).toEqual(slicedPhotoBytes.toString());
+    });
+    it('should extract photo', async () => {
+
+      const photoChunks = photoExtractorChunked(nDelimitedData, delimiterIndices);
+
+      // const nullifierSeed = Field.random();
+      const nullifierHash = nullifier(Field.from(0), photoChunks);
+
+      expect(nullifierHash.toBigInt()).toEqual(10925948596859628672570915913938655172287655450674278034619273873192962315293n);
     });
   });
 });
