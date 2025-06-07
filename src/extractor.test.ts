@@ -1,4 +1,4 @@
-import { Field } from 'o1js';
+import { Field, Poseidon } from 'o1js';
 import {
   MAX_FIELD_BYTE_SIZE,
   PHOTO_PACK_SIZE,
@@ -103,18 +103,19 @@ describe('Extractor circuit tests', () => {
       // Our state here is at length 5, so try:
       expect(photoBytes.toString()).toEqual(slicedPhotoBytes.toString());
     });
-    it('should extract photo', async () => {
-      const photoChunks = photoExtractorChunked(
-        nDelimitedData,
-        delimiterIndices
-      );
+    it('should compute nullifier correctly', async () => {
+    const nullifierSeed = Field(12345678);
+    
+    const photoBytes = photoExtractor(nDelimitedData, delimiterIndices);
 
-      // const nullifierSeed = Field.random();
-      const nullifierHash = nullifier(Field.from(0), photoChunks);
+    const nullifierHash = nullifier(nullifierSeed, photoBytes)
+    const photoHash = Poseidon.hash(photoBytes);
+    const nullifierOffCircuit = Poseidon.hash([nullifierSeed, photoHash]);
 
-      expect(nullifierHash.toBigInt()).toEqual(
-        10925948596859628672570915913938655172287655450674278034619273873192962315293n
-      );
-    });
+    expect(nullifierHash).toEqual(nullifierOffCircuit);
+
+  })
+
+
   });
 });
