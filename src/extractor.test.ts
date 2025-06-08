@@ -1,4 +1,4 @@
-import { Field } from 'o1js';
+import { Field, Poseidon } from 'o1js';
 import {
   MAX_FIELD_BYTE_SIZE,
   PHOTO_PACK_SIZE,
@@ -9,10 +9,11 @@ import { getQRData, TEST_DATA } from './getQRData.js';
 import {
   ageAndGenderExtractor,
   delimitData,
-  photoExtractor,
   pincodeExtractor,
   stateExtractor,
   timestampExtractor,
+  photoExtractor,
+  photoExtractorChunked,
 } from './extractors.js';
 import {
   createDelimitedData,
@@ -20,6 +21,7 @@ import {
   charBytesToInt,
   createPaddedQRData,
 } from './testUtils.js';
+import { nullifier } from './nullifier.js';
 
 describe('Extractor circuit tests', () => {
   let nDelimitedData: Field[];
@@ -101,5 +103,19 @@ describe('Extractor circuit tests', () => {
       // Our state here is at length 5, so try:
       expect(photoBytes.toString()).toEqual(slicedPhotoBytes.toString());
     });
+    it('should compute nullifier correctly', async () => {
+    const nullifierSeed = Field(12345678);
+    
+    const photoBytes = photoExtractor(nDelimitedData, delimiterIndices);
+
+    const nullifierHash = nullifier(nullifierSeed, photoBytes)
+    const photoHash = Poseidon.hash(photoBytes);
+    const nullifierOffCircuit = Poseidon.hash([nullifierSeed, photoHash]);
+
+    expect(nullifierHash).toEqual(nullifierOffCircuit);
+
+  })
+
+
   });
 });
