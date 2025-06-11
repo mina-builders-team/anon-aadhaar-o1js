@@ -18,7 +18,7 @@ import { getDelimiterIndices } from './utils.js';
 import { PHOTO_POSITION } from './constants.js';
 import { ConstraintSystemSummary } from 'o1js/dist/node/lib/provable/core/provable-context.js';
 import { SignatureVerifier } from './signatureVerifier.js';
-import { hashProgram } from './recursion.js';
+import { hashProgram, hashProgramWrapper } from './recursion.js';
 import { nullifier } from './nullifier.js';
 
 interface BenchmarkResults {
@@ -155,3 +155,28 @@ const nullifierParameters = await getBenchmarkParameters(
   'Nullifier',
   nullifierConstraints
 );
+
+// Prepare data for hashing and signature verifier benchmarks.
+const dataBlocks = prepareRecursiveHashData(inputs.signedData);
+
+// Analyzers for `hashProgram`
+const hashProgramCompilation = performance.now();
+await hashProgram.compile({proofsEnabled, forceRecompile});
+const hashProgramCompilationEnd = performance.now();
+
+const hashProgramConstraints = await hashProgram.analyzeMethods();
+
+const hashWrapperCompilation = performance.now();
+await hashProgramWrapper.compile({proofsEnabled, forceRecompile});
+const hashWrapperCompilationEnd = performance.now();
+
+
+const signatureVerifierCompilation = performance.now();
+await SignatureVerifier.compile({proofsEnabled, forceRecompile});
+const signatureVerifierCompilationEnd = performance.now();
+
+const SignatureVerifierConstraints = await SignatureVerifier.analyzeMethods();
+
+const signatureVerifierMethod = performance.now();
+await SignatureVerifier.verifySignature(dataBlocks, signature, publicKey);
+const signatureVerifierMethodEnd = performance.now();
