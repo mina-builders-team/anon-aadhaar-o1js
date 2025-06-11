@@ -1,6 +1,6 @@
 import { Field, Provable } from 'o1js';
 import { getQRData, TEST_DATA } from './getQRData.js';
-import { createDelimitedData, createPaddedQRData } from './testUtils.js';
+import { createDelimitedData, createPaddedQRData, prepareRecursiveHashData } from './testUtils.js';
 import { ageAndGenderExtractor, delimitData, photoExtractor, photoExtractorChunked, pincodeExtractor, stateExtractor, timestampExtractor } from './extractors.js';
 import { getDelimiterIndices } from './utils.js';
 import { PHOTO_POSITION } from './constants.js';
@@ -13,31 +13,35 @@ interface BenchmarkResults {
 
 const inputs = getQRData(TEST_DATA);
 const qrDataPadded = inputs.paddedData.toBytes();
-let qrData = createPaddedQRData(qrDataPadded);
+const qrData = createPaddedQRData(qrDataPadded);
+const dataArray = Provable.witness(Provable.Array(Field, 1536), () =>
+  qrData.map((x) => Field.from(x))
+);
 
 // Get the photo index.
 
 const delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field);
-const photoIndex = delimiterIndices[PHOTO_POSITION - 1].add(1);
-let nDelimitedData = createDelimitedData(qrData, Number(photoIndex)).map(Field);
+const photoIndex = Provable.witness(Field, () => delimiterIndices[PHOTO_POSITION - 1].add(1));
+const nDelimitedData = createDelimitedData(qrData, Number(photoIndex)).map(Field);
 
-async function getConstraints(
-  fun: () => void
-): Promise<ConstraintSystemSummary> {
-  const constraints = await Provable.constraintSystem(() => fun());
+const delimitedDataArray = Provable.witness(
+  Provable.Array(Field, 1536),
+  () => nDelimitedData
+);
 
-  return constraints;
-}
+const indices = Provable.witness(
+Provable.Array(Field, 18),
+() => delimiterIndices
+);
 
 async function getBenchmarkParameters(
   methodName: string,
   fun: () => void
 ): Promise<BenchmarkResults> {
-  const results = await getConstraints(fun);
-
+  const constraints = await Provable.constraintSystem(() => fun());
   return {
     methodName: methodName,
-    rowSize: results,
+    rowSize: constraints,
   };
 }
 
@@ -47,91 +51,37 @@ async function getBenchmarkParameters(
  * of constraints are done with `Provable.constraintSystem()`.
  */
 function delimitDataConstraints() {
-  const dataArray = Provable.witness(Provable.Array(Field, 1536), () =>
-    qrData.map((x) => Field.from(x))
-  );
-  const photoIdx = Provable.witness(Field, () => photoIndex);
-
-  // This throws error at the moment.
-  delimitData(dataArray, photoIdx);
+  delimitData(dataArray, photoIndex);
 }
 
 function timestampExtractorConstraints() {
-  const dataArray = Provable.witness(Provable.Array(Field, 1536), () =>
-    qrData.map((x) => Field.from(x))
-  );
-
   timestampExtractor(dataArray);
 }
 
 function ageAndGenderExtractorConstraints() {
-  const dataArray = Provable.witness(
-    Provable.Array(Field, 1536),
-    () => nDelimitedData
-  );
 
-  const indices = Provable.witness(
-    Provable.Array(Field, 18),
-    () => delimiterIndices
-  );
   const day = Provable.witness(Field, () => Field.from(1));
   const month = Provable.witness(Field, () => Field.from(1));
   const year = Provable.witness(Field, () => Field.from(2024));
 
-  ageAndGenderExtractor(dataArray, indices, year, month, day);
+  ageAndGenderExtractor(delimitedDataArray, indices, year, month, day);
 }
 
 function pincodeExtractorConstraints(){
-  const dataArray = Provable.witness(
-    Provable.Array(Field, 1536),
-    () => nDelimitedData
-  );
-
-  const indices = Provable.witness(
-  Provable.Array(Field, 18),
-  () => delimiterIndices
-  );
-  pincodeExtractor(dataArray, indices);
+  pincodeExtractor(delimitedDataArray, indices);
 }
 
 function stateExtractorConstraints(){
-  const dataArray = Provable.witness(
-    Provable.Array(Field, 1536),
-    () => nDelimitedData
-  );
-
-  const indices = Provable.witness(
-  Provable.Array(Field, 18),
-  () => delimiterIndices
-  );
-  stateExtractor(dataArray, indices);
+  stateExtractor(delimitedDataArray, indices);
 }
 
 function chunkedPhotoExtractorConstraints(){
-  const dataArray = Provable.witness(
-    Provable.Array(Field, 1536),
-    () => nDelimitedData
-  );
-
-  const indices = Provable.witness(
-  Provable.Array(Field, 18),
-  () => delimiterIndices
-  );
-  photoExtractor(dataArray, indices);
+  photoExtractor(delimitedDataArray, indices);
 }
 
 
 function photoExtractorConstraints(){
-  const dataArray = Provable.witness(
-    Provable.Array(Field, 1536),
-    () => nDelimitedData
-  );
-
-  const indices = Provable.witness(
-  Provable.Array(Field, 18),
-  () => delimiterIndices
-  );
-  photoExtractorChunked(dataArray, indices);
+  photoExtractorChunked(delimitedDataArray, indices);
 }
 
 // Parameters are assigned to a variable as `BenchmarkResults` type.
