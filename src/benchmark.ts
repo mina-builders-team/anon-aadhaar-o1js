@@ -140,3 +140,18 @@ const chunkedPhotoExtractorParameters = await getBenchmarkParameters(
   'Pincode',
   chunkedPhotoExtractorConstraints
 );
+
+// Analyzers for nullifier 
+
+const photoBytes = photoExtractorChunked(nDelimitedData, indices);
+
+function nullifierConstraints(){
+  const photo = Provable.witness(Provable.Array(Field, 32), () => photoBytes);
+  const nullifierSeed = Provable.witness(Field, () => Field.random());
+  nullifier(nullifierSeed, photo);
+};
+
+const nullifierParameters = await getBenchmarkParameters(
+  'Nullifier',
+  nullifierConstraints
+);
