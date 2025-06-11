@@ -1,37 +1,60 @@
 import { Field, Provable } from 'o1js';
 import { getQRData, TEST_DATA } from './getQRData.js';
-import { createDelimitedData, createPaddedQRData, prepareRecursiveHashData } from './testUtils.js';
-import { ageAndGenderExtractor, delimitData, photoExtractor, photoExtractorChunked, pincodeExtractor, stateExtractor, timestampExtractor } from './extractors.js';
+import {
+  createDelimitedData,
+  createPaddedQRData,
+  prepareRecursiveHashData,
+} from './testUtils.js';
+import {
+  ageAndGenderExtractor,
+  delimitData,
+  photoExtractor,
+  photoExtractorChunked,
+  pincodeExtractor,
+  stateExtractor,
+  timestampExtractor,
+} from './extractors.js';
 import { getDelimiterIndices } from './utils.js';
 import { PHOTO_POSITION } from './constants.js';
 import { ConstraintSystemSummary } from 'o1js/dist/node/lib/provable/core/provable-context.js';
+import { SignatureVerifier } from './signatureVerifier.js';
+import { hashProgram } from './recursion.js';
+import { nullifier } from './nullifier.js';
 
 interface BenchmarkResults {
   methodName: string;
   rowSize: ConstraintSystemSummary;
 }
 
+// Proof Generation Configuration
+let proofsEnabled = false;
+let forceRecompile = true;
+
+// Input Preparation
 const inputs = getQRData(TEST_DATA);
 const qrDataPadded = inputs.paddedData.toBytes();
+const signature = inputs.signatureBigint;
+const publicKey = inputs.publicKeyBigint;
 const qrData = createPaddedQRData(qrDataPadded);
-const dataArray = Provable.witness(Provable.Array(Field, 1536), () =>
-  qrData.map((x) => Field.from(x))
-);
-
-// Get the photo index.
-
 const delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field);
-const photoIndex = Provable.witness(Field, () => delimiterIndices[PHOTO_POSITION - 1].add(1));
-const nDelimitedData = createDelimitedData(qrData, Number(photoIndex)).map(Field);
 
+// Witnessed values
+const photoIndex = Provable.witness(Field, () =>
+  delimiterIndices[PHOTO_POSITION - 1].add(1)
+);
+const nDelimitedData = createDelimitedData(qrData, Number(photoIndex)).map(
+  Field
+);
 const delimitedDataArray = Provable.witness(
   Provable.Array(Field, 1536),
   () => nDelimitedData
 );
-
 const indices = Provable.witness(
-Provable.Array(Field, 18),
-() => delimiterIndices
+  Provable.Array(Field, 18),
+  () => delimiterIndices
+);
+const dataArray = Provable.witness(Provable.Array(Field, 1536), () =>
+  qrData.map((x) => Field.from(x))
 );
 
 async function getBenchmarkParameters(
@@ -59,7 +82,6 @@ function timestampExtractorConstraints() {
 }
 
 function ageAndGenderExtractorConstraints() {
-
   const day = Provable.witness(Field, () => Field.from(1));
   const month = Provable.witness(Field, () => Field.from(1));
   const year = Provable.witness(Field, () => Field.from(2024));
@@ -67,24 +89,23 @@ function ageAndGenderExtractorConstraints() {
   ageAndGenderExtractor(delimitedDataArray, indices, year, month, day);
 }
 
-function pincodeExtractorConstraints(){
+function pincodeExtractorConstraints() {
   pincodeExtractor(delimitedDataArray, indices);
 }
 
-function stateExtractorConstraints(){
+function stateExtractorConstraints() {
   stateExtractor(delimitedDataArray, indices);
 }
 
-function chunkedPhotoExtractorConstraints(){
+function chunkedPhotoExtractorConstraints() {
   photoExtractor(delimitedDataArray, indices);
 }
 
-
-function photoExtractorConstraints(){
+function photoExtractorConstraints() {
   photoExtractorChunked(delimitedDataArray, indices);
 }
 
-// Parameters are assigned to a variable as `BenchmarkResults` type.
+// Parameters are assigned to relevant variables as `BenchmarkResults` type.
 const delimitDataParameters = await getBenchmarkParameters(
   'Delimit Data',
   delimitDataConstraints
@@ -96,7 +117,7 @@ const ageAndGenderExtractorParameters = await getBenchmarkParameters(
 );
 
 const timestampParameters = await getBenchmarkParameters(
-  'Delimit Data',
+  'Timestamp',
   timestampExtractorConstraints
 );
 
@@ -105,12 +126,10 @@ const pincodeExtractorParameters = await getBenchmarkParameters(
   pincodeExtractorConstraints
 );
 
-
 const stateExtractorParameters = await getBenchmarkParameters(
   'Pincode',
   stateExtractorConstraints
 );
-
 
 const photoExtractorParameters = await getBenchmarkParameters(
   'Pincode',
