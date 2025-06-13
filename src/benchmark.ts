@@ -131,7 +131,7 @@ function chunkedPhotoExtractorConstraints() {
   Provable.Array(Field, 18),
   () => delimiterIndices
 );
-  photoExtractor(delimitedDataArray, indices);
+  photoExtractorChunked(delimitedDataArray, indices);
 }
 
 function photoExtractorConstraints() {
@@ -143,7 +143,7 @@ function photoExtractorConstraints() {
   Provable.Array(Field, 18),
   () => delimiterIndices
 );
-  photoExtractorChunked(delimitedDataArray, indices);
+  photoExtractor(delimitedDataArray, indices);
 }
 
 // Parameters are assigned to relevant variables as `BenchmarkResults` type.
@@ -168,17 +168,17 @@ const pincodeExtractorParameters = await getBenchmarkParameters(
 );
 
 const stateExtractorParameters = await getBenchmarkParameters(
-  'Pincode',
+  'State',
   stateExtractorConstraints
 );
 
 const photoExtractorParameters = await getBenchmarkParameters(
-  'Pincode',
+  'Photo',
   photoExtractorConstraints
 );
 
 const chunkedPhotoExtractorParameters = await getBenchmarkParameters(
-  'Pincode',
+  'Chunked Photo',
   chunkedPhotoExtractorConstraints
 );
 
@@ -199,6 +199,27 @@ const nullifierParameters = await getBenchmarkParameters(
   'Nullifier',
   nullifierConstraints
 );
+
+const benchmarkResults = [
+  delimitDataParameters,
+  ageAndGenderExtractorParameters,
+  timestampParameters,
+  pincodeExtractorParameters,
+  stateExtractorParameters,
+  photoExtractorParameters,
+  chunkedPhotoExtractorParameters,
+  nullifierParameters,
+];
+console.log('lan: ' , photoExtractorParameters.rowSize.rows);
+console.log('lan: ' , nullifierParameters.rowSize.rows);
+
+console.table(
+  benchmarkResults.map((result) => ({
+    Method: result.methodName,
+    Rows: result.rowSize.rows,
+  }))
+);
+
 // Prepare data for hashing and signature verifier benchmarks.
 const dataBlocks = prepareRecursiveHashData(inputs.signedData);
 
