@@ -61,7 +61,7 @@ async function getBenchmarkParameters(
 /**
  * Start of benchmark for extractors.
  * Since they are functions to be used inside ZkProgram, computation
- * of constraints are done with `Provable.constraintSystem()`.
+ * of constraints are done with Provable.constraintSystem().
  */
 function delimitDataConstraints() {
   const dataArray = Provable.witness(Provable.Array(Field, 1536), () =>
@@ -153,7 +153,7 @@ function photoExtractorConstraints() {
   photoExtractor(delimitedDataArray, indices);
 }
 
-// Parameters are assigned to relevant variables as `BenchmarkResults` type.
+// Parameters are assigned to relevant variables as BenchmarkResults type.
 const delimitDataParameters = await getBenchmarkParameters(
   'Delimit Data',
   delimitDataConstraints
@@ -235,6 +235,7 @@ const dataBlocksForHashBase = prepareRecursiveHashData(
 const programCompilationTimes: CompilationResults[] = [];
 
 async function hashAnalysis() {
+ try { 
   // Compile circuit and record time
   let start = performance.now();
   await hashProgram.compile({ proofsEnabled, forceRecompile });
@@ -274,11 +275,21 @@ async function hashAnalysis() {
       time: hashBaseTime,
     },
   ];
-
   console.table(hashProgramMethods);
+
+  }
+    catch(e){
+    if (e instanceof Error) {
+    console.error('Error in hash analysis step:', e.message);
+    console.error(e.stack);
+  } else {
+    console.error('Unknown error in hash analysis step:', e);
+  }
+  }
 }
 
-async function compileVerifier() {
+async function verifierAnalysis() {
+  try{  
   // Compile SignatureVerifier and record time
   let start = performance.now();
   await SignatureVerifier.compile({ proofsEnabled });
@@ -301,17 +312,28 @@ async function compileVerifier() {
   const signatureVerifierconstraint = [
     {
       circuitName: 'verifySignature',
-      time: verifyTime,
       rows: signatureVerifierAnalysis.verifySignature.rows,
+      time: verifyTime,
     },
   ];
   console.table(signatureVerifierconstraint);
+
+
+  }
+  catch(e){
+    if (e instanceof Error) {
+    console.error('Error in verifier analysis step:', e.message);
+    console.error(e.stack);
+  } else {
+    console.error('Unknown error in verifier analysis step:', e);
+  }
+  }
 }
 
 async function main() {
   await hashAnalysis();
-  await compileVerifier();
+  await verifierAnalysis();
   console.table(programCompilationTimes);
 }
 
-main();
+await main();
