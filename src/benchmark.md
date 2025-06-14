@@ -42,7 +42,7 @@ Provable functions include extractors and the nullifier. Constraint counts are g
 
 ## hashProgram Method Analysis
 
-Note: Execution time for the base hashing method depends on input size.
+Note: Execution time for the base hashing method depends on input size. Also remind that `hashRecursive` is called recursively depending on the length of the data blocks. For 5 blocks a new `hashRecursive` is called.
 
 | Method Name         | Rows  | Time     |
 | ------------------- |-------|----------|

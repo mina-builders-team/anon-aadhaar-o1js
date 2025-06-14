@@ -197,7 +197,7 @@ npm run test
 ## How to run benchmark
 [Benchmark Results](./benchmark.md)
 
-When benchmark is ran with the following command, you should obtain a table as the same format as in the `benchmark.md`.
+When the benchmark is run using the following command, it should produce a table in the same format as shown in `benchmark.md`.
 
 ```sh
 npm run benchmark
