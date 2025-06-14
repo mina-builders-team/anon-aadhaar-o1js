@@ -21,7 +21,6 @@ import { SignatureVerifier } from './signatureVerifier.js';
 import { hashProgram } from './recursion.js';
 import { nullifier } from './nullifier.js';
 
-
 interface BenchmarkResults {
   methodName: string;
   rowSize: ConstraintSystemSummary;
@@ -46,9 +45,7 @@ const delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field);
 
 // Witnessed values
 const photo = delimiterIndices[PHOTO_POSITION - 1].add(1);
-const nDelimitedData = createDelimitedData(qrData, Number(photo)).map(
-  Field
-);
+const nDelimitedData = createDelimitedData(qrData, Number(photo)).map(Field);
 
 async function getBenchmarkParameters(
   methodName: string,
@@ -68,33 +65,34 @@ async function getBenchmarkParameters(
  */
 function delimitDataConstraints() {
   const dataArray = Provable.witness(Provable.Array(Field, 1536), () =>
-  qrData.map((x) => Field.from(x))
+    qrData.map((x) => Field.from(x))
   );
 
   const photoIndex = Provable.witness(Field, () =>
-  delimiterIndices[PHOTO_POSITION - 1].add(1)
-);
+    delimiterIndices[PHOTO_POSITION - 1].add(1)
+  );
 
   delimitData(dataArray, photoIndex);
 }
 
 function timestampExtractorConstraints() {
   const dataArray = Provable.witness(Provable.Array(Field, 1536), () =>
-  qrData.map((x) => Field.from(x))
-);
+    qrData.map((x) => Field.from(x))
+  );
 
   timestampExtractor(dataArray);
 }
 
 function ageAndGenderExtractorConstraints() {
   const delimitedDataArray = Provable.witness(
-  Provable.Array(Field, 1536),
-  () => nDelimitedData);
+    Provable.Array(Field, 1536),
+    () => nDelimitedData
+  );
 
   const indices = Provable.witness(
-  Provable.Array(Field, 18),
-  () => delimiterIndices
-);
+    Provable.Array(Field, 18),
+    () => delimiterIndices
+  );
 
   const day = Provable.witness(Field, () => Field.from(1));
   const month = Provable.witness(Field, () => Field.from(1));
@@ -104,50 +102,54 @@ function ageAndGenderExtractorConstraints() {
 }
 
 function pincodeExtractorConstraints() {
-    const delimitedDataArray = Provable.witness(
-  Provable.Array(Field, 1536),
-  () => nDelimitedData);
+  const delimitedDataArray = Provable.witness(
+    Provable.Array(Field, 1536),
+    () => nDelimitedData
+  );
 
   const indices = Provable.witness(
-  Provable.Array(Field, 18),
-  () => delimiterIndices
-);
+    Provable.Array(Field, 18),
+    () => delimiterIndices
+  );
   pincodeExtractor(delimitedDataArray, indices);
 }
 
 function stateExtractorConstraints() {
-    const delimitedDataArray = Provable.witness(
-  Provable.Array(Field, 1536),
-  () => nDelimitedData);
+  const delimitedDataArray = Provable.witness(
+    Provable.Array(Field, 1536),
+    () => nDelimitedData
+  );
 
   const indices = Provable.witness(
-  Provable.Array(Field, 18),
-  () => delimiterIndices
-);
+    Provable.Array(Field, 18),
+    () => delimiterIndices
+  );
   stateExtractor(delimitedDataArray, indices);
 }
 
 function chunkedPhotoExtractorConstraints() {
-    const delimitedDataArray = Provable.witness(
-  Provable.Array(Field, 1536),
-  () => nDelimitedData);
+  const delimitedDataArray = Provable.witness(
+    Provable.Array(Field, 1536),
+    () => nDelimitedData
+  );
 
   const indices = Provable.witness(
-  Provable.Array(Field, 18),
-  () => delimiterIndices
-);
+    Provable.Array(Field, 18),
+    () => delimiterIndices
+  );
   photoExtractorChunked(delimitedDataArray, indices);
 }
 
 function photoExtractorConstraints() {
   const delimitedDataArray = Provable.witness(
-  Provable.Array(Field, 1536),
-  () => nDelimitedData);
+    Provable.Array(Field, 1536),
+    () => nDelimitedData
+  );
 
   const indices = Provable.witness(
-  Provable.Array(Field, 18),
-  () => delimiterIndices
-);
+    Provable.Array(Field, 18),
+    () => delimiterIndices
+  );
   photoExtractor(delimitedDataArray, indices);
 }
 
@@ -187,18 +189,18 @@ const chunkedPhotoExtractorParameters = await getBenchmarkParameters(
   chunkedPhotoExtractorConstraints
 );
 
-// Analyzers for nullifier 
+// Analyzers for nullifier
 const indices = Provable.witness(
   Provable.Array(Field, 18),
   () => delimiterIndices
 );
 const photoBytes = photoExtractorChunked(nDelimitedData, indices);
 
-function nullifierConstraints(){
+function nullifierConstraints() {
   const photo = Provable.witness(Provable.Array(Field, 32), () => photoBytes);
   const nullifierSeed = Provable.witness(Field, () => Field.random());
   nullifier(nullifierSeed, photo);
-};
+}
 
 const nullifierParameters = await getBenchmarkParameters(
   'Nullifier',
@@ -252,19 +254,29 @@ async function hashAnalysis() {
   const hashBaseTime = ((end - start) / 1000).toFixed(3) + ' s';
 
   // Prepare array for hashProgram methods and print table
-  programCompilationTimes.push({ circuitName: 'hashProgram', time: compileTime });
+  programCompilationTimes.push({
+    circuitName: 'hashProgram',
+    time: compileTime,
+  });
 
   const hashProgramAnalysis = await hashProgram.analyzeMethods();
 
   console.log('hashProgram Method data');
   const hashProgramMethods = [
-    { methodName: 'hashRecursive', rows: hashProgramAnalysis.hashRecursive.rows, time: hashRecursiveTime },
-    { methodName: 'hashBase', rows: hashProgramAnalysis.hashBase.rows ,time: hashBaseTime },
+    {
+      methodName: 'hashRecursive',
+      rows: hashProgramAnalysis.hashRecursive.rows,
+      time: hashRecursiveTime,
+    },
+    {
+      methodName: 'hashBase',
+      rows: hashProgramAnalysis.hashBase.rows,
+      time: hashBaseTime,
+    },
   ];
 
   console.table(hashProgramMethods);
 }
-
 
 async function compileVerifier() {
   // Compile SignatureVerifier and record time
@@ -273,18 +285,25 @@ async function compileVerifier() {
   let end = performance.now();
   const compileTime = ((end - start) / 1000).toFixed(3) + ' s';
 
-  // Record verifySignature execution time  
+  // Record verifySignature execution time
   start = performance.now();
   await SignatureVerifier.verifySignature(dataBlocks, signature, publicKey);
   end = performance.now();
   const verifyTime = ((end - start) / 1000).toFixed(3) + ' s';
 
-  programCompilationTimes.push({ circuitName: 'SignatueVerifier', time: compileTime });
+  programCompilationTimes.push({
+    circuitName: 'SignatueVerifier',
+    time: compileTime,
+  });
 
   const signatureVerifierAnalysis = await SignatureVerifier.analyzeMethods();
 
   const signatureVerifierconstraint = [
-    {circuitName:'verifySignature', time: verifyTime, rows: signatureVerifierAnalysis.verifySignature.rows }
+    {
+      circuitName: 'verifySignature',
+      time: verifyTime,
+      rows: signatureVerifierAnalysis.verifySignature.rows,
+    },
   ];
   console.table(signatureVerifierconstraint);
 }
