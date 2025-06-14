@@ -1,7 +1,6 @@
 # Benchmark Report
 
-This benchmark report presents analysis of the circuits and provable functions that are used in Anon Aadhaar. Benchmark report includes constraints of provable functions (extractors and nullifier) and `ZkProgram` circuits.
-For provable functions, `Provable.constraintSystem` API is used. Execution time of the provable functions can not be determined, since they are executed out of circuit at the moment and planned to be used in the Aadhaar circuit, only constraints of them is put in the report.
+This benchmark report presents an analysis of the circuits and provable functions used in Anon Aadhaar. It includes constraint counts for provable functions (extractors and nullifier) and `ZkProgram` circuits. For provable functions, the `Provable.constraintSystem` API is used. Execution time for these functions is not measured, as they are currently executed outside of a circuit. They are planned to be used within the Aadhaar circuit, and for now, only their constraints are reported.
 
 ## Device Information
 
@@ -11,9 +10,17 @@ For provable functions, `Provable.constraintSystem` API is used. Execution time 
 - Node.js Version: 23.5.0
 - o1js Version: 2.4.0
 
+## Methodology
+
+Two different approaches are used for measurement:
+- `Provable.constraintSystem` is used to analyze the constraint count of functions like extractors or the nullifier. Only constraints are measured, as these functions are standalone and their execution time cannot be determined outside of a circuit. To obtain accurate constraint values, inputs to these functions are provided using `Provable.witness`.
+- `.analyzeMethods()` is used on `ZkProgram` circuits to extract constraint information in a structured format. To measure compile and execution times of `ZkProgram` methods, `performance.now()` is called before and after each computation.
+
+To minimize the impact of cache optimizations during circuit compilation, the `forceRecompile` option is enabled.
+
 ## Provable Functions Analysis
 
-Provable functions consist of extractors and nullifier. For calculating the constraints, `Provable.constraintSytstem`is used. To make this API to measure the constarint values, execution of these functions should be done with witnessed inputs. Otherwise, contraints will be displayed as 0. To make the process more neat, a function called `getBenchmarkParameters` is used, returns the constraint summaries and name of the extraction done.
+Provable functions include extractors and the nullifier. Constraint counts are gathered using `Provable.constraintSystem`. For this API to work correctly, inputs must be provided as witnesses. Otherwise, constraint counts will appear as zero. A helper function named `getBenchmarkParameters` is used to streamline this process by returning both the constraint summary and method name.
 
 | Extractor             | Rows   |
 | --------------------- | ------ |
@@ -35,7 +42,7 @@ Provable functions consist of extractors and nullifier. For calculating the cons
 
 ## hashProgram Method Analysis
 
-Note: Time it takes for the base hashing method varies depending on the size of the input.
+Note: Execution time for the base hashing method depends on input size.
 
 | Method Name         | Rows  | Time     |
 | ------------------- |-------|----------|
@@ -50,6 +57,6 @@ Note: Time it takes for the base hashing method varies depending on the size of 
 
 ## Conclusion and Remarks
 
-Existing implementation has optimizations available, that can reduce the constraints of some extractors drastically.
+There are opportunities to optimize the current implementation further, particularly to reduce the constraint count of some extractors significantly.
 
-Also, at the moment `SignatureVerifier` circuit can not be compiled with `forceRecompile` option, since it uses `hashProgram` in `hashBlocks` methods - which is causing circuit limit to be exceeded since `hashProgram` is not seen as cached when `SignatureVerifier` is compiled with `forceRecompile` option. Hence, compilatino time of `SignatureVerifier` should be considered together with `hashProgram`.
+Currently, the `SignatureVerifier` circuit cannot be compiled with the `forceRecompile` option because it depends on the `hashProgram` in its `hashBlocks` method. When `forceRecompile` is enabled, `hashProgram` is not recognized as cached, which causes the circuit size to exceed the allowed limit. Therefore, the compilation time for `SignatureVerifier` should be interpreted alongside `hashProgram`.
