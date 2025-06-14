@@ -27,6 +27,11 @@ interface BenchmarkResults {
   rowSize: ConstraintSystemSummary;
 }
 
+interface CompilationResults {
+  circuitName: string;
+  time: string;
+}
+
 // Proof Generation Configuration
 let proofsEnabled = true;
 let forceRecompile = true;
@@ -210,8 +215,6 @@ const benchmarkResults = [
   chunkedPhotoExtractorParameters,
   nullifierParameters,
 ];
-console.log('lan: ' , photoExtractorParameters.rowSize.rows);
-console.log('lan: ' , nullifierParameters.rowSize.rows);
 
 console.table(
   benchmarkResults.map((result) => ({
