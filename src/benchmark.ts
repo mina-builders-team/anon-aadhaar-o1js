@@ -226,32 +226,73 @@ console.table(
 // Prepare data for hashing and signature verifier benchmarks.
 const dataBlocks = prepareRecursiveHashData(inputs.signedData);
 
-async function compileHash(){
-// Analyzers for `hashProgram`
-const hashProgramCompilation = performance.now();
-await hashProgram.compile({proofsEnabled, forceRecompile});
-const hashProgramCompilationEnd = performance.now();
+const dataBlocksForHashBase = prepareRecursiveHashData(
+  inputs.signedData.slice(0, 448)
+);
 
-const hashProgramConstraints = await hashProgram.analyzeMethods();
-console.log(hashProgramConstraints.hashRecursive.summary());
-console.log(hashProgramConstraints.hashBase.summary());
-console.log((hashProgramCompilationEnd - hashProgramCompilation) / 1000, 's');
+const programCompilationTimes: CompilationResults[] = [];
+
+async function hashAnalysis() {
+  // Compile circuit and record time
+  let start = performance.now();
+  await hashProgram.compile({ proofsEnabled, forceRecompile });
+  let end = performance.now();
+  const compileTime = ((end - start) / 1000).toFixed(3) + ' s';
+
+  // hashRecursive timing
+  start = performance.now();
+  await hashProgram.hashRecursive(dataBlocks);
+  end = performance.now();
+  const hashRecursiveTime = ((end - start) / 1000).toFixed(3) + ' s';
+
+  // hashBase timing
+  start = performance.now();
+  await hashProgram.hashBase(dataBlocksForHashBase);
+  end = performance.now();
+  const hashBaseTime = ((end - start) / 1000).toFixed(3) + ' s';
+
+  // Prepare array for hashProgram methods and print table
+  programCompilationTimes.push({ circuitName: 'hashProgram', time: compileTime });
+
+  const hashProgramAnalysis = await hashProgram.analyzeMethods();
+
+  console.log('hashProgram Method data');
+  const hashProgramMethods = [
+    { methodName: 'hashRecursive', rows: hashProgramAnalysis.hashRecursive.rows, time: hashRecursiveTime },
+    { methodName: 'hashBase', rows: hashProgramAnalysis.hashBase.rows ,time: hashBaseTime },
+  ];
+
+  console.table(hashProgramMethods);
 }
 
-async function compileVerifier(){
-const signatureVerifierCompilation = performance.now();
-await SignatureVerifier.compile({proofsEnabled});
-const signatureVerifierCompilationEnd = performance.now();
 
-console.log((signatureVerifierCompilationEnd - signatureVerifierCompilation) / 1000, 's');
-const SignatureVerifierConstraints = await SignatureVerifier.analyzeMethods();
-console.log(SignatureVerifierConstraints.verifySignature.summary());
+async function compileVerifier() {
+  // Compile SignatureVerifier and record time
+  let start = performance.now();
+  await SignatureVerifier.compile({ proofsEnabled });
+  let end = performance.now();
+  const compileTime = ((end - start) / 1000).toFixed(3) + ' s';
 
-const signatureVerifierMethod = performance.now();
-await SignatureVerifier.verifySignature(dataBlocks, signature, publicKey);
-const signatureVerifierMethodEnd = performance.now();
-console.log((signatureVerifierMethodEnd - signatureVerifierMethod) / 1000, 's');
+  // Record verifySignature execution time  
+  start = performance.now();
+  await SignatureVerifier.verifySignature(dataBlocks, signature, publicKey);
+  end = performance.now();
+  const verifyTime = ((end - start) / 1000).toFixed(3) + ' s';
+
+  programCompilationTimes.push({ circuitName: 'SignatueVerifier', time: compileTime });
+
+  const signatureVerifierAnalysis = await SignatureVerifier.analyzeMethods();
+
+  const signatureVerifierconstraint = [
+    {circuitName:'verifySignature', time: verifyTime, rows: signatureVerifierAnalysis.verifySignature.rows }
+  ];
+  console.table(signatureVerifierconstraint);
 }
 
-await compileHash();
-await compileVerifier();
+async function main() {
+  await hashAnalysis();
+  await compileVerifier();
+  console.table(programCompilationTimes);
+}
+
+main();
