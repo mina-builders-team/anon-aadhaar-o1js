@@ -179,3 +179,26 @@ flowchart TD
 - [Anon Aadhaar Documentation](https://documentation.anon-aadhaar.pse.dev/docs/intro) - Comprehensive guide on the Anon Aadhaar system, provided by the PSE team.
 - [Anon Aadhaar Implementation](https://github.com/anon-aadhaar/anon-aadhaar/tree/main) - The official repository for Anon Aadhaar implementation by the PSE team in Circom.
 - [Aadhaar Secure QR Code Specification](https://uidai.gov.in/images/resource/User_manulal_QR_Code_15032019.pdf) -  This document provides the detailed specification for the Secure QR code used in Aadhaar.
+
+# How to Build & Test
+
+## How to build
+
+```sh
+npm run build
+```
+
+## How to run tests
+
+```sh
+npm run test
+```
+
+## How to run benchmark
+[Benchmark Results](./benchmark.md)
+
+When benchmark is ran with the following command, you should obtain a table as the same format as in the `benchmark.md`.
+
+```sh
+npm run benchmark
+```
