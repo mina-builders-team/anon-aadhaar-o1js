@@ -31,6 +31,9 @@ interface CompilationResults {
   time: string;
 }
 
+const DATA_ARRAY_SIZE = 1536;
+const DELIMITER_ARRAY_SIZE = 18;
+
 // Proof Generation Configuration
 let proofsEnabled = true;
 let forceRecompile = true;
@@ -64,7 +67,7 @@ async function getBenchmarkParameters(
  * of constraints are done with Provable.constraintSystem().
  */
 function delimitDataConstraints() {
-  const dataArray = Provable.witness(Provable.Array(Field, 1536), () =>
+  const dataArray = Provable.witness(Provable.Array(Field, DATA_ARRAY_SIZE), () =>
     qrData.map((x) => Field.from(x))
   );
 
@@ -76,7 +79,7 @@ function delimitDataConstraints() {
 }
 
 function timestampExtractorConstraints() {
-  const dataArray = Provable.witness(Provable.Array(Field, 1536), () =>
+  const dataArray = Provable.witness(Provable.Array(Field, DATA_ARRAY_SIZE), () =>
     qrData.map((x) => Field.from(x))
   );
 
@@ -85,12 +88,12 @@ function timestampExtractorConstraints() {
 
 function ageAndGenderExtractorConstraints() {
   const delimitedDataArray = Provable.witness(
-    Provable.Array(Field, 1536),
+    Provable.Array(Field, DATA_ARRAY_SIZE),
     () => nDelimitedData
   );
 
   const indices = Provable.witness(
-    Provable.Array(Field, 18),
+    Provable.Array(Field, DELIMITER_ARRAY_SIZE),
     () => delimiterIndices
   );
 
@@ -103,12 +106,12 @@ function ageAndGenderExtractorConstraints() {
 
 function pincodeExtractorConstraints() {
   const delimitedDataArray = Provable.witness(
-    Provable.Array(Field, 1536),
+    Provable.Array(Field, DATA_ARRAY_SIZE),
     () => nDelimitedData
   );
 
   const indices = Provable.witness(
-    Provable.Array(Field, 18),
+    Provable.Array(Field, DELIMITER_ARRAY_SIZE),
     () => delimiterIndices
   );
   pincodeExtractor(delimitedDataArray, indices);
@@ -116,12 +119,12 @@ function pincodeExtractorConstraints() {
 
 function stateExtractorConstraints() {
   const delimitedDataArray = Provable.witness(
-    Provable.Array(Field, 1536),
+    Provable.Array(Field, DATA_ARRAY_SIZE),
     () => nDelimitedData
   );
 
   const indices = Provable.witness(
-    Provable.Array(Field, 18),
+    Provable.Array(Field, DELIMITER_ARRAY_SIZE),
     () => delimiterIndices
   );
   stateExtractor(delimitedDataArray, indices);
@@ -129,12 +132,12 @@ function stateExtractorConstraints() {
 
 function chunkedPhotoExtractorConstraints() {
   const delimitedDataArray = Provable.witness(
-    Provable.Array(Field, 1536),
+    Provable.Array(Field, DATA_ARRAY_SIZE),
     () => nDelimitedData
   );
 
   const indices = Provable.witness(
-    Provable.Array(Field, 18),
+    Provable.Array(Field, DELIMITER_ARRAY_SIZE),
     () => delimiterIndices
   );
   photoExtractorChunked(delimitedDataArray, indices);
@@ -142,12 +145,12 @@ function chunkedPhotoExtractorConstraints() {
 
 function photoExtractorConstraints() {
   const delimitedDataArray = Provable.witness(
-    Provable.Array(Field, 1536),
+    Provable.Array(Field, DATA_ARRAY_SIZE),
     () => nDelimitedData
   );
 
   const indices = Provable.witness(
-    Provable.Array(Field, 18),
+    Provable.Array(Field, DELIMITER_ARRAY_SIZE),
     () => delimiterIndices
   );
   photoExtractor(delimitedDataArray, indices);
@@ -191,7 +194,7 @@ const chunkedPhotoExtractorParameters = await getBenchmarkParameters(
 
 // Analyzers for nullifier
 const indices = Provable.witness(
-  Provable.Array(Field, 18),
+  Provable.Array(Field, DELIMITER_ARRAY_SIZE),
   () => delimiterIndices
 );
 const photoBytes = photoExtractorChunked(nDelimitedData, indices);
@@ -317,7 +320,7 @@ async function verifierAnalysis() {
     },
   ];
   console.table(signatureVerifierconstraint);
-
+  
 
   }
   catch(e){
