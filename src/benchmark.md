@@ -16,7 +16,9 @@ Two different approaches are used for measurement:
 - `Provable.constraintSystem` is used to analyze the constraint count of functions like extractors or the nullifier. Only constraints are measured, as these functions are standalone and their execution time cannot be determined outside of a circuit. To obtain accurate constraint values, inputs to these functions are provided using `Provable.witness`.
 - `.analyzeMethods()` is used on `ZkProgram` circuits to extract constraint information in a structured format. To measure compile and execution times of `ZkProgram` methods, `performance.now()` is called before and after each computation.
 
-To minimize the impact of cache optimizations during circuit compilation, the `forceRecompile` option is enabled.
+
+To minimize the impact of cache optimizations during circuit compilation, the `forceRecompile` option is enabled. Yet, it is not used for `SignatureVerifier`. While benchmarking the `SignatureVerifier` with `forceRecompile` option, `RuntimeError: unreachable` is occurred. In o1js, this error can indicate that circuit row size limit (~65k rows) is exceeded. Since `SignatureVerifier` uses `hashBlocks` that uses `hashProgram`, this option causes the compilation of both `SignatureVerifier` and already compiled `hashProgram`, hence exceeds the circuit limit. Normally, what should happen is once the `hashProgram` is compiled, compilation step of `SignatureVerifier` should get the compiled from cache and use it instead of recompiling all components. For that reason, 
+
 
 ## Provable Functions Analysis
 
@@ -53,7 +55,7 @@ Note: Execution time for the base hashing method depends on input size. Also rem
 
 | Method Name     | Rows  | Time     |
 | --------------- | ----- | -------- |
-| verifySignature | 38973 | 21.333 s |
+| verifySignature | 38973 | 87.488 s |
 
 ## Conclusion and Remarks
 
