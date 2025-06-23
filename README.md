@@ -185,13 +185,13 @@ flowchart TD
 ## How to build
 
 ```sh
-npm run build
+pnpm run build
 ```
 
 ## How to run tests
 
 ```sh
-npm run test
+pnpm run test
 ```
 
 ## How to run benchmark
@@ -200,5 +200,5 @@ npm run test
 When the benchmark is run using the following command, it should produce a table in the same format as shown in `benchmark.md`.
 
 ```sh
-npm run benchmark
+cd packages/core && pnpm run benchmark
 ```
