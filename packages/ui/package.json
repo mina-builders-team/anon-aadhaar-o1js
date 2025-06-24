@@ -15,7 +15,8 @@
     "next": "15.3.4",
     "o1js": ">=2.4.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -30,8 +31,5 @@
     "postcss": "^8.4.31",
     "tailwindcss": "3.3.3",
     "typescript": "^5.4.5"
-  },
-  "peerDependencies": {
-    "anon-aadhaar-o1js": "workspace:*"
   }
 }

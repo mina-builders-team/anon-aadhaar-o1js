@@ -40,16 +40,17 @@ describe('Extractor circuit tests', () => {
     photoIndex = delimiterIndices[PHOTO_POSITION - 1].add(1);
     // Map to field for using it through tests.
     nDelimitedData = createDelimitedData(qrData, Number(photoIndex)).map(Field);
-  }),
-    describe('Delimiter circuit tests', () => {
-      it('should extract delimited data correctly', async () => {
-        const qrDataField = qrData.map(Field);
+  });
 
-        const delimitedData = delimitData(qrDataField, photoIndex);
+  describe('Delimiter circuit tests', () => {
+    it('should extract delimited data correctly', async () => {
+      const qrDataField = qrData.map(Field);
 
-        expect(delimitedData).toEqual(nDelimitedData);
-      });
+      const delimitedData = delimitData(qrDataField, photoIndex);
+
+      expect(delimitedData).toEqual(nDelimitedData);
     });
+  });
   describe('Extractor Circuit tests', () => {
     it('should extract timestamp correctly', async () => {
       const timestamp = timestampExtractor(nDelimitedData);

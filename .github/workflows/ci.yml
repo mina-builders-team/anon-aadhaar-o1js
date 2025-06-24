@@ -48,11 +48,13 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: Git checkout
         uses: actions/checkout@v4
-      - name: NPM ci, build, & test
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+      - name: pnpm install, build, & test
         run: |
-          npm ci
-          npm run build --if-present
-          npm test
+          pnpm install --frozen-lockfile
+          pnpm run build
+          pnpm test
         env:
           CI: true
       #
