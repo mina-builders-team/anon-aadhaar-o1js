@@ -226,7 +226,7 @@ function pincodeExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
 /**
  * Extracts the state information from delimited data until it hits the next delimiter.
  *
- * Rows: 49280
+ * Rows: 12328
  *
  * @param {Field[]} nDelimitedData - The delimited input data array.
  * @param {Field[]} delimiterIndices - Array of indices marking field positions.
@@ -277,20 +277,30 @@ function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
  * the start position using the `delimiterIndices` and selects the
  * corresponding subarray of photo bytes.
  *
- * Rows: ~100k
+ * Rows: 13640
  *
  * @param {Field[]} nDelimitedData - The full delimited input data as an array of Fields.
  * @param {Field[]} delimiterIndices - Array of Fields marking the start of each field.
  * @returns {Field[]} An array of Fields representing the extracted photo data bytes.
  */
 function photoExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
-  const byteLength = MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE;
-
   const startIndex = delimiterIndices[PHOTO_POSITION - 1].add(1);
 
-  const selectedArray = selectSubarray(nDelimitedData, startIndex, byteLength);
+  let isIndex = Field(0);
+  let isValue = Field(0);
 
-  return selectedArray;
+  let photoBytes = [];
+
+  for (let i = 0; i < 496; i++) {
+    isIndex = isIndex.seal();
+    isIndex = startIndex.lessThan(i).toField();
+
+    isValue = isValue.seal();
+    isValue = isIndex.mul(nDelimitedData[i]);
+    photoBytes.push(isValue);
+  }
+
+  return photoBytes;
 }
 
 /**
@@ -302,6 +312,8 @@ function photoExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
  *
  * The result is a compact representation of the photo suitable for ZK circuits.
  *
+ * Rows: 13880
+ * 
  * @param {Field[]} nDelimitedData - The full delimited input data as an array of Fields.
  * @param {Field[]} delimiterIndices - Array of Fields marking the start of each field.
  * @returns {Field[]} A 32-element array of packed Fields representing the photo.
@@ -316,7 +328,7 @@ function photoExtractorChunked(
 
   let photoArray = [];
 
-  for (let i = 0; i < 32; i++) {
+  for (let i = 0; i < 16; i++) {
     const packedData = pack(byteChunks[i]);
 
     photoArray.push(packedData);
