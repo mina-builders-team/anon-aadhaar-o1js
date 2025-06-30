@@ -233,18 +233,31 @@ function pincodeExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
  * @returns {Field[]} An array representing the extracted state data.
  */
 function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
-  let stateArray = [];
-
-  const byteLength = MAX_FIELD_BYTE_SIZE + 1;
-
-  // start with first element.
   const startIndex = delimiterIndices[STATE_POSITION - 1].add(1);
+
+  let stateArray = [];
 
   // Ending delimiter of the state.
   const endValue = (STATE_POSITION + 1) * 255;
   let is255 = Bool(false);
-  for (let i = 0; i < byteLength; i++) {
-    const pushValue = Gadgets.arrayGet(nDelimitedData, startIndex.add(i));
+
+  for (let i = 0; i < 16; i++) {
+    let pushValue = Field.from(0);
+    let isIndex = Field.from(0);
+    let isValue = Field.from(0);
+
+    let currentIndex = startIndex.add(i);
+    // Under assumption that state data will be at most <256th byte.
+    for (let j = 0; j < 256; j++) {
+      isIndex = isIndex.seal();
+      isIndex = currentIndex.equals(j).toField();
+
+      isValue = isValue.seal();
+      isValue = isIndex.mul(nDelimitedData[j]);
+
+      pushValue = pushValue.seal();
+      pushValue = pushValue.add(isValue);
+    }
 
     is255 = Bool.or(is255, pushValue.equals(endValue));
 
