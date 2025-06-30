@@ -92,19 +92,21 @@ describe('Extractor circuit tests', () => {
 
       expect(intToCharString(stateValue, 5)).toEqual('Delhi');
     });
-    it('should extract photo', async () => {
+    it('should execute photo extractor correctly', async () => {
       const photoBytes = photoExtractor(nDelimitedData, delimiterIndices);
 
-      // we know photo bytes start at 185.
-      const byteLength = MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE;
+      // 496 is the hard coded value we gave, we pack first 16 31 bytes for optimization reasons.
+      const byteLength = 16 * 31;
       const startIndex = Number(delimiterIndices[PHOTO_POSITION - 1]);
-      // Start with startIndex + 1 to omit the delimiter
-      const slicedPhotoBytes = qrData.slice(
-        startIndex + 1,
-        startIndex + byteLength + 1
+
+      let exactPhotoBytes = photoBytes.slice(startIndex + 2);
+      // Start with startIndex + 2 to omit the delimiter. 
+      const slicedPhotoBytes = nDelimitedData.slice(
+        startIndex + 2,
+        byteLength
       );
-      // Our state here is at length 5, so try:
-      expect(photoBytes.toString()).toEqual(slicedPhotoBytes.toString());
+
+      expect(exactPhotoBytes.toString()).toEqual(slicedPhotoBytes.toString());
     });
     it('should compute nullifier correctly', async () => {
     const nullifierSeed = Field(12345678);
