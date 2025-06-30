@@ -1,4 +1,4 @@
-import { Field, Provable } from 'o1js';
+import { Field, Provable, UInt32 } from 'o1js';
 import { getQRData, TEST_DATA } from './getQRData.js';
 import {
   createDelimitedData,
@@ -68,8 +68,8 @@ function delimitDataConstraints() {
     qrData.map((x) => Field.from(x))
   );
 
-  const photoIndex = Provable.witness(Field, () =>
-    delimiterIndices[PHOTO_POSITION - 1].add(1)
+  const photoIndex = Provable.witness(UInt32, () =>
+    UInt32.Unsafe.fromField(delimiterIndices[PHOTO_POSITION - 1].add(1))
   );
 
   delimitData(dataArray, photoIndex);

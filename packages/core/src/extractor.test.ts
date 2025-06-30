@@ -1,4 +1,4 @@
-import { Field, Poseidon } from 'o1js';
+import { Field, Poseidon, UInt32 } from 'o1js';
 import {
   MAX_FIELD_BYTE_SIZE,
   PHOTO_PACK_SIZE,
@@ -27,7 +27,7 @@ describe('Extractor circuit tests', () => {
   let nDelimitedData: Field[];
   let qrData: number[];
   let delimiterIndices: Field[];
-  let photoIndex: Field;
+  let photoIndex: UInt32;
 
   beforeAll(async () => {
     const inputs = getQRData(TEST_DATA);
@@ -37,7 +37,9 @@ describe('Extractor circuit tests', () => {
 
     qrData = createPaddedQRData(qrDataPadded);
 
-    photoIndex = delimiterIndices[PHOTO_POSITION - 1].add(1);
+    photoIndex = UInt32.Unsafe.fromField(
+      delimiterIndices[PHOTO_POSITION - 1].add(1)
+    );
     // Map to field for using it through tests.
     nDelimitedData = createDelimitedData(qrData, Number(photoIndex)).map(Field);
   });

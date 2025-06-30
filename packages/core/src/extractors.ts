@@ -1,4 +1,4 @@
-import { assert, Bool, Field, Gadgets, Provable } from 'o1js';
+import { assert, Bool, Field, Gadgets, Provable, UInt32 } from 'o1js';
 import {
   chunk,
   digitBytesToInt,
@@ -7,6 +7,7 @@ import {
   selectSubarray,
 } from './utils.js';
 import {
+  DATA_ARRAY_SIZE,
   DOB_POSITION,
   MAX_FIELD_BYTE_SIZE,
   PHOTO_PACK_SIZE,
@@ -28,31 +29,37 @@ export {
  * Processes the padded data up to the photo index, applying a 255 delimiter filter.
  * Returns a new array where elements before the photo are conditionally zeroed or kept.
  *
- * Rows: 633754
+ * Rows: 10753
  *
  * @param {Field[]} paddedData - The input data array, padded with extra values.
  * @param {Field} photoIndex - The index marking where photo data begins.
  * @returns {Field[]} The delimited and filtered data array.
  */
-function delimitData(paddedData: Field[], photoIndex: Field) {
+function delimitData(paddedData: Field[], photoIndex: UInt32) {
   let delimitedData = [];
   let n255Filter = Field.from(0);
-  const twoFiftyFive = Field.from(255);
 
-  let is255 = Field.from(0);
-  let indexBeforePhoto = Field.from(0);
-  let is255AndIndexBeforePhoto = Field.from(0);
-  for (let i = 0; i < 1536; i++) {
-    is255 = paddedData[i].equals(twoFiftyFive).toField();
+  for (let i = 0; i < DATA_ARRAY_SIZE; i++) {
+    const is255AndIndexBeforePhoto = Bool.and(
+      paddedData[i].equals(255),
+      UInt32.from(i).lessThan(photoIndex)
+    );
 
-    indexBeforePhoto = Field(i).lessThan(photoIndex).toField();
-    is255AndIndexBeforePhoto = is255.mul(indexBeforePhoto);
+    const n255FilterDelta = Provable.if(
+      is255AndIndexBeforePhoto,
+      Field(1),
+      Field(0)
+    );
 
-    delimitedData[i] = is255AndIndexBeforePhoto
-      .mul(n255Filter)
-      .add(paddedData[i]);
+    const dataDelta = Provable.if(
+      is255AndIndexBeforePhoto,
+      n255Filter,
+      Field(0)
+    );
 
-    n255Filter = is255AndIndexBeforePhoto.mul(255).add(n255Filter);
+    n255Filter = n255Filter.seal();
+    delimitedData[i] = paddedData[i].add(dataDelta.mul(255));
+    n255Filter = n255Filter.add(n255FilterDelta);
   }
 
   return delimitedData;
