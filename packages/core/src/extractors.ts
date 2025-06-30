@@ -187,26 +187,41 @@ function ageAndGenderExtractor(
 /**
  * Extracts the fixed-length 6-digit pincode from delimited data.
  *
- * Rows: 9219
+ * Rows: 4599
  *
  * @param {Field[]} nDelimitedData - The delimited input data array.
  * @param {Field[]} delimiterIndices - Array of indices marking field positions.
  * @returns {Field} The extracted pincode as an integer Field.
  */
 function pincodeExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
-  let pincodeArray = [];
-
   const startIndex = delimiterIndices[PINCODE_POSITION - 1].add(1);
 
-  // Pincode size is fixed.
-  for (let i = 0; i < 6; i++) {
-    pincodeArray.push(Gadgets.arrayGet(nDelimitedData, startIndex.add(i)));
-  }
+  let pincodeArray = [];
+  let isIndex = Field.from(0);
+  let isValue = Field.from(0);
 
+  for (let i = 0; i < 6; i++) {
+    let pushValue = Field.from(0);
+    let currentIndex = startIndex.add(i);
+    // 256 is the temporary value - it will be generated with factooooried functions.
+    for (let j = 0; j < 256; j++) {
+      isIndex = isIndex.seal();
+      isIndex = currentIndex.equals(j).toField();
+
+      isValue = isValue.seal();
+      isValue = isIndex.mul(nDelimitedData[j]);
+
+      pushValue = pushValue.seal();
+      pushValue = pushValue.add(isValue);
+    }
+
+    pincodeArray.push(pushValue);
+  }
   const pincode = digitBytesToInt(pincodeArray, 6);
 
   return pincode;
 }
+
 
 /**
  * Extracts the state information from delimited data until it hits the next delimiter.
