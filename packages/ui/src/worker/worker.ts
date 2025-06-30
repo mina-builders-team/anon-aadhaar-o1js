@@ -9,12 +9,18 @@ export type WorkerStatus =
 let isInitialized = false;
 const proofsEnabled = true;
 
+/**
+ * Updates the status in the workerStore
+ */
 function setStatus(status: WorkerStatus) {
   self.postMessage(JSON.stringify(status));
 }
   
 setStatus({ status: 'uninitialized' });
 
+/**
+ * Initialize the worker by compiling the circuits
+ */
 async function init() {
   try {
     setStatus({ status: 'computing', message: 'Compiling Hash Circuit' });
@@ -33,7 +39,9 @@ async function init() {
   }
 }
 
-// Simulates the main computation workload
+/**
+ * Simulates the main computation workload
+ */
 async function verifySignature() {
   if (!isInitialized) {
     console.error('Worker is not initialized. Please call init() first.');
