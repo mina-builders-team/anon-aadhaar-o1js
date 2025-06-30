@@ -1,7 +1,5 @@
 import { Field, Poseidon, UInt32 } from 'o1js';
 import {
-  MAX_FIELD_BYTE_SIZE,
-  PHOTO_PACK_SIZE,
   PHOTO_POSITION,
 } from './constants.js';
 import { getDelimiterIndices } from './utils.js';
@@ -13,7 +11,6 @@ import {
   stateExtractor,
   timestampExtractor,
   photoExtractor,
-  photoExtractorChunked,
 } from './extractors.js';
 import {
   createDelimitedData,

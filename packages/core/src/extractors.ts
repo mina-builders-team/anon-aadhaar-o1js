@@ -1,16 +1,13 @@
-import { assert, Bool, Field, Gadgets, Provable, UInt32 } from 'o1js';
+import { assert, Bool, Field, Provable, UInt32 } from 'o1js';
 import {
   chunk,
   digitBytesToInt,
   digitBytesToTimestamp,
   pack,
-  selectSubarray,
 } from './utils.js';
 import {
   DATA_ARRAY_SIZE,
   DOB_POSITION,
-  MAX_FIELD_BYTE_SIZE,
-  PHOTO_PACK_SIZE,
   PHOTO_POSITION,
   PINCODE_POSITION,
   STATE_POSITION,
