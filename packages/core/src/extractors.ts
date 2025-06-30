@@ -112,7 +112,7 @@ function timestampExtractor(nDelimitedData: Field[]) {
  * Extracts date of birth and gender information from delimited data,
  * calculates the person’s current age based on the current date.
  *
- * Rows: 20058
+ * Rows: 10051
  *
  * @param {Field[]} nDelimitedData - The delimited input data array.
  * @param {Field[]} delimiterIndices - Array of indices marking field positions.
@@ -130,12 +130,24 @@ function ageAndGenderExtractor(
 ) {
   let ageData: Field[] = [];
   const startIndex = delimiterIndices[DOB_POSITION - 1];
+  let isIndex = Field(0);
+  let isValue = Field(0);
 
   // Date consist of 12 characters including delimiters.
   for (let i = 0; i < 12; i++) {
-    ageData.push(Gadgets.arrayGet(nDelimitedData, startIndex.add(i)));
+    let pushValue = Field.from(0);
+    let currentIndex = startIndex.add(i);
+    // Soft assumption: data we search will be placed in less than 256th index.
+    for (let j = 0; j < 256; j++) {
+      isIndex = isIndex.seal();
+      isIndex = currentIndex.equals(j).toField();
+      isValue = isValue.seal();
+      isValue = isIndex.mul(nDelimitedData[j]);
+      pushValue = pushValue.seal();
+      pushValue = pushValue.add(isValue);
+    }
+    ageData.push(pushValue);
   }
-
   const years = digitBytesToInt(
     [ageData[7], ageData[8], ageData[9], ageData[10]],
     4
@@ -147,7 +159,16 @@ function ageAndGenderExtractor(
   assert(ageData[0].equals(Field(DOB_POSITION * 255)));
   assert(ageData[11].equals(Field((DOB_POSITION + 1) * 255)));
 
-  let gender = Gadgets.arrayGet(nDelimitedData, startIndex.add(12));
+  let gender = Field.from(0);
+
+  for (let j = 0; j < 256; j++) {
+    isIndex = isIndex.seal();
+    isIndex = startIndex.add(12).equals(j).toField();
+    isValue = isValue.seal();
+    isValue = isIndex.mul(nDelimitedData[j]);
+    gender = gender.seal();
+    gender = gender.add(isValue);
+  }
 
   // Calculate age based on year
   const ageByYear = currentYear.sub(years).sub(Field(1));
