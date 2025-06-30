@@ -5,6 +5,7 @@ import { DynamicBytes } from 'mina-attestations';
 import { MerkleBlocks } from './dataTypes.js';
 import { SignatureVerifier } from './signatureVerifier.js';
 import { recursiveHash } from './recursion.js';
+import { DATA_ARRAY_SIZE, DELIMITER_ARRAY_SIZE } from './constants.js';
 export {
   pkcs1v15PadWrong,
   createDelimitedData,
@@ -77,7 +78,7 @@ function createDelimitedData(data: number[], photoIndex: number): number[] {
   let n = 1;
 
   const result = data.map((value, i) => {
-    if (i < photoIndex && value === 255 && n <= 18) {
+    if (i < photoIndex && value === 255 && n <= DELIMITER_ARRAY_SIZE) {
       return 255 * n++;
     }
     return value;
@@ -156,7 +157,7 @@ function createPaddedQRData(inputData: Uint8Array) {
   }
 
   // Pad with zeros to reach exactly 1536 elements
-  for (let i = inputData.length; i < 1536; i++) {
+  for (let i = inputData.length; i < DATA_ARRAY_SIZE; i++) {
     dataArray.push(0);
   }
 

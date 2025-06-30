@@ -15,7 +15,7 @@ import {
   timestampExtractor,
 } from './extractors.js';
 import { getDelimiterIndices } from './utils.js';
-import { PHOTO_POSITION } from './constants.js';
+import { PHOTO_POSITION, DATA_ARRAY_SIZE, DELIMITER_ARRAY_SIZE } from './constants.js';
 import { ConstraintSystemSummary } from 'o1js/dist/node/lib/provable/core/provable-context.js';
 import { SignatureVerifier } from './signatureVerifier.js';
 import { hashProgram } from './recursion.js';
@@ -30,9 +30,6 @@ interface CompilationResults {
   circuitName: string;
   time: string;
 }
-
-const DATA_ARRAY_SIZE = 1536;
-const DELIMITER_ARRAY_SIZE = 18;
 
 // Proof Generation Configuration
 let proofsEnabled = true;
