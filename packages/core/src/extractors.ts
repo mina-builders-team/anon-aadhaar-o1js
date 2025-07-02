@@ -19,8 +19,6 @@ export {
   ageAndGenderExtractor,
   pincodeExtractor,
   stateExtractor,
-  photoExtractor,
-  photoExtractorChunked,
 };
 
 /**
@@ -232,72 +230,4 @@ function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
   }
 
   return stateArray;
-}
-
-/**
- * Extracts the photo data field from the delimited input.
- *
- * The photo field spans a fixed-size byte block determined by
- * `MAX_FIELD_BYTE_SIZE * PHOTO_PACK_SIZE`. This function calculates
- * the start position using the `delimiterIndices` and selects the
- * corresponding subarray of photo bytes.
- *
- * Rows: 13640
- *
- * @param {Field[]} nDelimitedData - The full delimited input data as an array of Fields.
- * @param {Field[]} delimiterIndices - Array of Fields marking the start of each field.
- * @returns {Field[]} An array of Fields representing the extracted photo data bytes.
- */
-function photoExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
-  const startIndex = delimiterIndices[PHOTO_POSITION - 1].add(1);
-
-  let isIndex = Field(0);
-  let isValue = Field(0);
-
-  let photoBytes = [];
-
-  for (let i = 0; i < 496; i++) {
-    isIndex = isIndex.seal();
-    isIndex = startIndex.lessThan(i).toField();
-
-    isValue = isValue.seal();
-    isValue = isIndex.mul(nDelimitedData[i]);
-    photoBytes.push(isValue);
-  }
-
-  return photoBytes;
-}
-
-/**
- * Extracts and packs the photo data field into an array of 32 `Field` values.
- *
- * First, the raw photo byte data is extracted using `photoExtractor`. Then,
- * it is split into 32 chunks of 31 bytes each, and each chunk is packed into
- * a single `Field` using the `pack` function.
- *
- * The result is a compact representation of the photo suitable for ZK circuits.
- *
- * Rows: 13880
- * 
- * @param {Field[]} nDelimitedData - The full delimited input data as an array of Fields.
- * @param {Field[]} delimiterIndices - Array of Fields marking the start of each field.
- * @returns {Field[]} A 32-element array of packed Fields representing the photo.
- */
-function photoExtractorChunked(
-  nDelimitedData: Field[],
-  delimiterIndices: Field[]
-) {
-  let selectedArray = photoExtractor(nDelimitedData, delimiterIndices);
-
-  let byteChunks = chunk(selectedArray, 31);
-
-  let photoArray = [];
-
-  for (let i = 0; i < 16; i++) {
-    const packedData = pack(byteChunks[i]);
-
-    photoArray.push(packedData);
-  }
-
-  return photoArray;
 }
