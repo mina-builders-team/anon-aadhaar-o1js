@@ -10,11 +10,11 @@ import {
   ageAndGenderExtractor,
   pincodeExtractor,
   stateExtractor,
-  photoExtractorChunked,
 } from '../extractors.js';
 import { getQRData, TEST_DATA } from '../getQRData.js';
 import { createPaddedQRData } from '../testUtils.js';
 import { getDelimiterIndices } from '../utils.js';
+import { nullifier } from '../nullifier.js';
 
 class ExtractorOutputs extends Struct({
   Timestamp: Field,
@@ -22,7 +22,7 @@ class ExtractorOutputs extends Struct({
   Gender: Field,
   Pincode: Field,
   State: Provable.Array(Field, 16),
-  PhotoBytes: Provable.Array(Field, 8),
+  nullifiedValue: Field
 }) {}
 
 const ExtractorCircuit = ZkProgram({
@@ -64,12 +64,12 @@ const ExtractorCircuit = ZkProgram({
         Provable.log('Pincode Extracted..');
         const state = stateExtractor(nDelimitedData, delimiterIndices);
         Provable.log('State Extracted..');
-        const chunkedPhoto = photoExtractorChunked(
-          nDelimitedData,
-          delimiterIndices
-        );
-        Provable.log('Photo Extracted..');
-
+        
+        // This can/should be given as an input to the circuit. 
+        const nullifierSeed = Field.from(123124124214);
+        
+        const nullifiedValue = nullifier(nDelimitedData, nullifierSeed);
+        Provable.log('Nullifier Computed..');
         return {
           publicOutput: new ExtractorOutputs({
             Timestamp: timestamp,
@@ -77,7 +77,7 @@ const ExtractorCircuit = ZkProgram({
             Gender: gender,
             Pincode: pincode,
             State: state,
-            PhotoBytes: chunkedPhoto,
+            nullifiedValue: nullifiedValue,
           }),
         };
       },
@@ -96,6 +96,7 @@ const month = Field.from(1);
 const year = Field.from(2024);
 const { verificationKey } = await ExtractorCircuit.compile({ proofsEnabled: true });
 
+console.time('Proof generation time');
 const { proof } = await ExtractorCircuit.extract(
   qrData,
   delimiterIndices,
@@ -103,5 +104,9 @@ const { proof } = await ExtractorCircuit.extract(
   month,
   day
 );
+console.timeEnd('Proof generation timey');
+
+const constraints = await ExtractorCircuit.analyzeMethods();
+console.log(constraints.extract.summary());
 
 await verify(proof, verificationKey);
