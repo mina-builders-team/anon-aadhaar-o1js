@@ -4,6 +4,7 @@ import {
   digitBytesToInt,
   digitBytesToTimestamp,
   pack,
+  searchElement,
 } from './utils.js';
 import {
   DATA_ARRAY_SIZE,
@@ -127,23 +128,14 @@ function ageAndGenderExtractor(
 ) {
   let ageData: Field[] = [];
   const startIndex = delimiterIndices[DOB_POSITION - 1];
-  let isIndex = Field(0);
-  let isValue = Field(0);
-
   // Date consist of 12 characters including delimiters.
   for (let i = 0; i < 12; i++) {
-    let pushValue = Field.from(0);
     let currentIndex = startIndex.add(i);
     // Soft assumption: data we search will be placed in less than 256th index.
-    for (let j = 0; j < 256; j++) {
-      isIndex = isIndex.seal();
-      isIndex = currentIndex.equals(j).toField();
-      isValue = isValue.seal();
-      isValue = isIndex.mul(nDelimitedData[j]);
-      pushValue = pushValue.seal();
-      pushValue = pushValue.add(isValue);
-    }
-    ageData.push(pushValue);
+
+    const agePushValue = searchElement(nDelimitedData, currentIndex, 256);
+
+    ageData.push(agePushValue);
   }
   const years = digitBytesToInt(
     [ageData[7], ageData[8], ageData[9], ageData[10]],
@@ -157,15 +149,9 @@ function ageAndGenderExtractor(
   assert(ageData[11].equals(Field((DOB_POSITION + 1) * 255)));
 
   let gender = Field.from(0);
-
-  for (let j = 0; j < 256; j++) {
-    isIndex = isIndex.seal();
-    isIndex = startIndex.add(12).equals(j).toField();
-    isValue = isValue.seal();
-    isValue = isIndex.mul(nDelimitedData[j]);
-    gender = gender.seal();
-    gender = gender.add(isValue);
-  }
+  let genderIndex = startIndex.add(12);
+  
+  gender = searchElement(nDelimitedData, genderIndex, 256);
 
   // Calculate age based on year
   const ageByYear = currentYear.sub(years).sub(Field(1));
@@ -194,25 +180,12 @@ function pincodeExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
   const startIndex = delimiterIndices[PINCODE_POSITION - 1].add(1);
 
   let pincodeArray = [];
-  let isIndex = Field.from(0);
-  let isValue = Field.from(0);
 
   for (let i = 0; i < 6; i++) {
-    let pushValue = Field.from(0);
     let currentIndex = startIndex.add(i);
-    // 256 is the temporary value - it will be generated with factooooried functions.
-    for (let j = 0; j < 256; j++) {
-      isIndex = isIndex.seal();
-      isIndex = currentIndex.equals(j).toField();
 
-      isValue = isValue.seal();
-      isValue = isIndex.mul(nDelimitedData[j]);
-
-      pushValue = pushValue.seal();
-      pushValue = pushValue.add(isValue);
-    }
-
-    pincodeArray.push(pushValue);
+    const pushval = searchElement(nDelimitedData, currentIndex, 256);
+    pincodeArray.push(pushval);
   }
   const pincode = digitBytesToInt(pincodeArray, 6);
 
@@ -240,17 +213,12 @@ function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
 
   for (let i = 0; i < 16; i++) {
     let pushValue = Field.from(0);
-    let isIndex = Field.from(0);
-    let isValue = Field.from(0);
 
     let currentIndex = startIndex.add(i);
     // Under assumption that state data will be at most <256th byte.
     for (let j = 0; j < 256; j++) {
-      isIndex = isIndex.seal();
-      isIndex = currentIndex.equals(j).toField();
-
-      isValue = isValue.seal();
-      isValue = isIndex.mul(nDelimitedData[j]);
+      const isIndex = currentIndex.equals(j).toField();
+      const isValue = isIndex.mul(nDelimitedData[j]);
 
       pushValue = pushValue.seal();
       pushValue = pushValue.add(isValue);
