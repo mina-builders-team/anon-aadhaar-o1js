@@ -197,7 +197,7 @@ const indices = Provable.witness(
 const photoBytes = photoExtractorChunked(nDelimitedData, indices);
 
 function nullifierConstraints() {
-  const photo = Provable.witness(Provable.Array(Field, 32), () => photoBytes);
+  const photo = Provable.witness(Provable.Array(Field, 16), () => photoBytes);
   const nullifierSeed = Provable.witness(Field, () => Field.random());
   nullifier(nullifierSeed, photo);
 }

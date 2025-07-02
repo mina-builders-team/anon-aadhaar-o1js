@@ -26,21 +26,21 @@ Provable functions include extractors and the nullifier. Constraint counts are g
 
 | Extractor             | Rows   |
 | --------------------- | ------ |
-| delimitData           | 633984 |
-| ageAndGenderExtractor | 20058  |
+| delimitData           | 10753 |
+| ageAndGenderExtractor | 10051  |
 | timestampExtractor    | 953    |
-| pincodeExtractor      | 9219   |
-| stateExtractor        | 49280  |
-| photoExtractor        | 101387 |
-| photoExtractorChunked | 107323 |
-| nullifier             | 220    |
+| pincodeExtractor      | 4599   |
+| stateExtractor        | 12328  |
+| photoExtractor        | 13640 |
+| photoExtractorChunked | 13880 |
+| nullifier             | 116    |
 
 ## ZkProgram Compilation Times
 
 | Circuit Name      | Time     |
 | ----------------- | -------- |
-| hashProgram       | 65.613 s |
-| SignatureVerifier | 7.229 s  |
+| hashProgram       | 93.137 s |
+| SignatureVerifier | 7.519 s  |
 
 ## hashProgram Method Analysis
 
@@ -48,14 +48,14 @@ Note: Execution time for the base hashing method depends on input size. Also rem
 
 | Method Name         | Rows  | Time     |
 | ------------------- |-------|----------|
-| hashBase (7 blocks) | 42264 | 21.333 s |
-| hashRecursive       | 26481 | 65.085 s |
+| hashBase (7 blocks) | 42264 | 33.521 s |
+| hashRecursive       | 26481 | 101.592 s |
 
 ## SignatureVerifier Method Analysis
 
 | Method Name     | Rows  | Time     |
 | --------------- | ----- | -------- |
-| verifySignature | 38973 | 87.488 s |
+| verifySignature | 38973 | 113.528 s |
 
 ## Conclusion and Remarks
 
