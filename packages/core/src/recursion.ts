@@ -1,12 +1,5 @@
-import {
-  Experimental,
-  Gadgets,
-  Proof,
-  Provable,
-  UInt32,
-  ZkProgram,
-} from 'o1js';
-import { Block32, MerkleBlocks, State32 } from './dataTypes.js';
+import { Experimental, Gadgets, Proof, Provable, UInt32, ZkProgram } from 'o1js'
+import { Block32, MerkleBlocks, State32 } from './dataTypes.js'
 export {
   BLOCKS_PER_BASE_PROOF,
   BLOCKS_PER_RECURSIVE_PROOF,
@@ -15,12 +8,12 @@ export {
   recursiveHash,
   hashBlocks,
   hashBlock256,
-};
+}
 
 // 9 is on the high end, leads to 47k constraints
 // By changing the numbers, we can obtain less or more constraints.
-const BLOCKS_PER_RECURSIVE_PROOF = 5;
-const BLOCKS_PER_BASE_PROOF = 8;
+const BLOCKS_PER_RECURSIVE_PROOF = 5
+const BLOCKS_PER_BASE_PROOF = 8
 
 const hashProgram = ZkProgram({
   name: 'hash-program',
@@ -33,14 +26,14 @@ const hashProgram = ZkProgram({
     hashBase: {
       privateInputs: [],
       async method(blocks: MerkleBlocks) {
-        let state = State32.from(Gadgets.SHA2.initialState(256) as UInt32[]);
+        let state = State32.from(Gadgets.SHA2.initialState(256) as UInt32[])
 
         // Apply hash to each block. After hashing, state is updated conditionally if the hashing process is done with a non-dummy block.
         blocks.forEach(BLOCKS_PER_BASE_PROOF, (block, isDummy) => {
-          let nextState = hashBlock256(state, block);
-          state = Provable.if(isDummy, State32, state, nextState);
-        });
-        return { publicOutput: state };
+          let nextState = hashBlock256(state, block)
+          state = Provable.if(isDummy, State32, state, nextState)
+        })
+        return { publicOutput: state }
       },
     },
 
@@ -48,12 +41,12 @@ const hashProgram = ZkProgram({
     hashRecursive: {
       privateInputs: [],
       async method(blocks: MerkleBlocks) {
-        let state = await hashBlocks(blocks, BLOCKS_PER_RECURSIVE_PROOF);
-        return { publicOutput: state };
+        let state = await hashBlocks(blocks, BLOCKS_PER_RECURSIVE_PROOF)
+        return { publicOutput: state }
       },
     },
   },
-});
+})
 
 /**
  * A hash wrapper that can be used to get the output of hashBlocks along with a zk proof.
@@ -72,14 +65,14 @@ const hashProgramWrapper = ZkProgram({
     run: {
       privateInputs: [],
       async method(blocks: MerkleBlocks) {
-        let currentState = await hashBlocks(blocks, BLOCKS_PER_RECURSIVE_PROOF);
-        return { publicOutput: currentState };
+        let currentState = await hashBlocks(blocks, BLOCKS_PER_RECURSIVE_PROOF)
+        return { publicOutput: currentState }
       },
     },
   },
-});
+})
 
-let recursiveHash = Experimental.Recursive(hashProgramWrapper);
+let recursiveHash = Experimental.Recursive(hashProgramWrapper)
 
 /**
  * Recursively hashes a sequence of Merkle blocks using a proof system.
@@ -100,48 +93,48 @@ async function hashBlocks(
   numberOfBlocks: number
 ): Promise<State32> {
   // Popping `numberOfBlocks` amount of blocks from the MerkleBlocks
-  let { remaining, tail } = MerkleBlocks.popTail(blocks, numberOfBlocks);
+  let { remaining, tail } = MerkleBlocks.popTail(blocks, numberOfBlocks)
 
   // Apply recursive hashing in witness blocks. Later on, remanining MerkleBlock's hash commitment can be checked with the recursionProof's output to see if correct blocks are used.
   let recursionProof = await Provable.witnessAsync(
     hashProgram.Proof,
     async () => {
       // convert the blocks to constants
-      let blocksForProof = Provable.toConstant(MerkleBlocks, remaining.clone());
+      let blocksForProof = Provable.toConstant(MerkleBlocks, remaining.clone())
 
       // If remaining blocks of recursive approach is less than a threshold (BLOCKS_PER_BASE_PROOF), a base hashing is applied.
-      let remainingBlocks = remaining.lengthUnconstrained().get();
+      let remainingBlocks = remaining.lengthUnconstrained().get()
 
       // Define the proof variable that will be returned.
-      let proof: Proof<MerkleBlocks, State32>;
+      let proof: Proof<MerkleBlocks, State32>
 
       // Choose which hashing method will be used depending on the remainingBlocks.
       if (remainingBlocks <= BLOCKS_PER_BASE_PROOF) {
-        ({ proof } = await hashProgram.hashBase(blocksForProof));
+        ;({ proof } = await hashProgram.hashBase(blocksForProof))
       } else {
-        ({ proof } = await hashProgram.hashRecursive(blocksForProof));
+        ;({ proof } = await hashProgram.hashRecursive(blocksForProof))
       }
-      return proof;
+      return proof
     }
-  );
+  )
 
   // Use declare method to verify proof inside of ZkProgram as if it was an input to the circuit.
-  recursionProof.declare();
-  recursionProof.verify();
+  recursionProof.declare()
+  recursionProof.verify()
 
   // Constrain public input to match the remaining blocks
-  remaining.hash.assertEquals(recursionProof.publicInput.hash);
+  remaining.hash.assertEquals(recursionProof.publicInput.hash)
 
   // Continue hashing the final part
-  let state = recursionProof.publicOutput;
+  let state = recursionProof.publicOutput
 
   // Apply hashing to every existing block. Blocks are returned as Option<Block32>, where it has a Bool 'isSome' indicates if there is a block in iterated element.
   // isSome is used for reassigning the state with the updated hash
   tail.forEach(({ isSome, value: block }) => {
-    let nextState = hashBlock256(state, block);
-    state = Provable.if(isSome, State32, nextState, state);
-  });
-  return state;
+    let nextState = hashBlock256(state, block)
+    state = Provable.if(isSome, State32, nextState, state)
+  })
+  return state
 }
 
 /**
@@ -153,6 +146,6 @@ async function hashBlocks(
  * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/main/src/dynamic/dynamic-sha2.ts#L511
  */
 function hashBlock256(state: State32, block: Block32): State32 {
-  let W = Gadgets.SHA2.messageSchedule(256, block.array);
-  return State32.from(Gadgets.SHA2.compression(256, state.array, W));
+  let W = Gadgets.SHA2.messageSchedule(256, block.array)
+  return State32.from(Gadgets.SHA2.compression(256, state.array, W))
 }

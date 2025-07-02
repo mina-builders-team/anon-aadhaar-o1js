@@ -13,49 +13,46 @@ This benchmark report presents an analysis of the circuits and provable function
 ## Methodology
 
 Two different approaches are used for measurement:
+
 - `Provable.constraintSystem` is used to analyze the constraint count of functions like extractors or the nullifier. Only constraints are measured, as these functions are standalone and their execution time cannot be determined outside of a circuit. To obtain accurate constraint values, inputs to these functions are provided using `Provable.witness`.
 - `.analyzeMethods()` is used on `ZkProgram` circuits to extract constraint information in a structured format. To measure compile and execution times of `ZkProgram` methods, `performance.now()` is called before and after each computation.
 
-
-To minimize the impact of cache optimizations during circuit compilation, the `forceRecompile` option is enabled. Yet, it is not used for `SignatureVerifier`. While benchmarking the `SignatureVerifier` with `forceRecompile` option, `RuntimeError: unreachable` is occurred. In o1js, this error can indicate that circuit row size limit (~65k rows) is exceeded. Since `SignatureVerifier` uses `hashBlocks` that uses `hashProgram`, this option causes the compilation of both `SignatureVerifier` and already compiled `hashProgram`, hence exceeds the circuit limit. Normally, what should happen is once the `hashProgram` is compiled, compilation step of `SignatureVerifier` should get the compiled from cache and use it instead of recompiling all components. For that reason, 
-
+To minimize the impact of cache optimizations during circuit compilation, the `forceRecompile` option is enabled. Yet, it is not used for `SignatureVerifier`. While benchmarking the `SignatureVerifier` with `forceRecompile` option, `RuntimeError: unreachable` is occurred. In o1js, this error can indicate that circuit row size limit (~65k rows) is exceeded. Since `SignatureVerifier` uses `hashBlocks` that uses `hashProgram`, this option causes the compilation of both `SignatureVerifier` and already compiled `hashProgram`, hence exceeds the circuit limit. Normally, what should happen is once the `hashProgram` is compiled, compilation step of `SignatureVerifier` should get the compiled from cache and use it instead of recompiling all components. For that reason,
 
 ## Provable Functions Analysis
 
 Provable functions include extractors and the nullifier. Constraint counts are gathered using `Provable.constraintSystem`. For this API to work correctly, inputs must be provided as witnesses. Otherwise, constraint counts will appear as zero. A helper function named `getBenchmarkParameters` is used to streamline this process by returning both the constraint summary and method name.
 
-| Extractor             | Rows   |
-| --------------------- | ------ |
-| delimitData           | 633984 |
-| ageAndGenderExtractor | 20058  |
-| timestampExtractor    | 953    |
-| pincodeExtractor      | 9219   |
-| stateExtractor        | 49280  |
-| photoExtractor        | 101387 |
-| photoExtractorChunked | 107323 |
-| nullifier             | 220    |
+| Extractor             | Rows  |
+| --------------------- | ----- |
+| delimitData           | 10753 |
+| ageAndGenderExtractor | 9416  |
+| timestampExtractor    | 953   |
+| pincodeExtractor      | 3837  |
+| stateExtractor        | 12328 |
+| nullifier             | 13    |
 
 ## ZkProgram Compilation Times
 
 | Circuit Name      | Time     |
 | ----------------- | -------- |
-| hashProgram       | 65.613 s |
-| SignatureVerifier | 7.229 s  |
+| hashProgram       | 93.137 s |
+| SignatureVerifier | 7.519 s  |
 
 ## hashProgram Method Analysis
 
 Note: Execution time for the base hashing method depends on input size. Also remind that `hashRecursive` is called recursively depending on the length of the data blocks. For 5 blocks a new `hashRecursive` is called.
 
-| Method Name         | Rows  | Time     |
-| ------------------- |-------|----------|
-| hashBase (7 blocks) | 42264 | 21.333 s |
-| hashRecursive       | 26481 | 65.085 s |
+| Method Name         | Rows  | Time      |
+| ------------------- | ----- | --------- |
+| hashBase (7 blocks) | 42264 | 33.521 s  |
+| hashRecursive       | 26481 | 101.592 s |
 
 ## SignatureVerifier Method Analysis
 
-| Method Name     | Rows  | Time     |
-| --------------- | ----- | -------- |
-| verifySignature | 38973 | 87.488 s |
+| Method Name     | Rows  | Time      |
+| --------------- | ----- | --------- |
+| verifySignature | 38973 | 113.528 s |
 
 ## Conclusion and Remarks
 

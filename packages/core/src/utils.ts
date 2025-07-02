@@ -8,11 +8,11 @@ import {
   Field,
   Poseidon,
   ProvableType,
-} from 'o1js';
-import { Bigint2048 } from './rsa.js';
-import pako from 'pako';
-import { DynamicArray, StaticArray } from 'mina-attestations';
-import { Block32, BlockBytes, State32, WordBytes } from './dataTypes.js';
+} from 'o1js'
+import { Bigint2048 } from './rsa.js'
+import pako from 'pako'
+import { DynamicArray, StaticArray } from 'mina-attestations'
+import { Block32, BlockBytes, State32, WordBytes } from './dataTypes.js'
 
 export {
   pkcs1v15Pad,
@@ -28,7 +28,8 @@ export {
   generateMessageBlocks,
   pack,
   chunk,
-};
+  searchElement,
+}
 
 /**
  * Creates a PKCS#1 v1.5 padded message for the given SHA-256 digest.
@@ -44,13 +45,13 @@ function pkcs1v15Pad(sha256Digest: Bytes) {
   // Algorithm identifier (OID) for SHA-256 in PKCS#1 v1.5 padding
   const algorithmConstantBytes = Bytes.fromHex(
     '3031300d060960864801650304020105000420'
-  ).bytes;
+  ).bytes
 
   // Calculate the length of the padding string (PS)
-  const padLength = 202;
+  const padLength = 202
 
   // Create the padding string (PS) with 0xFF bytes based on padLength
-  const paddingString = Bytes.from(new Array(padLength).fill(0xff));
+  const paddingString = Bytes.from(new Array(padLength).fill(0xff))
 
   // Assemble the PKCS#1 v1.5 padding components
   const padding = [
@@ -59,18 +60,18 @@ function pkcs1v15Pad(sha256Digest: Bytes) {
     ...Bytes.fromHex('00').bytes, // Separator byte 00
     ...algorithmConstantBytes, // Algorithm identifier (OID)
     ...sha256Digest.bytes, // SHA-256 digest
-  ];
+  ]
 
   // Convert the padded message to a byte array
-  const paddedHash = Bytes.from(padding);
+  const paddedHash = Bytes.from(padding)
 
   // Create a Bigint2048 witness from the padded hash
   const message = Provable.witness(Bigint2048, () => {
-    const hexString = '0x' + paddedHash.toHex();
-    return Bigint2048.from(BigInt(hexString));
-  });
+    const hexString = '0x' + paddedHash.toHex()
+    return Bigint2048.from(BigInt(hexString))
+  })
 
-  return message;
+  return message
 }
 
 /**
@@ -90,34 +91,34 @@ function updateHash(
   assert(
     paddedPreimage.length % 64 === 0,
     'Preimage must be padded to a multiple of 64 bytes'
-  );
+  )
 
-  const messageBlocks = generateMessageBlocks(paddedPreimage);
+  const messageBlocks = generateMessageBlocks(paddedPreimage)
 
   // Create array to store hash states after each block
   let hashValues: UInt32[][] = Array.from(
     { length: messageBlocks.length + 1 },
     () => [UInt32.from(0)]
-  );
+  )
 
   // Initialize with the provided hash state
-  hashValues[0] = [...initialHashValue];
+  hashValues[0] = [...initialHashValue]
 
   // Process each message block
   for (let i = 0; i < messageBlocks.length; i++) {
     // Create message schedule for current block
-    const messageSchedule = Gadgets.SHA2.messageSchedule(256, messageBlocks[i]);
+    const messageSchedule = Gadgets.SHA2.messageSchedule(256, messageBlocks[i])
 
     // Update hash state using compression function
     hashValues[i + 1] = [
       ...Gadgets.SHA2.compression(256, hashValues[i], messageSchedule),
-    ];
+    ]
   }
 
   // Return the hashState
   return {
     hashState: hashValues[hashValues.length - 1],
-  };
+  }
 }
 
 /**
@@ -128,7 +129,7 @@ function updateHash(
  * @notice Copied from https://github.com/Shigoto-dev19/o1js-dynamic-sha256/blob/main/src/utils.ts#L118
  */
 function bytesToWord(wordBytes: UInt8[]): UInt32 {
-  return UInt32.fromBytes(wordBytes);
+  return UInt32.fromBytes(wordBytes)
 }
 
 /**
@@ -140,20 +141,20 @@ function bytesToWord(wordBytes: UInt8[]): UInt32 {
  */
 function generateMessageBlocks(paddedMessage: Bytes): UInt32[][] {
   // Split the message into 32-bit chunks
-  const chunks: UInt32[] = [];
+  const chunks: UInt32[] = []
 
   for (let i = 0; i < paddedMessage.length; i += 4) {
     // Chunk 4 bytes into one UInt32, as expected by SHA-256
     // bytesToWord expects little endian, so we reverse the bytes
     const chunk = UInt32.from(
       bytesToWord(paddedMessage.bytes.slice(i, i + 4).reverse())
-    );
-    chunks.push(chunk);
+    )
+    chunks.push(chunk)
   }
 
   // Split message into 16-element sized message blocks
   // SHA-256 expects n-blocks of 512 bits each, 16 * 32 bits = 512 bits
-  return chunk(chunks, 16);
+  return chunk(chunks, 16)
 }
 
 /**
@@ -169,11 +170,11 @@ function chunk<T>(array: T[], size: number): T[][] {
   assert(
     array.length % size === 0,
     `Array length must be a multiple of ${size}`
-  );
+  )
   // Return data array by chunking it by 'size'.
   return Array.from({ length: array.length / size }, (_, i) =>
     array.slice(size * i, size * (i + 1))
-  );
+  )
 }
 
 /**
@@ -187,8 +188,8 @@ function chunk<T>(array: T[], size: number): T[][] {
  * @notice - Copied from https://github.com/anon-aadhaar/anon-aadhaar/blob/main/packages/core/src/utils.ts#L115
  */
 function decompressByteArray(byteArray: Uint8Array): Uint8Array {
-  const decompressedArray = pako.inflate(byteArray);
-  return decompressedArray;
+  const decompressedArray = pako.inflate(byteArray)
+  return decompressedArray
 }
 
 /**
@@ -198,17 +199,17 @@ function decompressByteArray(byteArray: Uint8Array): Uint8Array {
  * @returns An array of indices where the delimiter bytes are located, capped at 18 elements.
  */
 function getDelimiterIndices(paddedData: Uint8Array): number[] {
-  let delimiterIndices = [];
+  let delimiterIndices = []
   for (let i = 0; i < paddedData.length; i++) {
     if (paddedData[i] === 255) {
-      delimiterIndices.push(i);
+      delimiterIndices.push(i)
     }
     if (delimiterIndices.length === 18) {
-      break;
+      break
     }
   }
 
-  return delimiterIndices;
+  return delimiterIndices
 }
 
 /**
@@ -221,23 +222,23 @@ function getDelimiterIndices(paddedData: Uint8Array): number[] {
  * @returns A `Field` representing the full integer value.
  */
 function digitBytesToInt(digits: Field[], numDigits: number): Field {
-  let result = Field.from(0);
-  const asciiZero = Field.from(48);
+  let result = Field.from(0)
+  const asciiZero = Field.from(48)
 
-  let powersOfTen = Field.from(1);
+  let powersOfTen = Field.from(1)
   for (let i = 0; i < numDigits - 1; i++) {
-    powersOfTen = powersOfTen.mul(10);
+    powersOfTen = powersOfTen.mul(10)
   }
 
   for (let i = 0; i < numDigits; i++) {
     // Convert ASCII digit (e.g., '0' = 48, '1' = 49) to actual value
-    const digitValue = digits[i].sub(asciiZero);
+    const digitValue = digits[i].sub(asciiZero)
 
-    result = result.add(digitValue.mul(powersOfTen));
-    powersOfTen = powersOfTen.div(10);
+    result = result.add(digitValue.mul(powersOfTen))
+    powersOfTen = powersOfTen.div(10)
   }
 
-  return result;
+  return result
 }
 
 /**
@@ -278,49 +279,49 @@ function digitBytesToTimestamp(
     Field(273),
     Field(304),
     Field(334),
-  ];
+  ]
 
   // Calculate days based on years since 1970
-  const yearsSinceEpoch = year.sub(Field(1970));
-  let daysPassed = yearsSinceEpoch.mul(Field(365));
+  const yearsSinceEpoch = year.sub(Field(1970))
+  let daysPassed = yearsSinceEpoch.mul(Field(365))
 
   // Add days in current month
-  daysPassed = daysPassed.add(day.sub(Field(1)));
+  daysPassed = daysPassed.add(day.sub(Field(1)))
 
   // Add days from previous months in current year
-  let daysFromPreviousMonths = Field(0);
+  let daysFromPreviousMonths = Field(0)
   for (let i = 0; i < 12; i++) {
-    const isCurrentMonth = month.sub(Field(1)).equals(Field(i)).toField();
+    const isCurrentMonth = month.sub(Field(1)).equals(Field(i)).toField()
     daysFromPreviousMonths = daysFromPreviousMonths.add(
       isCurrentMonth.mul(daysTillPreviousMonth[i])
-    );
+    )
   }
-  daysPassed = daysPassed.add(daysFromPreviousMonths);
+  daysPassed = daysPassed.add(daysFromPreviousMonths)
 
   // Calculate leap years
-  const maxLeapYears = Math.floor((maxYears - 1972) / 4) + 1;
+  const maxLeapYears = Math.floor((maxYears - 1972) / 4) + 1
 
   // Handle leap years before current year
-  let leapYearDays = Field(0);
+  let leapYearDays = Field(0)
   for (let i = 0; i < maxLeapYears; i++) {
-    const leapYear = Field(1972 + i * 4);
-    const isLeapYearBeforeCurrent = year.greaterThan(leapYear).toField();
-    leapYearDays = leapYearDays.add(isLeapYearBeforeCurrent);
+    const leapYear = Field(1972 + i * 4)
+    const isLeapYearBeforeCurrent = year.greaterThan(leapYear).toField()
+    leapYearDays = leapYearDays.add(isLeapYearBeforeCurrent)
 
     // Special case: if current year is a leap year and date is after February
-    const isCurrentLeapYear = year.equals(leapYear).toField();
-    const isAfterFebruary = month.greaterThan(Field(2)).toField();
-    leapYearDays = leapYearDays.add(isCurrentLeapYear.mul(isAfterFebruary));
+    const isCurrentLeapYear = year.equals(leapYear).toField()
+    const isAfterFebruary = month.greaterThan(Field(2)).toField()
+    leapYearDays = leapYearDays.add(isCurrentLeapYear.mul(isAfterFebruary))
   }
-  daysPassed = daysPassed.add(leapYearDays);
+  daysPassed = daysPassed.add(leapYearDays)
 
   // Convert days to seconds and add time components
-  let timestamp = daysPassed.mul(Field(86400)); // 86400 seconds in a day
-  timestamp = timestamp.add(hour.mul(Field(3600))); // 3600 seconds in an hour
-  timestamp = timestamp.add(minute.mul(Field(60))); // 60 seconds in a minute
-  timestamp = timestamp.add(second);
+  let timestamp = daysPassed.mul(Field(86400)) // 86400 seconds in a day
+  timestamp = timestamp.add(hour.mul(Field(3600))) // 3600 seconds in an hour
+  timestamp = timestamp.add(minute.mul(Field(60))) // 60 seconds in a minute
+  timestamp = timestamp.add(second)
 
-  return timestamp;
+  return timestamp
 }
 
 /**
@@ -344,45 +345,45 @@ function selectSubarray(
   startIndex: Field,
   subarrayLength: number
 ): Field[] {
-  const maxArrayLen = input.length;
+  const maxArrayLen = input.length
   assert(
     subarrayLength <= maxArrayLen,
     'Subarray length exceeds input array length!'
-  );
+  )
 
-  const bitLength = Math.ceil(Math.log2(maxArrayLen));
-  const shiftBits = startIndex.toBits(bitLength);
+  const bitLength = Math.ceil(Math.log2(maxArrayLen))
+  const shiftBits = startIndex.toBits(bitLength)
   let tmp: Field[][] = Array.from({ length: bitLength }, () =>
     Array.from({ length: maxArrayLen }, () => Field(0))
-  );
+  )
 
   for (let j = 0; j < bitLength; j++) {
     for (let i = 0; i < maxArrayLen; i++) {
-      let offset = (i + (1 << j)) % maxArrayLen;
+      let offset = (i + (1 << j)) % maxArrayLen
       // Shift left by 2^j indices if bit is 1
       if (j === 0) {
         tmp[j][i] = shiftBits[j]
           .toField()
           .mul(input[offset].sub(input[i]))
-          .add(input[i]);
+          .add(input[i])
       } else {
         tmp[j][i] = shiftBits[j]
           .toField()
           .mul(tmp[j - 1][offset].sub(tmp[j - 1][i]))
-          .add(tmp[j - 1][i]);
+          .add(tmp[j - 1][i])
       }
     }
   }
 
   // Return last row
-  let subarray: Field[] = [];
+  let subarray: Field[] = []
   for (let i = 0; i < subarrayLength; i++) {
-    const selectedByte = tmp[bitLength - 1][i];
+    const selectedByte = tmp[bitLength - 1][i]
 
-    subarray.push(selectedByte);
+    subarray.push(selectedByte)
   }
 
-  return subarray;
+  return subarray
 }
 
 /**
@@ -394,8 +395,8 @@ function selectSubarray(
  * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-sha2.ts#L521
  */
 function commitBlock256(commitment: Field, block: Block32): Field {
-  let blockHash = hashSafe(toFieldsPacked(block));
-  return hashSafe([commitment, blockHash]);
+  let blockHash = hashSafe(toFieldsPacked(block))
+  return hashSafe([commitment, blockHash])
 }
 
 /**
@@ -407,11 +408,11 @@ function commitBlock256(commitment: Field, block: Block32): Field {
  */
 function hashSafe(fields: (Field | number | bigint)[]) {
   // Get the length of the fields
-  let n = fields.length;
+  let n = fields.length
 
   // Add prefix depending on the length of the data fields
-  let prefix = n === 0 ? 'zero' : n % 2 === 0 ? 'even' : 'odd_';
-  return Poseidon.hashWithPrefix(prefix, fields.map(Field));
+  let prefix = n === 0 ? 'zero' : n % 2 === 0 ? 'even' : 'odd_'
+  return Poseidon.hashWithPrefix(prefix, fields.map(Field))
 }
 
 /**
@@ -423,40 +424,40 @@ function hashSafe(fields: (Field | number | bigint)[]) {
  */
 function toFieldsPacked(block: Block32): Field[] {
   // Get the provable type for Block32
-  let type = ProvableType.get(Block32);
+  let type = ProvableType.get(Block32)
 
   // If the type doesn't have a toInput method, just use toFields directly
-  if (type.toInput === undefined) return type.toFields(block);
+  if (type.toInput === undefined) return type.toFields(block)
 
   // Convert the block to input format, which gives fields and packed values
-  let { fields = [], packed = [] } = toInput(block);
+  let { fields = [], packed = [] } = toInput(block)
 
   // Start with any direct fields
-  let result = [...fields];
+  let result = [...fields]
 
   // Initialize variables for packing
-  let current = Field(0);
-  let currentSize = 0;
+  let current = Field(0)
+  let currentSize = 0
 
   // Process packed values
   for (let [field, size] of packed) {
     // If there's room in the current field, add this value
     if (currentSize + size < Field.sizeInBits) {
       // Multiply the field by 2^currentSize and add to current
-      current = current.add(field.mul(1n << BigInt(currentSize)));
-      currentSize += size;
+      current = current.add(field.mul(1n << BigInt(currentSize)))
+      currentSize += size
     } else {
       // No more room - finalize the current field and start a new one
-      result.push(current.seal());
-      current = field;
-      currentSize = size;
+      result.push(current.seal())
+      current = field
+      currentSize = size
     }
   }
 
   // Add the last field if there's anything in it
-  if (currentSize > 0) result.push(current.seal());
+  if (currentSize > 0) result.push(current.seal())
 
-  return result;
+  return result
 }
 
 /**
@@ -469,15 +470,15 @@ function toFieldsPacked(block: Block32): Field[] {
  */
 function toInput(block: Block32) {
   // Get the provable type for Block32
-  const type = ProvableType.get(Block32);
+  const type = ProvableType.get(Block32)
 
   // If the type has a toInput method, use it
   if (type.toInput !== undefined) {
-    return type.toInput(block);
+    return type.toInput(block)
   }
 
   // Otherwise, fall back to using toFields and wrap the result
-  return { fields: type.toFields(block) };
+  return { fields: type.toFields(block) }
 }
 
 /**
@@ -495,10 +496,10 @@ function pad<T>(array: T[], size: number, value: T | (() => T)): T[] {
   assert(
     array.length <= size,
     `padding array of size ${array.length} larger than target size ${size}`
-  );
+  )
   let cb: () => T =
-    typeof value === 'function' ? (value as () => T) : () => value;
-  return array.concat(Array.from({ length: size - array.length }, cb));
+    typeof value === 'function' ? (value as () => T) : () => value
+  return array.concat(Array.from({ length: size - array.length }, cb))
 }
 
 /**
@@ -509,9 +510,9 @@ function pad<T>(array: T[], size: number, value: T | (() => T)): T[] {
  * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-sha2.ts#L239
  */
 function splitMultiIndex(index: UInt32) {
-  let { rest: l0, quotient: l1 } = index.divMod(64);
-  let { rest: l00, quotient: l01 } = l0.divMod(4);
-  return [l00.value, l01.value, l1.value] as const;
+  let { rest: l0, quotient: l1 } = index.divMod(64)
+  let { rest: l00, quotient: l01 } = l0.divMod(4)
+  return [l00.value, l01.value, l1.value] as const
 }
 
 /**
@@ -552,54 +553,54 @@ function padding256(
   // check that all message bytes beyond the actual length are 0, so that we get valid padding just by adding the 0x80 and L bytes
   // this step creates most of the constraint overhead of dynamic sha2, but seems unavoidable :/
   message.forEach((byte, isPadding) => {
-    Provable.assertEqualIf(isPadding, UInt8, byte, UInt8.from(0));
-  });
+    Provable.assertEqualIf(isPadding, UInt8, byte, UInt8.from(0))
+  })
 
   // create blocks of 64 bytes each
-  const maxBlocks = Math.ceil((message.maxLength + 9) / 64);
-  const BlocksOfBytes = DynamicArray(BlockBytes, { maxLength: maxBlocks });
+  const maxBlocks = Math.ceil((message.maxLength + 9) / 64)
+  const BlocksOfBytes = DynamicArray(BlockBytes, { maxLength: maxBlocks })
 
   // Get the block index and determine the number of blocks
-  let lastBlockIndex = UInt32.Unsafe.fromField(message.length.add(8)).div(64);
-  let numberOfBlocks = lastBlockIndex.value.add(1);
+  let lastBlockIndex = UInt32.Unsafe.fromField(message.length.add(8)).div(64)
+  let numberOfBlocks = lastBlockIndex.value.add(1)
 
   // Apply padding
-  let padded = pad(message.array, maxBlocks * 64, UInt8.from(0));
+  let padded = pad(message.array, maxBlocks * 64, UInt8.from(0))
   // Split padded byte blocks to arrays of 64 bytes.
-  let chunked = chunk(padded, 64).map(BlockBytes.from);
-  let blocksOfBytes = new BlocksOfBytes(chunked, numberOfBlocks);
+  let chunked = chunk(padded, 64).map(BlockBytes.from)
+  let blocksOfBytes = new BlocksOfBytes(chunked, numberOfBlocks)
 
   // pack each block of 64 bytes into 16 uint32s (4 bytes each)
   let blocks = blocksOfBytes.map(Block32, (block) =>
     block.chunk(4).map(UInt32, (b) => UInt32.fromBytesBE(b.array))
-  );
+  )
 
   // Splice the length in the same way
   // Length = byteIndex + 4 * integerIndex + 64 * blockIndexx
   // blockIndex is the block index, integerIndex is the uint32 index in the block, and byteIndex the byte index in the uint32
   let [byteIndex, integerIndex, blockIndex] = splitMultiIndex(
     UInt32.Unsafe.fromField(message.length)
-  );
+  )
 
   // hierarchically get byte at `length` and set to 0x80
   // we can use unsafe get/set because the indices are in bounds by design
-  let block = blocks.getOrUnconstrained(blockIndex);
+  let block = blocks.getOrUnconstrained(blockIndex)
   let wordBytes = WordBytes.from(
     block.getOrUnconstrained(integerIndex).toBytesBE()
-  );
+  )
 
-  wordBytes.setOrDoNothing(byteIndex, UInt8.from(0x80));
-  block.setOrDoNothing(integerIndex, UInt32.fromBytesBE(wordBytes.array));
-  blocks.setOrDoNothing(blockIndex, block);
+  wordBytes.setOrDoNothing(byteIndex, UInt8.from(0x80))
+  block.setOrDoNothing(integerIndex, UInt32.fromBytesBE(wordBytes.array))
+  blocks.setOrDoNothing(blockIndex, block)
 
   // set last 64 bits to encoded length (in bits, big-endian encoded)
   // in fact, since dynamic array asserts that length fits in 16 bits, we can set the second to last uint32 to 0
-  let lastBlock = blocks.getOrUnconstrained(lastBlockIndex.value);
-  lastBlock.set(14, UInt32.from(0));
-  lastBlock.set(15, UInt32.Unsafe.fromField(message.length.mul(8))); // length in bits
-  blocks.setOrDoNothing(lastBlockIndex.value, lastBlock);
+  let lastBlock = blocks.getOrUnconstrained(lastBlockIndex.value)
+  lastBlock.set(14, UInt32.from(0))
+  lastBlock.set(15, UInt32.Unsafe.fromField(message.length.mul(8))) // length in bits
+  blocks.setOrDoNothing(lastBlockIndex.value, lastBlock)
 
-  return blocks;
+  return blocks
 }
 
 /**
@@ -609,7 +610,7 @@ function padding256(
  * @returns {Bytes} A `Bytes` object representing the big-endian byte serialization of the state.
  */
 function state32ToBytes(state: State32) {
-  return Bytes.from(state.array.flatMap((x) => x.toBytesBE()));
+  return Bytes.from(state.array.flatMap((x) => x.toBytesBE()))
 }
 
 /**
@@ -628,10 +629,25 @@ function pack(chunks: Field[]): Field {
   assert(
     chunks.length != 32,
     `Chunk length is not satisfied, expected 32, got ${chunks.length}`
-  );
-  let sum = Field(0);
+  )
+  let sum = Field(0)
   chunks.forEach((chunk, i) => {
-    sum = sum.add(chunk.mul(1n << BigInt(i * 32)));
-  });
-  return sum.seal();
+    sum = sum.add(chunk.mul(1n << BigInt(i * 32)))
+  })
+  return sum.seal()
+}
+
+function searchElement(
+  nDelimitedData: Field[],
+  currentIndex: Field,
+  loopSize: number
+) {
+  let pushValue = Field.from(0)
+  for (let j = 0; j < loopSize; j++) {
+    const isIndex = currentIndex.equals(j).toField()
+    const isValue = isIndex.mul(nDelimitedData[j])
+    pushValue = pushValue.add(isValue)
+  }
+
+  return pushValue
 }
