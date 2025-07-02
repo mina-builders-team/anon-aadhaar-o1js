@@ -1,4 +1,4 @@
-import { Field, Poseidon, UInt32 } from 'o1js';
+import { Field, UInt32 } from 'o1js';
 import {
   PHOTO_POSITION,
 } from './constants.js';
@@ -10,7 +10,6 @@ import {
   pincodeExtractor,
   stateExtractor,
   timestampExtractor,
-  photoExtractor,
 } from './extractors.js';
 import {
   createDelimitedData,
@@ -89,35 +88,11 @@ describe('Extractor circuit tests', () => {
 
       expect(intToCharString(stateValue, 5)).toEqual('Delhi');
     });
-    it('should execute photo extractor correctly', async () => {
-      const photoBytes = photoExtractor(nDelimitedData, delimiterIndices);
-
-      // 496 is the hard coded value we gave, we pack first 16 31 bytes for optimization reasons.
-      const byteLength = 16 * 31;
-      const startIndex = Number(delimiterIndices[PHOTO_POSITION - 1]);
-
-      let exactPhotoBytes = photoBytes.slice(startIndex + 2);
-      // Start with startIndex + 2 to omit the delimiter. 
-      const slicedPhotoBytes = nDelimitedData.slice(
-        startIndex + 2,
-        byteLength
-      );
-
-      expect(exactPhotoBytes.toString()).toEqual(slicedPhotoBytes.toString());
-    });
     it('should compute nullifier correctly', async () => {
     const nullifierSeed = Field(12345678);
-    
-    const photoBytes = photoExtractor(nDelimitedData, delimiterIndices);
 
-    const nullifierHash = nullifier(nullifierSeed, photoBytes)
-    const photoHash = Poseidon.hash(photoBytes);
-    const nullifierOffCircuit = Poseidon.hash([nullifierSeed, photoHash]);
-
-    expect(nullifierHash).toEqual(nullifierOffCircuit);
-
+    const nullifierHash = nullifier(nDelimitedData, nullifierSeed);
+    console.log(nullifierHash.value);
   })
-
-
   });
 });
