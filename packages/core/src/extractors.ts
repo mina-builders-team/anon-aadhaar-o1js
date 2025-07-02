@@ -1,15 +1,12 @@
 import { assert, Bool, Field, Provable, UInt32 } from 'o1js';
 import {
-  chunk,
   digitBytesToInt,
   digitBytesToTimestamp,
-  pack,
   searchElement,
 } from './utils.js';
 import {
   DATA_ARRAY_SIZE,
   DOB_POSITION,
-  PHOTO_POSITION,
   PINCODE_POSITION,
   STATE_POSITION,
 } from './constants.js';
