@@ -1,9 +1,9 @@
-import { ZkProgram, Field } from 'o1js';
-import { pkcs1v15Pad, state32ToBytes } from './utils.js';
-import { Bigint2048, rsaVerify65537 } from './rsa.js';
-import { BLOCKS_PER_RECURSIVE_PROOF, hashBlocks } from './recursion.js';
-import { MerkleBlocks } from './dataTypes.js';
-export { SignatureVerifier };
+import { ZkProgram, Field } from 'o1js'
+import { pkcs1v15Pad, state32ToBytes } from './utils.js'
+import { Bigint2048, rsaVerify65537 } from './rsa.js'
+import { BLOCKS_PER_RECURSIVE_PROOF, hashBlocks } from './recursion.js'
+import { MerkleBlocks } from './dataTypes.js'
+export { SignatureVerifier }
 
 const SignatureVerifier = ZkProgram({
   name: 'SignatureVerifier',
@@ -29,14 +29,14 @@ const SignatureVerifier = ZkProgram({
         signature: Bigint2048,
         publicKey: Bigint2048
       ) {
-        const hashState = await hashBlocks(blocks, BLOCKS_PER_RECURSIVE_PROOF);
+        const hashState = await hashBlocks(blocks, BLOCKS_PER_RECURSIVE_PROOF)
 
-        const finalHash = state32ToBytes(hashState);
+        const finalHash = state32ToBytes(hashState)
 
-        const paddedHash = pkcs1v15Pad(finalHash);
+        const paddedHash = pkcs1v15Pad(finalHash)
 
-        rsaVerify65537(paddedHash, signature, publicKey);
+        rsaVerify65537(paddedHash, signature, publicKey)
       },
     },
   },
-});
+})
