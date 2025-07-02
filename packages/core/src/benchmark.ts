@@ -8,8 +8,6 @@ import {
 import {
   ageAndGenderExtractor,
   delimitData,
-  photoExtractor,
-  photoExtractorChunked,
   pincodeExtractor,
   stateExtractor,
   timestampExtractor,
@@ -127,32 +125,6 @@ function stateExtractorConstraints() {
   stateExtractor(delimitedDataArray, indices);
 }
 
-function chunkedPhotoExtractorConstraints() {
-  const delimitedDataArray = Provable.witness(
-    Provable.Array(Field, DATA_ARRAY_SIZE),
-    () => nDelimitedData
-  );
-
-  const indices = Provable.witness(
-    Provable.Array(Field, DELIMITER_ARRAY_SIZE),
-    () => delimiterIndices
-  );
-  photoExtractorChunked(delimitedDataArray, indices);
-}
-
-function photoExtractorConstraints() {
-  const delimitedDataArray = Provable.witness(
-    Provable.Array(Field, DATA_ARRAY_SIZE),
-    () => nDelimitedData
-  );
-
-  const indices = Provable.witness(
-    Provable.Array(Field, DELIMITER_ARRAY_SIZE),
-    () => delimiterIndices
-  );
-  photoExtractor(delimitedDataArray, indices);
-}
-
 // Parameters are assigned to relevant variables as BenchmarkResults type.
 const delimitDataParameters = await getBenchmarkParameters(
   'Delimit Data',
@@ -179,27 +151,16 @@ const stateExtractorParameters = await getBenchmarkParameters(
   stateExtractorConstraints
 );
 
-const photoExtractorParameters = await getBenchmarkParameters(
-  'Photo',
-  photoExtractorConstraints
-);
-
-const chunkedPhotoExtractorParameters = await getBenchmarkParameters(
-  'Chunked Photo',
-  chunkedPhotoExtractorConstraints
-);
 
 // Analyzers for nullifier
 const indices = Provable.witness(
   Provable.Array(Field, DELIMITER_ARRAY_SIZE),
   () => delimiterIndices
 );
-const photoBytes = photoExtractorChunked(nDelimitedData, indices);
 
 function nullifierConstraints() {
-  const photo = Provable.witness(Provable.Array(Field, 16), () => photoBytes);
   const nullifierSeed = Provable.witness(Field, () => Field.random());
-  nullifier(nullifierSeed, photo);
+  nullifier(nDelimitedData, nullifierSeed);
 }
 
 const nullifierParameters = await getBenchmarkParameters(
@@ -213,8 +174,6 @@ const benchmarkResults = [
   timestampParameters,
   pincodeExtractorParameters,
   stateExtractorParameters,
-  photoExtractorParameters,
-  chunkedPhotoExtractorParameters,
   nullifierParameters,
 ];
 

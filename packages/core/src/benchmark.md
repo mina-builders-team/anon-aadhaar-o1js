@@ -27,13 +27,11 @@ Provable functions include extractors and the nullifier. Constraint counts are g
 | Extractor             | Rows   |
 | --------------------- | ------ |
 | delimitData           | 10753 |
-| ageAndGenderExtractor | 10051  |
+| ageAndGenderExtractor | 9416  |
 | timestampExtractor    | 953    |
-| pincodeExtractor      | 4599   |
+| pincodeExtractor      | 3837   |
 | stateExtractor        | 12328  |
-| photoExtractor        | 13640 |
-| photoExtractorChunked | 13880 |
-| nullifier             | 116    |
+| nullifier             | 13    |
 
 ## ZkProgram Compilation Times
 
