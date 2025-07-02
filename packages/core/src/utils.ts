@@ -28,6 +28,7 @@ export {
   generateMessageBlocks,
   pack,
   chunk,
+  searchElement
 };
 
 /**
@@ -634,4 +635,16 @@ function pack(chunks: Field[]): Field {
     sum = sum.add(chunk.mul(1n << BigInt(i * 32)));
   });
   return sum.seal();
+}
+
+
+function searchElement(nDelimitedData:Field[], currentIndex: Field, loopSize: number){
+  let pushValue = Field.from(0);
+  for (let j = 0; j < loopSize; j++) {
+    const isIndex = currentIndex.equals(j).toField();
+    const isValue = isIndex.mul(nDelimitedData[j]);
+    pushValue = pushValue.add(isValue);
+  }
+
+  return pushValue;
 }
