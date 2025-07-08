@@ -168,17 +168,19 @@ function ageAndGenderExtractor(
  * @returns {Field} The extracted pincode as an integer Field.
  */
 function pincodeExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
-  const startIndex = delimiterIndices[DELIMITER_POSITION.PINCODE- 1].add(1)
+  // startIndex is the index of delimiter
+  const startIndex = delimiterIndices[DELIMITER_POSITION.PINCODE - 1]
 
-  const pincodeArray = []
+  const pincodeArray: Field[] = []
 
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 7; i++) {
     const currentIndex = startIndex.add(i)
 
     const pushval = searchElement(nDelimitedData, currentIndex, 256)
     pincodeArray.push(pushval)
   }
-  const pincode = digitBytesToInt(pincodeArray, 6)
+  assert(pincodeArray[0].equals(Field(DELIMITER_POSITION.PINCODE * 255)))
+  const pincode = digitBytesToInt(pincodeArray.slice(1, 7), 6)
 
   return pincode
 }
@@ -193,13 +195,13 @@ function pincodeExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
  * @returns {Field[]} An array representing the extracted state data.
  */
 function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
-  const startIndex = delimiterIndices[DELIMITER_POSITION.STATE - 1].add(1)
+  const startIndex = delimiterIndices[DELIMITER_POSITION.STATE - 1]
 
   const stateArray = []
 
   // Ending delimiter of the state.
-  const endValue = (DELIMITER_POSITION.STATE + 1) * 255
-  let is255 = Bool(false)
+  const endValue = (DELIMITER_POSITION.STATE + 1) * 255;
+  let isEnd = Bool(false)
 
   for (let i = 0; i < 16; i++) {
     let pushValue = Field.from(0)
@@ -214,12 +216,14 @@ function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
       pushValue = pushValue.add(isValue)
     }
 
-    is255 = Bool.or(is255, pushValue.equals(endValue))
+    isEnd = Bool.or(isEnd, pushValue.equals(endValue))
 
-    const toBePushed = Provable.if(is255.not(), pushValue, Field.from(0))
+    const toBePushed = Provable.if(isEnd.not(), pushValue, Field.from(0))
 
     stateArray.push(toBePushed)
   }
 
-  return stateArray
+  assert(stateArray[0].equals(DELIMITER_POSITION.STATE * 255));
+
+  return stateArray.slice(1, 16)
 }
