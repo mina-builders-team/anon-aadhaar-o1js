@@ -38,6 +38,17 @@ describe('Extractor circuit tests', () => {
     nDelimitedData = createDelimitedData(qrData, Number(photoIndex)).map(Field)
   })
 
+  describe('getDelimiterIndices utility function', () => {
+    it('should extract delimiter indices correctly', async () => {
+      const inputs = getQRData(TEST_DATA)
+      const qrDataPadded = inputs.paddedData.toBytes()
+      const indices = getDelimiterIndices(qrDataPadded)
+      expect(indices.length).toEqual(18)
+      expect(qrDataPadded[indices[DELIMITER_POSITION.PHOTO - 1]]).toEqual(255)
+      expect(qrDataPadded[indices[DELIMITER_POSITION.NAME - 1]]).toEqual(255)
+    })
+  })
+
   describe('Delimiter circuit tests', () => {
     it('should extract delimited data correctly', async () => {
       const qrDataField = qrData.map(Field)
@@ -46,7 +57,8 @@ describe('Extractor circuit tests', () => {
       expect(nDelimitedDataFromCircuit).toEqual(nDelimitedData)
     })
   })
-  describe('Extractor Circuit tests', () => {
+
+  describe('Timestamp Extractor Circuit tests', () => {
     it('should extract timestamp correctly', async () => {
       const timestamp = timestampExtractor(nDelimitedData)
 
@@ -56,6 +68,9 @@ describe('Extractor circuit tests', () => {
 
       expect(date).toEqual(expectedDate)
     })
+  })
+
+  describe('Age and Gender Extractor Circuit tests', () => {
     it('should extract age and gender correctly', async () => {
       const day = Field.from(1)
       const month = Field.from(1)
@@ -66,11 +81,33 @@ describe('Extractor circuit tests', () => {
       expect(age.toBigInt()).toEqual(40n)
       expect(String.fromCharCode(Number(gender))).toEqual('M')
     })
+    it('should error with invalid delimiterIndices', async () => {
+      const day = Field.from(1)
+      const month = Field.from(1)
+      const year = Field.from(2024)
+
+      delimiterIndices[DELIMITER_POSITION.DOB - 1] = delimiterIndices[DELIMITER_POSITION.DOB - 1].sub(1)
+      expect(() => {
+        ageAndGenderExtractor(nDelimitedData, delimiterIndices, year, month, day)
+      }).toThrow()
+    })
+  })
+
+  describe('Pincode Extractor Circuit tests', () => {
     it('should get pincode ', async () => {
       const pincode = pincodeExtractor(nDelimitedData, delimiterIndices)
 
       expect(pincode.toBigInt()).toEqual(110051n)
     })
+    it('should error with invalid delimiterIndices', async () => {
+      delimiterIndices[DELIMITER_POSITION.PINCODE - 1] = delimiterIndices[DELIMITER_POSITION.PINCODE - 1].sub(1)
+      expect(() => {
+        pincodeExtractor(nDelimitedData, delimiterIndices)
+      }).toThrow()
+    })
+  })
+
+  describe('State Extractor Circuit tests', () => {
     it('should extract state', async () => {
       const state = stateExtractor(nDelimitedData, delimiterIndices)
 
@@ -79,6 +116,15 @@ describe('Extractor circuit tests', () => {
 
       expect(intToCharString(stateValue, 5)).toEqual('Delhi')
     })
+    it('should error with invalid delimiterIndices', async () => {
+      delimiterIndices[DELIMITER_POSITION.STATE - 1] = delimiterIndices[DELIMITER_POSITION.STATE - 1].sub(1)
+      expect(() => {
+        stateExtractor(nDelimitedData, delimiterIndices)
+      }).toThrow()
+    })
+  })
+
+  describe('Nullifier Circuit tests', () => {
     it('should compute nullifier correctly', async () => {
       const nullifierSeed = Field(12345678)
 
