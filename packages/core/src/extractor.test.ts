@@ -1,5 +1,5 @@
 import { Field, UInt32 } from 'o1js'
-import { PHOTO_POSITION } from './constants.js'
+import { DELIMITER_POSITION } from './constants.js'
 import { getDelimiterIndices } from './utils.js'
 import { getQRData, TEST_DATA } from './getQRData.js'
 import {
@@ -32,7 +32,7 @@ describe('Extractor circuit tests', () => {
     qrData = createPaddedQRData(qrDataPadded)
 
     photoIndex = UInt32.Unsafe.fromField(
-      delimiterIndices[PHOTO_POSITION - 1].add(1)
+      delimiterIndices[DELIMITER_POSITION.PHOTO - 1].add(1)
     )
     // Map to field for using it through tests.
     nDelimitedData = createDelimitedData(qrData, Number(photoIndex)).map(Field)
@@ -42,9 +42,8 @@ describe('Extractor circuit tests', () => {
     it('should extract delimited data correctly', async () => {
       const qrDataField = qrData.map(Field)
 
-      const delimitedData = delimitData(qrDataField, photoIndex)
-
-      expect(delimitedData).toEqual(nDelimitedData)
+      const nDelimitedDataFromCircuit = delimitData(qrDataField, photoIndex)
+      expect(nDelimitedDataFromCircuit).toEqual(nDelimitedData)
     })
   })
   describe('Extractor Circuit tests', () => {
@@ -62,13 +61,7 @@ describe('Extractor circuit tests', () => {
       const month = Field.from(1)
       const year = Field.from(2024)
 
-      const [age, gender] = ageAndGenderExtractor(
-        nDelimitedData,
-        delimiterIndices,
-        year,
-        month,
-        day
-      )
+      const [age, gender] = ageAndGenderExtractor(nDelimitedData, delimiterIndices, year, month, day)
 
       expect(age.toBigInt()).toEqual(40n)
       expect(String.fromCharCode(Number(gender))).toEqual('M')

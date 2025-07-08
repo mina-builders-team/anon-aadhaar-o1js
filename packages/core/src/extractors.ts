@@ -6,9 +6,7 @@ import {
 } from './utils.js'
 import {
   DATA_ARRAY_SIZE,
-  DOB_POSITION,
-  PINCODE_POSITION,
-  STATE_POSITION,
+  DELIMITER_POSITION
 } from './constants.js'
 export {
   delimitData,
@@ -29,7 +27,7 @@ export {
  * @returns {Field[]} The delimited and filtered data array.
  */
 function delimitData(paddedData: Field[], photoIndex: UInt32) {
-  let delimitedData = []
+  const delimitedData = []
   let n255Filter = Field.from(0)
 
   for (let i = 0; i < DATA_ARRAY_SIZE; i++) {
@@ -121,11 +119,11 @@ function ageAndGenderExtractor(
   currentMonth: Field,
   currentDay: Field
 ) {
-  let ageData: Field[] = []
-  const startIndex = delimiterIndices[DOB_POSITION - 1]
+  const ageData: Field[] = []
+  const startIndex = delimiterIndices[DELIMITER_POSITION.DOB - 1]
   // Date consist of 12 characters including delimiters.
   for (let i = 0; i < 12; i++) {
-    let currentIndex = startIndex.add(i)
+    const currentIndex = startIndex.add(i)
     // Soft assumption: data we search will be placed in less than 256th index.
 
     const agePushValue = searchElement(nDelimitedData, currentIndex, 256)
@@ -140,13 +138,11 @@ function ageAndGenderExtractor(
   const months = digitBytesToInt([ageData[4], ageData[5]], 2)
   const days = digitBytesToInt([ageData[1], ageData[2]], 2)
 
-  assert(ageData[0].equals(Field(DOB_POSITION * 255)))
-  assert(ageData[11].equals(Field((DOB_POSITION + 1) * 255)))
+  assert(ageData[0].equals(Field(DELIMITER_POSITION.DOB * 255)))
+  assert(ageData[11].equals(Field((DELIMITER_POSITION.DOB + 1) * 255)))
 
-  let gender = Field.from(0)
-  let genderIndex = startIndex.add(12)
-
-  gender = searchElement(nDelimitedData, genderIndex, 256)
+  const genderIndex = startIndex.add(12)
+  const gender = searchElement(nDelimitedData, genderIndex, 256)
 
   // Calculate age based on year
   const ageByYear = currentYear.sub(years).sub(Field(1))
@@ -172,12 +168,12 @@ function ageAndGenderExtractor(
  * @returns {Field} The extracted pincode as an integer Field.
  */
 function pincodeExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
-  const startIndex = delimiterIndices[PINCODE_POSITION - 1].add(1)
+  const startIndex = delimiterIndices[DELIMITER_POSITION.PINCODE- 1].add(1)
 
-  let pincodeArray = []
+  const pincodeArray = []
 
   for (let i = 0; i < 6; i++) {
-    let currentIndex = startIndex.add(i)
+    const currentIndex = startIndex.add(i)
 
     const pushval = searchElement(nDelimitedData, currentIndex, 256)
     pincodeArray.push(pushval)
@@ -197,18 +193,18 @@ function pincodeExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
  * @returns {Field[]} An array representing the extracted state data.
  */
 function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
-  const startIndex = delimiterIndices[STATE_POSITION - 1].add(1)
+  const startIndex = delimiterIndices[DELIMITER_POSITION.STATE - 1].add(1)
 
-  let stateArray = []
+  const stateArray = []
 
   // Ending delimiter of the state.
-  const endValue = (STATE_POSITION + 1) * 255
+  const endValue = (DELIMITER_POSITION.STATE + 1) * 255
   let is255 = Bool(false)
 
   for (let i = 0; i < 16; i++) {
     let pushValue = Field.from(0)
 
-    let currentIndex = startIndex.add(i)
+    const currentIndex = startIndex.add(i)
     // Under assumption that state data will be at most <256th byte.
     for (let j = 0; j < 256; j++) {
       const isIndex = currentIndex.equals(j).toField()

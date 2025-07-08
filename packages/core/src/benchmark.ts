@@ -14,7 +14,7 @@ import {
 } from './extractors.js'
 import { getDelimiterIndices } from './utils.js'
 import {
-  PHOTO_POSITION,
+  DELIMITER_POSITION,
   DATA_ARRAY_SIZE,
   DELIMITER_ARRAY_SIZE,
 } from './constants.js'
@@ -34,8 +34,8 @@ interface CompilationResults {
 }
 
 // Proof Generation Configuration
-let proofsEnabled = true
-let forceRecompile = true
+const proofsEnabled = true
+const forceRecompile = true
 
 // Input Preparation
 const inputs = getQRData(TEST_DATA)
@@ -46,7 +46,7 @@ const qrData = createPaddedQRData(qrDataPadded)
 const delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field)
 
 // Witnessed values
-const photo = delimiterIndices[PHOTO_POSITION - 1].add(1)
+const photo = delimiterIndices[DELIMITER_POSITION.PHOTO - 1].add(1)
 const nDelimitedData = createDelimitedData(qrData, Number(photo)).map(Field)
 
 async function getBenchmarkParameters(
@@ -72,7 +72,7 @@ function delimitDataConstraints() {
   )
 
   const photoIndex = Provable.witness(UInt32, () =>
-    UInt32.Unsafe.fromField(delimiterIndices[PHOTO_POSITION - 1].add(1))
+    UInt32.Unsafe.fromField(delimiterIndices[DELIMITER_POSITION.PHOTO - 1].add(1))
   )
 
   delimitData(dataArray, photoIndex)

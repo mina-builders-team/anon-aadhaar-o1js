@@ -7,7 +7,7 @@ import { verify } from 'o1js'
 
 const { signatureBigint, publicKeyBigint, signedData } = getQRData(TEST_DATA)
 
-let proofsEnabled = true
+const proofsEnabled = true
 
 console.time('Compile Hash Circuit')
 await hashProgram.compile({ proofsEnabled })

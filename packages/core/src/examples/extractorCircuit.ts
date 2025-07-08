@@ -2,7 +2,7 @@ import { ZkProgram, Provable, Field, UInt32, Struct, verify } from 'o1js'
 import {
   DATA_ARRAY_SIZE,
   DELIMITER_ARRAY_SIZE,
-  PHOTO_POSITION,
+  DELIMITER_POSITION,
 } from '../constants.js'
 import {
   delimitData,
@@ -46,7 +46,7 @@ const ExtractorCircuit = ZkProgram({
         day: Field
       ) {
         const photoIndex = UInt32.Unsafe.fromField(
-          delimiterIndices[PHOTO_POSITION - 1].add(1)
+          delimiterIndices[DELIMITER_POSITION.PHOTO - 1].add(1)
         )
         const nDelimitedData = delimitData(data, photoIndex)
         Provable.log('Data Delimited..')
@@ -88,9 +88,9 @@ const ExtractorCircuit = ZkProgram({
 const inputs = getQRData(TEST_DATA)
 const qrDataPadded = inputs.paddedData.toBytes()
 
-let delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field)
+const delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field)
 
-let qrData = createPaddedQRData(qrDataPadded).map(Field)
+const qrData = createPaddedQRData(qrDataPadded).map(Field)
 const day = Field.from(1)
 const month = Field.from(1)
 const year = Field.from(2024)
@@ -106,7 +106,7 @@ const { proof } = await ExtractorCircuit.extract(
   month,
   day
 )
-console.timeEnd('Proof generation timey')
+console.timeEnd('Proof generation time')
 
 const constraints = await ExtractorCircuit.analyzeMethods()
 console.log(constraints.extract.summary())

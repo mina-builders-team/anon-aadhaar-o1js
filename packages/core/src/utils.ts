@@ -96,7 +96,7 @@ function updateHash(
   const messageBlocks = generateMessageBlocks(paddedPreimage)
 
   // Create array to store hash states after each block
-  let hashValues: UInt32[][] = Array.from(
+  const hashValues: UInt32[][] = Array.from(
     { length: messageBlocks.length + 1 },
     () => [UInt32.from(0)]
   )
@@ -199,7 +199,7 @@ function decompressByteArray(byteArray: Uint8Array): Uint8Array {
  * @returns An array of indices where the delimiter bytes are located, capped at 18 elements.
  */
 function getDelimiterIndices(paddedData: Uint8Array): number[] {
-  let delimiterIndices = []
+  const delimiterIndices = []
   for (let i = 0; i < paddedData.length; i++) {
     if (paddedData[i] === 255) {
       delimiterIndices.push(i)

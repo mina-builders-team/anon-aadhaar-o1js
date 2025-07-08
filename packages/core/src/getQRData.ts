@@ -66,7 +66,7 @@ function getQRData(testQRData: string) {
   const paddedBlocks = Gadgets.SHA2.padding(256, signedData)
 
   // Convert padded Data from blocks to bytes.
-  let paddedData = Bytes.from(
+  const paddedData = Bytes.from(
     paddedBlocks
       .flat()
       .map((word) => word.toBytesBE())
