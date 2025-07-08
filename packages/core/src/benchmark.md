@@ -23,14 +23,16 @@ To minimize the impact of cache optimizations during circuit compilation, the `f
 
 Provable functions include extractors and the nullifier. Constraint counts are gathered using `Provable.constraintSystem`. For this API to work correctly, inputs must be provided as witnesses. Otherwise, constraint counts will appear as zero. A helper function named `getBenchmarkParameters` is used to streamline this process by returning both the constraint summary and method name.
 
-| Extractor             | Rows  |
-| --------------------- | ----- |
-| delimitData           | 10753 |
-| ageAndGenderExtractor | 9416  |
-| timestampExtractor    | 953   |
-| pincodeExtractor      | 3837  |
-| stateExtractor        | 12328 |
-| nullifier             | 13    |
+┌─────────┬──────────────────┬───────┐
+│ (index) │      Method      │ Rows  │
+├─────────┼──────────────────┼───────┤
+│    0    │  'Delimit Data'  │ 10753 │
+│    1    │ 'Age and Gender' │ 9416  │
+│    2    │   'Timestamp'    │  953  │
+│    3    │    'Pincode'     │ 4606  │
+│    4    │     'State'      │ 12331 │
+│    5    │   'Nullifier'    │  13   │
+└─────────┴──────────────────┴───────┘
 
 ## ZkProgram Compilation Times
 
