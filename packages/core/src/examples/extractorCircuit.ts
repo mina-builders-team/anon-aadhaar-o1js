@@ -106,7 +106,7 @@ const { proof } = await ExtractorCircuit.extract(
   month,
   day
 )
-console.timeEnd('Proof generation timey')
+console.timeEnd('Proof generation time')
 
 const constraints = await ExtractorCircuit.analyzeMethods()
 console.log(constraints.extract.summary())
