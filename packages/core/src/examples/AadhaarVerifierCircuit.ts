@@ -51,9 +51,10 @@ const AadhaarVerifier = ZkProgram({
             },
         },
         extractor: {
-            privateInputs: [ Provable.Array(Field, DATA_ARRAY_SIZE), Provable.Array(Field, DELIMITER_ARRAY_SIZE), Field, Field, Field],
+            privateInputs: [SelfProof, Provable.Array(Field, DATA_ARRAY_SIZE), Provable.Array(Field, DELIMITER_ARRAY_SIZE), Field, Field, Field],
 
-            async method(data: Field[], delimiterIndices: Field[], currentYear: Field, currentMonth:Field, currentDay:Field){
+            async method(earlierProof: SelfProof<unknown, AadhaarOutputs>, data: Field[], delimiterIndices: Field[], currentYear: Field, currentMonth:Field, currentDay:Field){
+                earlierProof.verify()
                 const photoIndex = UInt32.Unsafe.fromField( delimiterIndices[PHOTO_POSITION - 1].add(1))
                 const nDelimitedData = delimitData(data, photoIndex)
 
@@ -87,86 +88,6 @@ const AadhaarVerifier = ZkProgram({
         }
     }
 });
-
-const signature = ZkProgram({
-    name:'xd',
-    publicOutput: AadhaarOutputs,
-
-    methods:{
-                verifySignature: {
-            privateInputs: [MerkleBlocks, Bigint2048, Bigint2048],
-
-            async method(
-                blocks: MerkleBlocks,
-                signature: Bigint2048,
-                publicKey: Bigint2048
-            ) {
-                const hashState = await hashBlocks(blocks, BLOCKS_PER_RECURSIVE_PROOF)
-
-                const finalHash = state32ToBytes(hashState)
-
-                const paddedHash = pkcs1v15Pad(finalHash)
-
-                rsaVerify65537(paddedHash, signature, publicKey)
-
-                const emptyArray = Array.from({ length: 16 }, () => Field.from(0))
-                return {publicOutput: new AadhaarOutputs({
-                    Timestamp: Field.from(0),
-                    Age: Field.from(0),
-                    Gender: Field.from(0),
-                    Pincode: Field.from(0),
-                    State: emptyArray,
-                    nullifiedValue: Field.from(0),
-                })}
-            },
-        },
-    }
-});
-
-const extract = ZkProgram({
-    name:'dx',
-    publicOutput: AadhaarOutputs,
-
-    methods:{
-                extractor: {
-            privateInputs: [ Provable.Array(Field, DATA_ARRAY_SIZE), Provable.Array(Field, DELIMITER_ARRAY_SIZE), Field, Field, Field],
-
-            async method(data: Field[], delimiterIndices: Field[], currentYear: Field, currentMonth:Field, currentDay:Field){
-                const photoIndex = UInt32.Unsafe.fromField( delimiterIndices[PHOTO_POSITION - 1].add(1))
-                const nDelimitedData = delimitData(data, photoIndex)
-
-                const timestamp = timestampExtractor(nDelimitedData)
-
-                const [age, gender] = ageAndGenderExtractor(
-                nDelimitedData,
-                delimiterIndices,
-                currentYear,
-                currentMonth,
-                currentDay
-                );
-                const pincode = pincodeExtractor(nDelimitedData, delimiterIndices)
-                const state = stateExtractor(nDelimitedData, delimiterIndices)
-
-                // This can/should be given as an input to the circuit.
-                const nullifierSeed = Field.from(123124124214)
-
-                const nullifiedValue = nullifier(nDelimitedData, nullifierSeed)
-                return {
-                publicOutput: new AadhaarOutputs({
-                    Timestamp: timestamp,
-                    Age: age,
-                    Gender: gender,
-                    Pincode: pincode,
-                    State: state,
-                    nullifiedValue: nullifiedValue,
-                }),
-                }           
-            }
-        }
-    }
-});
-
-
 
 await hashProgram.compile()
 const { verificationKey } = await AadhaarVerifier.compile({proofsEnabled: true});
@@ -185,11 +106,11 @@ const year = Field.from(2024)
 const summary = await AadhaarVerifier.analyzeMethods()
 console.log(summary)
 console.time("verifySignature");
-const verificationProof = await AadhaarVerifier.verifySignature(preparedData, inputs.signatureBigint, inputs.publicKeyBigint);
+const verificationProof = await AadhaarVerifier.verifySignature(preparedData, inputs.signatureBigint, inputs.publicKeyBigint)
 await verify(verificationProof.proof, verificationKey);
 console.timeEnd("verifySignature");
 
 console.time("Extractor");
-const extractorProof = await AadhaarVerifier.extractor( qrData, delimiterIndices, year, month, day);
+const extractorProof = await AadhaarVerifier.extractor(verificationProof.proof, qrData, delimiterIndices, year, month, day)
 await verify(extractorProof.proof, verificationKey);
 console.timeEnd("Extractor");
