@@ -54,15 +54,14 @@ const ExtractorCircuit = ZkProgram({
         Provable.log('Timestamp Extracted..')
         const [age, gender] = ageAndGenderExtractor(
           nDelimitedData,
-          delimiterIndices,
           year,
           month,
           day
         )
         Provable.log('Age and Gender Extracted..')
-        const pincode = pincodeExtractor(nDelimitedData, delimiterIndices)
+        const pincode = pincodeExtractor(nDelimitedData)
         Provable.log('Pincode Extracted..')
-        const state = stateExtractor(nDelimitedData, delimiterIndices)
+        const state = stateExtractor(nDelimitedData)
         Provable.log('State Extracted..')
 
         // This can/should be given as an input to the circuit.

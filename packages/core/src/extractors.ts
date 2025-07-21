@@ -106,7 +106,6 @@ function timestampExtractor(nDelimitedData: Field[]) {
  * Rows: 10051
  *
  * @param {Field[]} nDelimitedData - The delimited input data array.
- * @param {Field[]} delimiterIndices - Array of indices marking field positions.
  * @param {Field} currentYear - Current year as a Field.
  * @param {Field} currentMonth - Current month as a Field.
  * @param {Field} currentDay - Current day as a Field.
@@ -114,20 +113,19 @@ function timestampExtractor(nDelimitedData: Field[]) {
  */
 function ageAndGenderExtractor(
   nDelimitedData: Field[],
-  delimiterIndices: Field[],
   currentYear: Field,
   currentMonth: Field,
   currentDay: Field
 ) {
   const ageData: Field[] = []
-  const startIndex = delimiterIndices[DELIMITER_POSITION.DOB - 1]
+  const startIndex = Provable.witness(Field, () => {
+    return  nDelimitedData.findIndex((value) => value.toBigInt() === BigInt(DELIMITER_POSITION.DOB * 255))
+  })
   // Date consist of 12 characters including delimiters.
   for (let i = 0; i < 12; i++) {
     const currentIndex = startIndex.add(i)
     // Soft assumption: data we search will be placed in less than 256th index.
-
     const agePushValue = searchElement(nDelimitedData, currentIndex, 256)
-
     ageData.push(agePushValue)
   }
   const years = digitBytesToInt(
@@ -164,12 +162,13 @@ function ageAndGenderExtractor(
  * Rows: 4599
  *
  * @param {Field[]} nDelimitedData - The delimited input data array.
- * @param {Field[]} delimiterIndices - Array of indices marking field positions.
  * @returns {Field} The extracted pincode as an integer Field.
  */
-function pincodeExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
+function pincodeExtractor(nDelimitedData: Field[]) {
   // startIndex is the index of delimiter
-  const startIndex = delimiterIndices[DELIMITER_POSITION.PINCODE - 1]
+  const startIndex = Provable.witness(Field, () => {
+    return nDelimitedData.findIndex((value) => value.toBigInt() === BigInt(DELIMITER_POSITION.PINCODE * 255))
+  })
 
   const pincodeArray: Field[] = []
 
@@ -191,14 +190,13 @@ function pincodeExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
  * Rows: 12328
  *
  * @param {Field[]} nDelimitedData - The delimited input data array.
- * @param {Field[]} delimiterIndices - Array of indices marking field positions.
  * @returns {Field[]} An array representing the extracted state data.
  */
-function stateExtractor(nDelimitedData: Field[], delimiterIndices: Field[]) {
-  const startIndex = delimiterIndices[DELIMITER_POSITION.STATE - 1]
-
+function stateExtractor(nDelimitedData: Field[]) {
+  const startIndex = Provable.witness(Field, () => {
+    return nDelimitedData.findIndex((value) => value.toBigInt() === BigInt(DELIMITER_POSITION.STATE * 255))
+  })
   const stateArray = []
-
   // Ending delimiter of the state.
   const endValue = (DELIMITER_POSITION.STATE + 1) * 255;
   let isEnd = Bool(false)

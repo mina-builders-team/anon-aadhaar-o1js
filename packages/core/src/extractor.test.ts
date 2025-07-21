@@ -20,14 +20,13 @@ import { nullifier } from './nullifier.js'
 describe('Extractor circuit tests', () => {
   let nDelimitedData: Field[]
   let qrData: number[]
-  let delimiterIndices: Field[]
   let photoIndex: UInt32
 
   beforeAll(async () => {
     const inputs = getQRData(TEST_DATA)
     const qrDataPadded = inputs.paddedData.toBytes()
 
-    delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field)
+    const delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field)
 
     qrData = createPaddedQRData(qrDataPadded)
 
@@ -76,51 +75,26 @@ describe('Extractor circuit tests', () => {
       const month = Field.from(1)
       const year = Field.from(2024)
 
-      const [age, gender] = ageAndGenderExtractor(nDelimitedData, delimiterIndices, year, month, day)
+      const [age, gender] = ageAndGenderExtractor(nDelimitedData, year, month, day)
 
       expect(age.toBigInt()).toEqual(40n)
       expect(String.fromCharCode(Number(gender))).toEqual('M')
-    })
-    it('should error with invalid delimiterIndices', async () => {
-      const day = Field.from(1)
-      const month = Field.from(1)
-      const year = Field.from(2024)
-
-      delimiterIndices[DELIMITER_POSITION.DOB - 1] = delimiterIndices[DELIMITER_POSITION.DOB - 1].sub(1)
-      expect(() => {
-        ageAndGenderExtractor(nDelimitedData, delimiterIndices, year, month, day)
-      }).toThrow()
     })
   })
 
   describe('Pincode Extractor Circuit tests', () => {
     it('should get pincode ', async () => {
-      const pincode = pincodeExtractor(nDelimitedData, delimiterIndices)
-
+      const pincode = pincodeExtractor(nDelimitedData)
       expect(pincode.toBigInt()).toEqual(110051n)
-    })
-    it('should error with invalid delimiterIndices', async () => {
-      delimiterIndices[DELIMITER_POSITION.PINCODE - 1] = delimiterIndices[DELIMITER_POSITION.PINCODE - 1].sub(1)
-      expect(() => {
-        pincodeExtractor(nDelimitedData, delimiterIndices)
-      }).toThrow()
     })
   })
 
   describe('State Extractor Circuit tests', () => {
     it('should extract state', async () => {
-      const state = stateExtractor(nDelimitedData, delimiterIndices)
-
+      const state = stateExtractor(nDelimitedData)
       // Our state here is at length 5, so try:
       const stateValue = charBytesToInt(state.slice(0, 5), 5)
-
       expect(intToCharString(stateValue, 5)).toEqual('Delhi')
-    })
-    it('should error with invalid delimiterIndices', async () => {
-      delimiterIndices[DELIMITER_POSITION.STATE - 1] = delimiterIndices[DELIMITER_POSITION.STATE - 1].sub(1)
-      expect(() => {
-        stateExtractor(nDelimitedData, delimiterIndices)
-      }).toThrow()
     })
   })
 

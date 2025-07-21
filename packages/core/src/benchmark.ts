@@ -93,16 +93,11 @@ function ageAndGenderExtractorConstraints() {
     () => nDelimitedData
   )
 
-  const indices = Provable.witness(
-    Provable.Array(Field, DELIMITER_ARRAY_SIZE),
-    () => delimiterIndices
-  )
-
   const day = Provable.witness(Field, () => Field.from(1))
   const month = Provable.witness(Field, () => Field.from(1))
   const year = Provable.witness(Field, () => Field.from(2024))
 
-  ageAndGenderExtractor(delimitedDataArray, indices, year, month, day)
+  ageAndGenderExtractor(delimitedDataArray, year, month, day)
 }
 
 function pincodeExtractorConstraints() {
@@ -111,11 +106,7 @@ function pincodeExtractorConstraints() {
     () => nDelimitedData
   )
 
-  const indices = Provable.witness(
-    Provable.Array(Field, DELIMITER_ARRAY_SIZE),
-    () => delimiterIndices
-  )
-  pincodeExtractor(delimitedDataArray, indices)
+  pincodeExtractor(delimitedDataArray)
 }
 
 function stateExtractorConstraints() {
@@ -124,11 +115,7 @@ function stateExtractorConstraints() {
     () => nDelimitedData
   )
 
-  const indices = Provable.witness(
-    Provable.Array(Field, DELIMITER_ARRAY_SIZE),
-    () => delimiterIndices
-  )
-  stateExtractor(delimitedDataArray, indices)
+  stateExtractor(delimitedDataArray)
 }
 
 // Parameters are assigned to relevant variables as BenchmarkResults type.
@@ -158,11 +145,6 @@ const stateExtractorParameters = await getBenchmarkParameters(
 )
 
 // Analyzers for nullifier
-const indices = Provable.witness(
-  Provable.Array(Field, DELIMITER_ARRAY_SIZE),
-  () => delimiterIndices
-)
-
 function nullifierConstraints() {
   const nullifierSeed = Provable.witness(Field, () => Field.random())
   nullifier(nDelimitedData, nullifierSeed)
