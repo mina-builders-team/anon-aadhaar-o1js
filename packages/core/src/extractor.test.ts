@@ -52,7 +52,7 @@ describe('Extractor circuit tests', () => {
     it('should extract delimited data correctly', async () => {
       const qrDataField = qrData.map(Field)
 
-      const nDelimitedDataFromCircuit = delimitData(qrDataField, photoIndex)
+      const nDelimitedDataFromCircuit = delimitData(qrDataField)
       expect(nDelimitedDataFromCircuit).toEqual(nDelimitedData)
     })
   })

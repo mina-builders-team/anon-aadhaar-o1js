@@ -16,7 +16,6 @@ import { getDelimiterIndices } from './utils.js'
 import {
   DELIMITER_POSITION,
   DATA_ARRAY_SIZE,
-  DELIMITER_ARRAY_SIZE,
 } from './constants.js'
 import { ConstraintSystemSummary } from 'o1js/dist/node/lib/provable/core/provable-context.js'
 import { SignatureVerifier } from './signatureVerifier.js'
@@ -71,11 +70,7 @@ function delimitDataConstraints() {
     () => qrData.map((x) => Field.from(x))
   )
 
-  const photoIndex = Provable.witness(UInt32, () =>
-    UInt32.Unsafe.fromField(delimiterIndices[DELIMITER_POSITION.PHOTO - 1].add(1))
-  )
-
-  delimitData(dataArray, photoIndex)
+  delimitData(dataArray)
 }
 
 function timestampExtractorConstraints() {

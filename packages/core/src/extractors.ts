@@ -1,8 +1,9 @@
-import { assert, Bool, Field, Provable, UInt32 } from 'o1js'
+import { assert, Bool, Field, Provable} from 'o1js'
 import {
   digitBytesToInt,
   digitBytesToTimestamp,
   searchElement,
+  selectSubarray,
 } from './utils.js'
 import {
   DATA_ARRAY_SIZE,
@@ -17,40 +18,31 @@ export {
 }
 
 /**
- * Processes the padded data up to the photo index, applying a 255 delimiter filter.
- * Returns a new array where elements before the photo are conditionally zeroed or kept.
+ * Processes the padded data up to the photo index with each delimiter replaced by n * 255
+ * where n means the nth occurrence of 255
  *
- * Rows: 10753
+ * Rows: 10749
  *
  * @param {Field[]} paddedData - The input data array, padded with extra values.
- * @param {Field} photoIndex - The index marking where photo data begins.
- * @returns {Field[]} The delimited and filtered data array.
+ * @returns {Field[]} The delimited data array.
  */
-function delimitData(paddedData: Field[], photoIndex: UInt32) {
+function delimitData(paddedData: Field[]) {
   const delimitedData = []
-  let n255Filter = Field.from(0)
+  let counter = Field.from(0);
+  let photoIndexReached = Bool(false);
 
   for (let i = 0; i < DATA_ARRAY_SIZE; i++) {
-    const is255AndIndexBeforePhoto = Bool.and(
-      paddedData[i].equals(255),
-      UInt32.from(i).lessThan(photoIndex)
-    )
-
-    const n255FilterDelta = Provable.if(
-      is255AndIndexBeforePhoto,
-      Field(1),
-      Field(0)
-    )
-
+    const is255 = paddedData[i].equals(255)
     const dataDelta = Provable.if(
-      is255AndIndexBeforePhoto,
-      n255Filter,
+      is255.and(photoIndexReached.not()),
+      counter.mul(255),
       Field(0)
     )
 
-    n255Filter = n255Filter.seal()
-    delimitedData[i] = paddedData[i].add(dataDelta.mul(255))
-    n255Filter = n255Filter.add(n255FilterDelta)
+    counter = counter.seal()
+    delimitedData[i] = paddedData[i].add(dataDelta)
+    counter = counter.add(is255.toField())
+    photoIndexReached = Bool.or(photoIndexReached, counter.equals(DELIMITER_POSITION.PHOTO))
   }
 
   return delimitedData
@@ -159,7 +151,7 @@ function ageAndGenderExtractor(
 /**
  * Extracts the fixed-length 6-digit pincode from delimited data.
  *
- * Rows: 4599
+ * Rows: 4606
  *
  * @param {Field[]} nDelimitedData - The delimited input data array.
  * @returns {Field} The extracted pincode as an integer Field.

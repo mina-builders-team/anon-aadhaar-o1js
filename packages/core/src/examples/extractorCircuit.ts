@@ -1,8 +1,7 @@
-import { ZkProgram, Provable, Field, UInt32, Struct, verify } from 'o1js'
+import { ZkProgram, Provable, Field, Struct, verify } from 'o1js'
 import {
   DATA_ARRAY_SIZE,
   DELIMITER_ARRAY_SIZE,
-  DELIMITER_POSITION,
 } from '../constants.js'
 import {
   delimitData,
@@ -45,10 +44,7 @@ const ExtractorCircuit = ZkProgram({
         month: Field,
         day: Field
       ) {
-        const photoIndex = UInt32.Unsafe.fromField(
-          delimiterIndices[DELIMITER_POSITION.PHOTO - 1].add(1)
-        )
-        const nDelimitedData = delimitData(data, photoIndex)
+        const nDelimitedData = delimitData(data)
         Provable.log('Data Delimited..')
         const timestamp = timestampExtractor(nDelimitedData)
         Provable.log('Timestamp Extracted..')
