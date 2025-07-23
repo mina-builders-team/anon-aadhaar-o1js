@@ -95,13 +95,14 @@ describe('Extractor circuit tests', () => {
       // Our state here is at length 5, so try:
       const stateValue = charBytesToInt(state.slice(0, 5), 5)
       expect(intToCharString(stateValue, 5)).toEqual('Delhi')
+      // the remaining bytes should be zero
+      expect(state.slice(5).every((x) => x.equals(Field(0)))).toBeTruthy()
     })
   })
 
   describe('Nullifier Circuit tests', () => {
     it('should compute nullifier correctly', async () => {
       const nullifierSeed = Field(12345678)
-
       const nullifierHash = nullifier(nDelimitedData, nullifierSeed)
       console.log(nullifierHash.value)
     })

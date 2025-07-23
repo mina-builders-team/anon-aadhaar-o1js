@@ -32,14 +32,12 @@ const ExtractorCircuit = ZkProgram({
     extract: {
       privateInputs: [
         Provable.Array(Field, DATA_ARRAY_SIZE),
-        Provable.Array(Field, DELIMITER_ARRAY_SIZE),
         Field,
         Field,
         Field,
       ],
       async method(
         data: Field[],
-        delimiterIndices: Field[],
         year: Field,
         month: Field,
         day: Field
@@ -83,7 +81,6 @@ const ExtractorCircuit = ZkProgram({
 const inputs = getQRData(TEST_DATA)
 const qrDataPadded = inputs.paddedData.toBytes()
 
-const delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field)
 
 const qrData = createPaddedQRData(qrDataPadded).map(Field)
 const day = Field.from(1)
@@ -96,7 +93,6 @@ const { verificationKey } = await ExtractorCircuit.compile({
 console.time('Proof generation time')
 const { proof } = await ExtractorCircuit.extract(
   qrData,
-  delimiterIndices,
   year,
   month,
   day

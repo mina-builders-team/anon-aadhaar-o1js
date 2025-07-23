@@ -95,7 +95,7 @@ function timestampExtractor(nDelimitedData: Field[]) {
  * Extracts date of birth and gender information from delimited data,
  * calculates the person’s current age based on the current date.
  *
- * Rows: 10051
+ * Rows: 9416
  *
  * @param {Field[]} nDelimitedData - The delimited input data array.
  * @param {Field} currentYear - Current year as a Field.
@@ -179,7 +179,7 @@ function pincodeExtractor(nDelimitedData: Field[]) {
 /**
  * Extracts the state information from delimited data until it hits the next delimiter.
  *
- * Rows: 12328
+ * Rows: 9406
  *
  * @param {Field[]} nDelimitedData - The delimited input data array.
  * @returns {Field[]} An array representing the extracted state data.
@@ -188,32 +188,16 @@ function stateExtractor(nDelimitedData: Field[]) {
   const startIndex = Provable.witness(Field, () => {
     return nDelimitedData.findIndex((value) => value.toBigInt() === BigInt(DELIMITER_POSITION.STATE * 255))
   })
-  const stateArray = []
-  // Ending delimiter of the state.
-  const endValue = (DELIMITER_POSITION.STATE + 1) * 255;
-  let isEnd = Bool(false)
-
-  for (let i = 0; i < 16; i++) {
-    let pushValue = Field.from(0)
-
-    const currentIndex = startIndex.add(i)
-    // Under assumption that state data will be at most <256th byte.
-    for (let j = 0; j < 256; j++) {
-      const isIndex = currentIndex.equals(j).toField()
-      const isValue = isIndex.mul(nDelimitedData[j])
-
-      pushValue = pushValue.seal()
-      pushValue = pushValue.add(isValue)
-    }
-
-    isEnd = Bool.or(isEnd, pushValue.equals(endValue))
-
-    const toBePushed = Provable.if(isEnd.not(), pushValue, Field.from(0))
-
-    stateArray.push(toBePushed)
-  }
-
+  // Under assumption that state data will be at most <256th byte and under 16 bytes.
+  const stateArray = selectSubarray(nDelimitedData.slice(0, 256), startIndex, 16)
   assert(stateArray[0].equals(DELIMITER_POSITION.STATE * 255));
+  // convert bytes after stateData to zero
+  const endValue = (DELIMITER_POSITION.STATE + 1) * 255;
+  let isEndReached = Bool(false);
+  for (let i = 0; i < 16; i++) {
+    isEndReached = Bool.or(isEndReached, stateArray[i].equals(endValue))
+    stateArray[i] = Provable.if(isEndReached.not(), stateArray[i], Field(0))
+  }
 
   return stateArray.slice(1, 16)
 }
