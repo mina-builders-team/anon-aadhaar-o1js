@@ -1,11 +1,11 @@
 import { Bytes, Field, Provable } from 'o1js'
-import { commitBlock256, padding256, state32ToBytes } from './utils.js'
-import { Bigint2048, rsaVerify65537 } from './rsa.js'
+import { commitBlock256, padding256, state32ToBytes } from '../src/utils.js'
+import { Bigint2048, rsaVerify65537 } from '../src/helpers/rsa.js'
 import { DynamicBytes } from 'mina-attestations'
-import { MerkleBlocks } from './dataTypes.js'
-import { SignatureVerifier } from './signatureVerifier.js'
-import { recursiveHash } from './recursion.js'
-import { DATA_ARRAY_SIZE, DELIMITER_ARRAY_SIZE } from './constants.js'
+import { MerkleBlocks } from '../src/helpers/dataTypes.js'
+import { SignatureVerifier } from '../src/helpers/signatureVerifier.js'
+import { recursiveHash } from '../src/helpers/sha256Hash.js'
+import { DATA_ARRAY_SIZE, DELIMITER_ARRAY_SIZE } from '../src/constants.js'
 export {
   pkcs1v15PadWrong,
   createDelimitedData,

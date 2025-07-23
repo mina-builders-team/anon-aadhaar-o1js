@@ -1,6 +1,6 @@
 import { Bytes, Gadgets } from 'o1js'
 import { decompressByteArray } from './utils.js'
-import { Bigint2048 } from './rsa.js'
+import { Bigint2048 } from './helpers/rsa.js'
 import { bufferToHex } from '@zk-email/helpers'
 
 export { getQRData, TEST_DATA, TEST_DATA_2 }

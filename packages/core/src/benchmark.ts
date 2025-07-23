@@ -1,26 +1,26 @@
-import { Field, Provable, UInt32 } from 'o1js'
+import { Field, Provable } from 'o1js'
 import { getQRData, TEST_DATA } from './getQRData.js'
 import {
   createDelimitedData,
   createPaddedQRData,
   prepareRecursiveHashData,
-} from './testUtils.js'
+} from '../tests/testUtils.js'
 import {
   ageAndGenderExtractor,
   delimitData,
   pincodeExtractor,
   stateExtractor,
   timestampExtractor,
-} from './extractors.js'
+} from './helpers/extractors.js'
 import { getDelimiterIndices } from './utils.js'
 import {
   DELIMITER_POSITION,
   DATA_ARRAY_SIZE,
 } from './constants.js'
 import { ConstraintSystemSummary } from 'o1js/dist/node/lib/provable/core/provable-context.js'
-import { SignatureVerifier } from './signatureVerifier.js'
-import { hashProgram } from './recursion.js'
-import { nullifier } from './nullifier.js'
+import { SignatureVerifier } from './helpers/signatureVerifier.js'
+import { hashProgram } from './helpers/sha256Hash.js'
+import { nullifier } from './helpers/nullifier.js'
 
 interface BenchmarkResults {
   methodName: string

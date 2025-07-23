@@ -1,5 +1,5 @@
 import { Field, Poseidon } from 'o1js'
-import { chunk } from './utils.js'
+import { chunk } from '../utils.js'
 export { nullifier }
 
 function nullifier(nDelimitedData: Field[], nullifierSeed: Field) {

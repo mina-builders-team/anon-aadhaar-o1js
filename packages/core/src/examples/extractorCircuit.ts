@@ -1,19 +1,15 @@
 import { ZkProgram, Provable, Field, Struct, verify } from 'o1js'
-import {
-  DATA_ARRAY_SIZE,
-  DELIMITER_ARRAY_SIZE,
-} from '../constants.js'
+import { DATA_ARRAY_SIZE } from '../constants.js'
 import {
   delimitData,
   timestampExtractor,
   ageAndGenderExtractor,
   pincodeExtractor,
   stateExtractor,
-} from '../extractors.js'
+} from '../helpers/extractors.js'
 import { getQRData, TEST_DATA } from '../getQRData.js'
-import { createPaddedQRData } from '../testUtils.js'
-import { getDelimiterIndices } from '../utils.js'
-import { nullifier } from '../nullifier.js'
+import { createPaddedQRData } from '../../tests/testUtils.js'
+import { nullifier } from '../helpers/nullifier.js'
 
 class ExtractorOutputs extends Struct({
   Timestamp: Field,

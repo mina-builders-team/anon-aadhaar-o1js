@@ -4,11 +4,11 @@ import {
   digitBytesToTimestamp,
   searchElement,
   selectSubarray,
-} from './utils.js'
+} from '../utils.js'
 import {
   DATA_ARRAY_SIZE,
   DELIMITER_POSITION
-} from './constants.js'
+} from '../constants.js'
 export {
   delimitData,
   timestampExtractor,

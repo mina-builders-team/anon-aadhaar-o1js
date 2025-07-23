@@ -1,6 +1,6 @@
 import { StaticArray } from 'mina-attestations'
 import { Bytes, MerkleList, Option, UInt32, UInt8 } from 'o1js'
-import { commitBlock256 } from './utils.js'
+import { commitBlock256 } from '../utils.js'
 export { WordBytes, BlockBytes, Block32, State32, Bytes32, MerkleBlocks }
 
 /**
@@ -48,7 +48,7 @@ class MerkleBlocks extends MerkleList.create(Block32, commitBlock256) {
     n: number
   ): { remaining: MerkleBlocks; tail: Option<Block32>[] } {
     blocks = blocks.clone()
-    let tail: Option<Block32>[] = Array(n)
+    const tail: Option<Block32>[] = Array(n)
 
     for (let i = n - 1; i >= 0; i--) {
       tail[i] = blocks.popOption()

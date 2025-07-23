@@ -1,21 +1,21 @@
 import { Field, UInt32 } from 'o1js'
-import { DELIMITER_POSITION } from './constants.js'
-import { getDelimiterIndices } from './utils.js'
-import { getQRData, TEST_DATA } from './getQRData.js'
+import { DELIMITER_POSITION } from '../src/constants.js'
+import { getDelimiterIndices } from '../src/utils.js'
+import { getQRData, TEST_DATA } from '../src/getQRData.js'
 import {
   ageAndGenderExtractor,
   delimitData,
   pincodeExtractor,
   stateExtractor,
   timestampExtractor,
-} from './extractors.js'
+} from '../src/helpers/extractors.js'
 import {
   createDelimitedData,
   intToCharString,
   charBytesToInt,
   createPaddedQRData,
 } from './testUtils.js'
-import { nullifier } from './nullifier.js'
+import { nullifier } from '../src/helpers/nullifier.js'
 
 describe('Extractor circuit tests', () => {
   let nDelimitedData: Field[]
