@@ -30,7 +30,7 @@ Provable functions include extractors and the nullifier. Constraint counts are g
 │    1    │ 'Age and Gender' │ 9416  │
 │    2    │   'Timestamp'    │  953  │
 │    3    │    'Pincode'     │ 4606  │
-│    4    │     'State'      │ 12331 │
+│    4    │     'State'      │ 9406  │
 │    5    │   'Nullifier'    │  13   │
 └─────────┴──────────────────┴───────┘
 
