@@ -44,7 +44,6 @@
     "node": ">=18.14.0"
   },
   "dependencies": {
-    "@zk-email/helpers": "^6.4.2",
     "mina-attestations": "^0.5.0",
     "pako": "^2.1.0"
   }
