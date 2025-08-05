@@ -113,6 +113,8 @@ function ageAndGenderExtractor(
   const startIndex = Provable.witness(Field, () => {
     return  nDelimitedData.findIndex((value) => value.toBigInt() === BigInt(DELIMITER_POSITION.DOB * 255))
   })
+  startIndex.assertGreaterThanOrEqual(0);
+  startIndex.assertLessThanOrEqual(DATA_ARRAY_SIZE);
   // Date consist of 12 characters including delimiters.
   for (let i = 0; i < 12; i++) {
     const currentIndex = startIndex.add(i)
@@ -161,6 +163,8 @@ function pincodeExtractor(nDelimitedData: Field[]) {
   const startIndex = Provable.witness(Field, () => {
     return nDelimitedData.findIndex((value) => value.toBigInt() === BigInt(DELIMITER_POSITION.PINCODE * 255))
   })
+  startIndex.assertGreaterThanOrEqual(0);
+  startIndex.assertLessThanOrEqual(DATA_ARRAY_SIZE);
 
   const pincodeArray: Field[] = []
 
@@ -188,6 +192,8 @@ function stateExtractor(nDelimitedData: Field[]) {
   const startIndex = Provable.witness(Field, () => {
     return nDelimitedData.findIndex((value) => value.toBigInt() === BigInt(DELIMITER_POSITION.STATE * 255))
   })
+  startIndex.assertGreaterThanOrEqual(0);
+  startIndex.assertLessThanOrEqual(DATA_ARRAY_SIZE);
   // Under assumption that state data will be at most <256th byte and under 16 bytes.
   const stateArray = selectSubarray(nDelimitedData.slice(0, 256), startIndex, 16)
   assert(stateArray[0].equals(DELIMITER_POSITION.STATE * 255));
