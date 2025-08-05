@@ -39,26 +39,20 @@ const ExtractorCircuit = ZkProgram({
         day: Field
       ) {
         const nDelimitedData = delimitData(data)
-        Provable.log('Data Delimited..')
         const timestamp = timestampExtractor(nDelimitedData)
-        Provable.log('Timestamp Extracted..')
         const [age, gender] = ageAndGenderExtractor(
           nDelimitedData,
           year,
           month,
           day
         )
-        Provable.log('Age and Gender Extracted..')
         const pincode = pincodeExtractor(nDelimitedData)
-        Provable.log('Pincode Extracted..')
         const state = stateExtractor(nDelimitedData)
-        Provable.log('State Extracted..')
 
         // This can/should be given as an input to the circuit.
         const nullifierSeed = Field.from(123124124214)
 
         const nullifiedValue = nullifier(nDelimitedData, nullifierSeed)
-        Provable.log('Nullifier Computed..')
         return {
           publicOutput: new ExtractorOutputs({
             Timestamp: timestamp,
