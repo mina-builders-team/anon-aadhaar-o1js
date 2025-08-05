@@ -1,10 +1,10 @@
-import { SignatureVerifier } from './signatureVerifier.js'
+import { SignatureVerifier } from '../src/helpers/signatureVerifier.js'
 
 import { Gadgets } from 'o1js'
-import { Bigint2048 } from './rsa.js'
+import { Bigint2048 } from '../src/helpers/rsa.js'
 
-import { pkcs1v15Pad } from './utils.js'
-import { getQRData, TEST_DATA, TEST_DATA_2 } from './getQRData.js'
+import { pkcs1v15Pad } from '../src/utils.js'
+import { getQRData, TEST_DATA, TEST_DATA_2 } from '../src/getQRData.js'
 
 import {
   pkcs1v15PadWrong,
@@ -13,7 +13,7 @@ import {
   expectSignatureCircuitError,
 } from './testUtils.js'
 
-import { hashProgram } from './recursion.js'
+import { hashProgram } from '../src/helpers/sha256Hash.js'
 
 const proofsEnabled = false
 

@@ -1,10 +1,10 @@
 import { Field, Poseidon } from 'o1js'
-import { chunk } from './utils.js'
+import { chunk } from '../utils.js'
 export { nullifier }
 
 function nullifier(nDelimitedData: Field[], nullifierSeed: Field) {
-  let chunkedData = chunk(nDelimitedData, 32)
-  let packedData = []
+  const chunkedData = chunk(nDelimitedData, 32)
+  const packedData = []
   let sum = Field(0)
   for (let i = 0; i < 48; i++) {
     chunkedData[i].forEach((chunk, i) => {
