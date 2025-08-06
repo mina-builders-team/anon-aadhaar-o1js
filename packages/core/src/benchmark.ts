@@ -1,27 +1,26 @@
-import { Field, Provable, UInt32 } from 'o1js'
+import { Field, Provable } from 'o1js'
 import { getQRData, TEST_DATA } from './getQRData.js'
 import {
   createDelimitedData,
   createPaddedQRData,
   prepareRecursiveHashData,
-} from './testUtils.js'
+} from '../tests/testUtils.js'
 import {
   ageAndGenderExtractor,
   delimitData,
   pincodeExtractor,
   stateExtractor,
   timestampExtractor,
-} from './extractors.js'
+} from './helpers/extractors.js'
 import { getDelimiterIndices } from './utils.js'
 import {
-  PHOTO_POSITION,
+  DELIMITER_POSITION,
   DATA_ARRAY_SIZE,
-  DELIMITER_ARRAY_SIZE,
 } from './constants.js'
 import { ConstraintSystemSummary } from 'o1js/dist/node/lib/provable/core/provable-context.js'
-import { SignatureVerifier } from './signatureVerifier.js'
-import { hashProgram } from './recursion.js'
-import { nullifier } from './nullifier.js'
+import { SignatureVerifier } from './helpers/signatureVerifier.js'
+import { hashProgram } from './helpers/sha256Hash.js'
+import { nullifier } from './helpers/nullifier.js'
 
 interface BenchmarkResults {
   methodName: string
@@ -34,8 +33,8 @@ interface CompilationResults {
 }
 
 // Proof Generation Configuration
-let proofsEnabled = true
-let forceRecompile = true
+const proofsEnabled = true
+const forceRecompile = true
 
 // Input Preparation
 const inputs = getQRData(TEST_DATA)
@@ -46,7 +45,7 @@ const qrData = createPaddedQRData(qrDataPadded)
 const delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field)
 
 // Witnessed values
-const photo = delimiterIndices[PHOTO_POSITION - 1].add(1)
+const photo = delimiterIndices[DELIMITER_POSITION.PHOTO - 1].add(1)
 const nDelimitedData = createDelimitedData(qrData, Number(photo)).map(Field)
 
 async function getBenchmarkParameters(
@@ -71,11 +70,7 @@ function delimitDataConstraints() {
     () => qrData.map((x) => Field.from(x))
   )
 
-  const photoIndex = Provable.witness(UInt32, () =>
-    UInt32.Unsafe.fromField(delimiterIndices[PHOTO_POSITION - 1].add(1))
-  )
-
-  delimitData(dataArray, photoIndex)
+  delimitData(dataArray)
 }
 
 function timestampExtractorConstraints() {
@@ -93,16 +88,11 @@ function ageAndGenderExtractorConstraints() {
     () => nDelimitedData
   )
 
-  const indices = Provable.witness(
-    Provable.Array(Field, DELIMITER_ARRAY_SIZE),
-    () => delimiterIndices
-  )
-
   const day = Provable.witness(Field, () => Field.from(1))
   const month = Provable.witness(Field, () => Field.from(1))
   const year = Provable.witness(Field, () => Field.from(2024))
 
-  ageAndGenderExtractor(delimitedDataArray, indices, year, month, day)
+  ageAndGenderExtractor(delimitedDataArray, year, month, day)
 }
 
 function pincodeExtractorConstraints() {
@@ -111,11 +101,7 @@ function pincodeExtractorConstraints() {
     () => nDelimitedData
   )
 
-  const indices = Provable.witness(
-    Provable.Array(Field, DELIMITER_ARRAY_SIZE),
-    () => delimiterIndices
-  )
-  pincodeExtractor(delimitedDataArray, indices)
+  pincodeExtractor(delimitedDataArray)
 }
 
 function stateExtractorConstraints() {
@@ -124,11 +110,7 @@ function stateExtractorConstraints() {
     () => nDelimitedData
   )
 
-  const indices = Provable.witness(
-    Provable.Array(Field, DELIMITER_ARRAY_SIZE),
-    () => delimiterIndices
-  )
-  stateExtractor(delimitedDataArray, indices)
+  stateExtractor(delimitedDataArray)
 }
 
 // Parameters are assigned to relevant variables as BenchmarkResults type.
@@ -158,11 +140,6 @@ const stateExtractorParameters = await getBenchmarkParameters(
 )
 
 // Analyzers for nullifier
-const indices = Provable.witness(
-  Provable.Array(Field, DELIMITER_ARRAY_SIZE),
-  () => delimiterIndices
-)
-
 function nullifierConstraints() {
   const nullifierSeed = Provable.witness(Field, () => Field.random())
   nullifier(nDelimitedData, nullifierSeed)

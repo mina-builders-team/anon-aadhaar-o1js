@@ -1,6 +1,6 @@
 import { Bytes, Gadgets } from 'o1js'
 import { decompressByteArray } from './utils.js'
-import { Bigint2048 } from './rsa.js'
+import { Bigint2048 } from './helpers/rsa.js'
 import { bufferToHex } from '@zk-email/helpers'
 
 export { getQRData, TEST_DATA, TEST_DATA_2 }
@@ -66,7 +66,7 @@ function getQRData(testQRData: string) {
   const paddedBlocks = Gadgets.SHA2.padding(256, signedData)
 
   // Convert padded Data from blocks to bytes.
-  let paddedData = Bytes.from(
+  const paddedData = Bytes.from(
     paddedBlocks
       .flat()
       .map((word) => word.toBytesBE())

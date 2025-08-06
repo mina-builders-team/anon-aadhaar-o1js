@@ -1,9 +1,9 @@
 import { Gadgets } from 'o1js'
-import { getQRData, TEST_DATA } from './getQRData.js'
+import { getQRData, TEST_DATA } from '../src/getQRData.js'
 import { generateHashFromData } from './testUtils.js'
-import { hashProgram, hashProgramWrapper } from './recursion.js'
+import { hashProgram, hashProgramWrapper } from '../src/helpers/sha256Hash.js'
 
-let proofsEnabled = false
+const proofsEnabled = false
 
 describe('Recursive Hash tests', () => {
   let signedData: Uint8Array

@@ -9,10 +9,10 @@ import {
   Poseidon,
   ProvableType,
 } from 'o1js'
-import { Bigint2048 } from './rsa.js'
+import { Bigint2048 } from './helpers/rsa.js'
 import pako from 'pako'
 import { DynamicArray, StaticArray } from 'mina-attestations'
-import { Block32, BlockBytes, State32, WordBytes } from './dataTypes.js'
+import { Block32, BlockBytes, State32, WordBytes } from './helpers/dataTypes.js'
 
 export {
   pkcs1v15Pad,
@@ -96,7 +96,7 @@ function updateHash(
   const messageBlocks = generateMessageBlocks(paddedPreimage)
 
   // Create array to store hash states after each block
-  let hashValues: UInt32[][] = Array.from(
+  const hashValues: UInt32[][] = Array.from(
     { length: messageBlocks.length + 1 },
     () => [UInt32.from(0)]
   )
@@ -199,7 +199,7 @@ function decompressByteArray(byteArray: Uint8Array): Uint8Array {
  * @returns An array of indices where the delimiter bytes are located, capped at 18 elements.
  */
 function getDelimiterIndices(paddedData: Uint8Array): number[] {
-  let delimiterIndices = []
+  const delimiterIndices = []
   for (let i = 0; i < paddedData.length; i++) {
     if (paddedData[i] === 255) {
       delimiterIndices.push(i)
@@ -353,13 +353,13 @@ function selectSubarray(
 
   const bitLength = Math.ceil(Math.log2(maxArrayLen))
   const shiftBits = startIndex.toBits(bitLength)
-  let tmp: Field[][] = Array.from({ length: bitLength }, () =>
+  const tmp: Field[][] = Array.from({ length: bitLength }, () =>
     Array.from({ length: maxArrayLen }, () => Field(0))
   )
 
   for (let j = 0; j < bitLength; j++) {
     for (let i = 0; i < maxArrayLen; i++) {
-      let offset = (i + (1 << j)) % maxArrayLen
+      const offset = (i + (1 << j)) % maxArrayLen
       // Shift left by 2^j indices if bit is 1
       if (j === 0) {
         tmp[j][i] = shiftBits[j]
@@ -376,7 +376,7 @@ function selectSubarray(
   }
 
   // Return last row
-  let subarray: Field[] = []
+  const subarray: Field[] = []
   for (let i = 0; i < subarrayLength; i++) {
     const selectedByte = tmp[bitLength - 1][i]
 
@@ -395,7 +395,7 @@ function selectSubarray(
  * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-sha2.ts#L521
  */
 function commitBlock256(commitment: Field, block: Block32): Field {
-  let blockHash = hashSafe(toFieldsPacked(block))
+  const blockHash = hashSafe(toFieldsPacked(block))
   return hashSafe([commitment, blockHash])
 }
 
@@ -408,10 +408,10 @@ function commitBlock256(commitment: Field, block: Block32): Field {
  */
 function hashSafe(fields: (Field | number | bigint)[]) {
   // Get the length of the fields
-  let n = fields.length
+  const n = fields.length
 
   // Add prefix depending on the length of the data fields
-  let prefix = n === 0 ? 'zero' : n % 2 === 0 ? 'even' : 'odd_'
+  const prefix = n === 0 ? 'zero' : n % 2 === 0 ? 'even' : 'odd_'
   return Poseidon.hashWithPrefix(prefix, fields.map(Field))
 }
 
@@ -424,23 +424,23 @@ function hashSafe(fields: (Field | number | bigint)[]) {
  */
 function toFieldsPacked(block: Block32): Field[] {
   // Get the provable type for Block32
-  let type = ProvableType.get(Block32)
+  const type = ProvableType.get(Block32)
 
   // If the type doesn't have a toInput method, just use toFields directly
   if (type.toInput === undefined) return type.toFields(block)
 
   // Convert the block to input format, which gives fields and packed values
-  let { fields = [], packed = [] } = toInput(block)
+  const { fields = [], packed = [] } = toInput(block)
 
   // Start with any direct fields
-  let result = [...fields]
+  const result = [...fields]
 
   // Initialize variables for packing
   let current = Field(0)
   let currentSize = 0
 
   // Process packed values
-  for (let [field, size] of packed) {
+  for (const [field, size] of packed) {
     // If there's room in the current field, add this value
     if (currentSize + size < Field.sizeInBits) {
       // Multiply the field by 2^currentSize and add to current
@@ -497,7 +497,7 @@ function pad<T>(array: T[], size: number, value: T | (() => T)): T[] {
     array.length <= size,
     `padding array of size ${array.length} larger than target size ${size}`
   )
-  let cb: () => T =
+  const cb: () => T =
     typeof value === 'function' ? (value as () => T) : () => value
   return array.concat(Array.from({ length: size - array.length }, cb))
 }
@@ -510,8 +510,8 @@ function pad<T>(array: T[], size: number, value: T | (() => T)): T[] {
  * @notice - Taken from https://github.com/zksecurity/mina-attestations/blob/835d8d47566c4c065fa34c88af7ce99a5993425c/src/dynamic/dynamic-sha2.ts#L239
  */
 function splitMultiIndex(index: UInt32) {
-  let { rest: l0, quotient: l1 } = index.divMod(64)
-  let { rest: l00, quotient: l01 } = l0.divMod(4)
+  const { rest: l0, quotient: l1 } = index.divMod(64)
+  const { rest: l00, quotient: l01 } = l0.divMod(4)
   return [l00.value, l01.value, l1.value] as const
 }
 
@@ -561,31 +561,31 @@ function padding256(
   const BlocksOfBytes = DynamicArray(BlockBytes, { maxLength: maxBlocks })
 
   // Get the block index and determine the number of blocks
-  let lastBlockIndex = UInt32.Unsafe.fromField(message.length.add(8)).div(64)
-  let numberOfBlocks = lastBlockIndex.value.add(1)
+  const lastBlockIndex = UInt32.Unsafe.fromField(message.length.add(8)).div(64)
+  const numberOfBlocks = lastBlockIndex.value.add(1)
 
   // Apply padding
-  let padded = pad(message.array, maxBlocks * 64, UInt8.from(0))
+  const padded = pad(message.array, maxBlocks * 64, UInt8.from(0))
   // Split padded byte blocks to arrays of 64 bytes.
-  let chunked = chunk(padded, 64).map(BlockBytes.from)
-  let blocksOfBytes = new BlocksOfBytes(chunked, numberOfBlocks)
+  const chunked = chunk(padded, 64).map(BlockBytes.from)
+  const blocksOfBytes = new BlocksOfBytes(chunked, numberOfBlocks)
 
   // pack each block of 64 bytes into 16 uint32s (4 bytes each)
-  let blocks = blocksOfBytes.map(Block32, (block) =>
+  const blocks = blocksOfBytes.map(Block32, (block) =>
     block.chunk(4).map(UInt32, (b) => UInt32.fromBytesBE(b.array))
   )
 
   // Splice the length in the same way
   // Length = byteIndex + 4 * integerIndex + 64 * blockIndexx
   // blockIndex is the block index, integerIndex is the uint32 index in the block, and byteIndex the byte index in the uint32
-  let [byteIndex, integerIndex, blockIndex] = splitMultiIndex(
+  const [byteIndex, integerIndex, blockIndex] = splitMultiIndex(
     UInt32.Unsafe.fromField(message.length)
   )
 
   // hierarchically get byte at `length` and set to 0x80
   // we can use unsafe get/set because the indices are in bounds by design
-  let block = blocks.getOrUnconstrained(blockIndex)
-  let wordBytes = WordBytes.from(
+  const block = blocks.getOrUnconstrained(blockIndex)
+  const wordBytes = WordBytes.from(
     block.getOrUnconstrained(integerIndex).toBytesBE()
   )
 
@@ -595,7 +595,7 @@ function padding256(
 
   // set last 64 bits to encoded length (in bits, big-endian encoded)
   // in fact, since dynamic array asserts that length fits in 16 bits, we can set the second to last uint32 to 0
-  let lastBlock = blocks.getOrUnconstrained(lastBlockIndex.value)
+  const lastBlock = blocks.getOrUnconstrained(lastBlockIndex.value)
   lastBlock.set(14, UInt32.from(0))
   lastBlock.set(15, UInt32.Unsafe.fromField(message.length.mul(8))) // length in bits
   blocks.setOrDoNothing(lastBlockIndex.value, lastBlock)
