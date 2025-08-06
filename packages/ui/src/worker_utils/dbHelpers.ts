@@ -22,7 +22,7 @@ function openDB(version: number): Promise<IDBDatabase> {
   });
 }
 
-async function saveProof(id: string, proof: JsonProof, version: number): Promise<void> {
+async function saveProof(id: string, proof: string, version: number): Promise<void> {
   const db = await openDB(version);
   const tx = db.transaction('proofs', 'readwrite');
   const store = tx.objectStore('proofs');
@@ -42,27 +42,26 @@ async function saveVK(id: string, vk: string, version: number): Promise<void> {
   await store.put({ id, vk }); // use the passed id here
 }
 
-async function loadVK(id: string, version: number): Promise<string | null> {
+async function loadVK(id: string, version: number): Promise<string> {
   const db = await openDB(version);
   const tx = db.transaction('verificationKeys', 'readonly');
   const req = tx.objectStore('verificationKeys').get(id); // use the passed id here
   return new Promise((resolve, reject) => {
     req.onsuccess = () => {
-      if (req.result) resolve(req.result.vk );
-      else resolve(null);
+      if (req.result) resolve(req.result.vk);
     };
     req.onerror = () => reject(req.error);
   });
 
 }
 
-async function loadProof(id: string, version: number): Promise<JsonProof | null> {
+async function loadProof(id: string, version: number): Promise<string | null> {
   const db = await openDB(version);
   const tx = db.transaction('proofs', 'readonly');
   const req = tx.objectStore('proofs').get(id); // use the passed id here
   return new Promise((resolve, reject) => {
     req.onsuccess = () => {
-      if (req.result) resolve(req.result.proof as JsonProof);
+      if (req.result) resolve(req.result.proof);
       else resolve(null);
     };
     req.onerror = () => reject(req.error);
