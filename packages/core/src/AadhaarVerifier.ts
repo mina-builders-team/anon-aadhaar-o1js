@@ -9,7 +9,7 @@ import { state32ToBytes,pkcs1v15Pad } from "./utils.js";
 
 export { AadhaarVerifier, AadhaarVerifierProof }
 
-class AadhaarOutputs extends Struct({
+export class AadhaarOutputs extends Struct({
   Timestamp: Field,
   Age: Field,
   Gender: Field,
