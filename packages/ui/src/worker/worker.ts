@@ -1,10 +1,6 @@
 import * as Comlink from 'comlink';
 import { hashProgram, SignatureVerifier } from 'anon-aadhaar-o1js';
-
-export type WorkerStatus =
-  | { status: 'ready' | 'uninitialized' }
-  | { status: 'computing'; message: string }
-  | { status: 'errored'; error: string }
+import { WorkerStatus } from '@/worker_utils/utils';
 
 let isInitialized = false;
 const proofsEnabled = true;
