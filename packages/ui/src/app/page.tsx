@@ -13,7 +13,8 @@ export default function Page() {
     initializeProofVerificationWorker,
     verifySignature,
     extractor,
-    verifyProof
+    verifyProof,
+    createCredential
   } = useWorkerStore();
 
 
@@ -36,6 +37,10 @@ export default function Page() {
 
   const handleProofVerification = async () => {
     await verifyProof()
+  };
+
+  const handleCreateCredential = async () => {
+    await createCredential()
   };
 
   const getStatusColor = (status: string) => {
@@ -68,17 +73,22 @@ export default function Page() {
             Verify Signature
           </button>
 
-          {<button
+          <button
             onClick={handleExtract}
             className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-md text-white font-medium"
           >
             Run Extractor
-          </button> }
+          </button>
           <button 
             onClick={handleProofVerification}
-            className="px-4 py-2 bg-orange-600 hover: bg-orange-700 rounded-md text-white font-medium">
+            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-md text-white font-medium">
               Run Proof Verification
-            </button>
+          </button>
+          <button
+            onClick={handleCreateCredential}
+            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-md text-white font-medium">
+            create AadhaarCredential
+          </button>
         </div>
       </div>
     </main>

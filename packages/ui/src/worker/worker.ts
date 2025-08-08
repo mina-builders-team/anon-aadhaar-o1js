@@ -1,6 +1,7 @@
 import * as Comlink from 'comlink';
-import { hashProgram, SignatureVerifier } from 'anon-aadhaar-o1js';
-import { WorkerStatus } from '@/worker_utils/utils';
+import { AadhaarVerifier, AadharCredential, hashProgram, SignatureVerifier } from 'anon-aadhaar-o1js';
+import { fetchHashCacheFiles, fetchVerifierCacheFiles, MinaFileSystem, WorkerStatus } from '@/worker_utils/utils';
+import { loadVK, saveVK } from '@/worker_utils/dbHelpers';
 
 let isInitialized = false;
 const proofsEnabled = true;
@@ -19,15 +20,35 @@ setStatus({ status: 'uninitialized' });
  */
 async function init() {
   try {
-    setStatus({ status: 'computing', message: 'Compiling Hash Circuit' });
-    console.time('Compile Hash Circuit');
-    await hashProgram.compile({ proofsEnabled });
-    console.timeEnd('Compile Hash Circuit');
+    setStatus({ status: 'computing', message: 'fetching cache files' });
 
-    setStatus({ status: 'computing', message: 'Compiling Verifier Circuit' });
-    console.time('Compile Verifier Circuit');
-    await SignatureVerifier.compile({ proofsEnabled });
-    console.timeEnd('Compile Verifier Circuit');
+    const hashCacheFiles = await fetchHashCacheFiles();
+    const verifierCacheFiles = await fetchVerifierCacheFiles();
+
+    const hashCache = MinaFileSystem(hashCacheFiles) as Cache;
+    const verifierCache = MinaFileSystem(verifierCacheFiles) as Cache;
+
+    setStatus({ status: 'computing', message: 'Compiling "hashProgram" Circuit' });
+    console.time('hashProgram Compilation')
+    await hashProgram.compile({ proofsEnabled, cache: hashCache});
+    console.timeEnd('hashProgram Compilation')
+
+    setStatus({ status: 'computing', message: 'Compiling "AadhaarVerifier" Circuit' });
+    console.time('AadhaarVerifier Compilation')
+    const aadhaarVK = await AadhaarVerifier.compile({ proofsEnabled, cache: verifierCache})
+    console.timeEnd('AadhaarVerifier Compilation')
+
+    // const loadedVK = await loadVK('aadhaar-vk', 3)
+    // if(!loadedVK){
+    //   const aadhaarVKStirng = JSON.stringify(aadhaarVK)
+    //   await saveVK('aadhaar-vk', aadhaarVKStirng, 3)
+    // }
+    
+    setStatus({ status: 'computing', message: 'Compiling AadharCredential Circuit' });
+    console.time('AadharCredential Compilation');
+    const vk = await AadharCredential.compile();
+    console.timeEnd('AadharCredential Compilation');
+
     isInitialized = true;
     setStatus({ status: 'ready' });
   } catch (e) {

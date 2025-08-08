@@ -50,10 +50,23 @@ const AadhaarVerifier = ZkProgram({
                 })}
             },
         },
-        extractor: {
-            privateInputs: [SelfProof, Provable.Array(Field, DATA_ARRAY_SIZE), Provable.Array(Field, DELIMITER_ARRAY_SIZE), Field, Field, Field],
-
-            async method( earlierProof: SelfProof<unknown,AadhaarOutputs>, data: Field[], delimiterIndices: Field[], currentYear: Field, currentMonth:Field, currentDay:Field){
+        extractor: {
+            privateInputs: [
+                SelfProof, 
+                Provable.Array(Field, DATA_ARRAY_SIZE), 
+                Provable.Array(Field, DELIMITER_ARRAY_SIZE), 
+                Field, 
+                Field, 
+                Field
+            ],
+            async method(
+                earlierProof: SelfProof<unknown,AadhaarOutputs>, 
+                data: Field[], 
+                delimiterIndices: Field[], 
+                currentYear: Field, 
+                currentMonth:Field, 
+                currentDay:Field
+            ){
                 earlierProof.verify()
                 const nDelimitedData = delimitData(data)
 

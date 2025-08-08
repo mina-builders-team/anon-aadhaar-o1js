@@ -12,7 +12,6 @@ import {
 } from 'mina-attestations';
 import { AadhaarOutputs, AadhaarVerifierProof } from './AadhaarVerifier';
 
-const String = DynamicString({ maxLength: 50 });
 
 export const AadharCredential = await Credential.Imported.fromMethod(
     {

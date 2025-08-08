@@ -4,7 +4,7 @@ import * as Comlink from 'comlink';
 import type { SignatureWorkerAPI } from '../worker/verifierWorker';
 import type { ExtractorWorkerAPI } from '../worker/extractorWorker';
 import type { ProofVerificationWorkerAPI } from '@/worker/proofVerificationWorker';
-
+import type { API } from '../worker/worker';
 
 let verifierWorker: Worker | null = null;
 let verifierProxy: Comlink.Remote<SignatureWorkerAPI> | null = null;
@@ -12,6 +12,8 @@ let extractorWorker: Worker | null = null;
 let extractorProxy: Comlink.Remote<ExtractorWorkerAPI> | null = null;
 let proofVerificationWorker: Worker | null = null;
 let proofVerificationProxy: Comlink.Remote<ProofVerificationWorkerAPI> | null = null;
+let worker: Worker | null = null;
+let proxy: Comlink.Remote<API> | null = null;
 
 const terminateVerifierWorker = () => {
   if (verifierWorker) {
@@ -26,6 +28,13 @@ const terminateExtractorWorker = () => {
     extractorWorker.terminate();
     extractorWorker = null;
     extractorProxy = null;
+  }
+};
+
+const initWorker = () => {
+  if (typeof window !== 'undefined' && !worker) {
+    worker = new Worker(new URL('../worker/worker.ts', import.meta.url));
+    proxy = Comlink.wrap<API>(worker);
   }
 };
 
@@ -53,6 +62,7 @@ function initProofVerificationWorker(){
 
 interface WorkerState {
   status: WorkerStatus;
+  createCredential: () => void;
   initializeVerifierWorker: () => void;
   initializeExtractorWorker: () => void;
   initializeProofVerificationWorker: () => void;
@@ -69,6 +79,25 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
   status: { status: 'uninitialized' },
   verifierProxy: null,
   extractorProxy: null,
+
+  createCredential: () => {
+    initWorker();
+    if (!worker || !proxy) {
+      return;
+    }
+    proxy.init();
+    worker.onmessage = (event) => {
+      try {
+        const status = JSON.parse(event.data);
+        if (Object.keys(status).includes('status')) {
+          console.log(status);
+          set({ status: status });
+        }
+      } catch {
+        // do nothing
+      }
+    };
+  },
   
   initializeVerifierWorker: async () => {
     initVerifierWorker();
@@ -138,8 +167,8 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
   },
 
   cleanupWorkers: () => {
-  terminateVerifierWorker();
-  terminateExtractorWorker();
+    terminateVerifierWorker();
+    terminateExtractorWorker();
   },
 
   
