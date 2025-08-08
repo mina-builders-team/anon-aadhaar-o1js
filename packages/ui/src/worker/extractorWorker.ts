@@ -1,6 +1,6 @@
 import * as Comlink from 'comlink';
-import { fetchHashCacheFiles, fetchVerifierCacheFiles, MinaFileSystem, WorkerStatus } from '@/worker_utils/utils';
-import { hashProgram, AadhaarVerifier, AadhaarVerifierProof, getQRData, createPaddedQRData, getDelimiterIndices } from "anon-aadhaar-o1js";
+import { fetchHashCacheFiles, fetchVerifierCacheFiles, MinaFileSystem } from '@/worker_utils/utils';
+import { hashProgram, AadhaarVerifier, AadhaarVerifierProof, getQRData, createPaddedQRData } from "anon-aadhaar-o1js";
 import { TEST_DATA } from "anon-aadhaar-o1js/build/src/getQRData";
 import { JsonProof, Field, Cache } from "o1js";
 
@@ -46,13 +46,12 @@ async function extract(
         const paddedData = inputs.paddedData.toBytes()
 
         const data = createPaddedQRData(paddedData).map(Field)
-        const delimiterIndices = getDelimiterIndices(paddedData)
 
         const currentYear = Field.from(2024)
         const currentMonth = Field.from(1)
         const currentDay = Field.from(1)
 
-        const { proof } = await AadhaarVerifier.extractor(verifierProof, data, delimiterIndices, currentYear, currentMonth, currentDay)
+        const { proof } = await AadhaarVerifier.extractor(verifierProof, data, currentYear, currentMonth, currentDay)
         const proofString = JSON.stringify(proof.toJSON())
 
         console.log('Extraction ready')
@@ -63,22 +62,9 @@ async function extract(
     }
 }
 
-async function cleanup() {
-  try {
-
-    if (typeof global !== 'undefined' && global.gc) {
-      global.gc();
-    }
-    console.log('Extractor worker cleanup completed');
-  } catch (e) {
-    console.log('Cleanup error (non-critical):', e);
-  }
-}
-
 const api = { 
   init, 
   extract,
-  cleanup 
 };
 
 export type ExtractorWorkerAPI = typeof api;
