@@ -65,7 +65,7 @@ export default function Page() {
       const result = await verifyProof();
       if(result){
         setVerificationResult(result);
-        setMsg(`Proof verification result is: ${result}`)
+        setMsg(`Proof verification result is: ${verificationresult}`)
       }
       else{
         setMsg('Somethings wrong with the proof verification step')
@@ -86,8 +86,6 @@ export default function Page() {
       default: return 'text-gray-400';
     }
   };
-
-  const isLoading = status.status === 'computing';
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-10 bg-gray-900 text-white">

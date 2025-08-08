@@ -1,5 +1,4 @@
 import * as Comlink from 'comlink';
-import { WorkerStatus } from '@/worker_utils/utils';
 import { AadhaarVerifierProof } from 'anon-aadhaar-o1js';
 import { verify, VerificationKey, JsonProof } from "o1js";
 

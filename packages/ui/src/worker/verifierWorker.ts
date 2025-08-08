@@ -1,12 +1,10 @@
 import * as Comlink from 'comlink';
 import { hashProgram, AadhaarVerifier, getQRData, prepareRecursiveHashData } from 'anon-aadhaar-o1js';
-import { VerificationKey, Cache } from 'o1js';
+import { Cache } from 'o1js';
 import { TEST_DATA } from 'anon-aadhaar-o1js/build/src/getQRData';
 import { fetchHashCacheFiles, fetchVerifierCacheFiles, MinaFileSystem } from '@/worker_utils/utils';
 
 let isInitialized = false;
-
-let verificationKey: VerificationKey = VerificationKey.empty();
 
 async function init() {
   try {
@@ -25,14 +23,9 @@ async function init() {
 
     const aadhaarVK = await AadhaarVerifier.compile({ cache: verifierCache})
 
-    console.log('Computed "AadhaarVerifier" Circuit')
+    console.log('Compiled "AadhaarVerifier" Circuit')
     
     isInitialized = true;
-    
-    console.log('ready')
-
-    const summary = await AadhaarVerifier.analyzeMethods()
-    console.log(JSON.stringify(summary.verifySignature))
 
     const aadhaarVKString = JSON.stringify(aadhaarVK.verificationKey)
   
