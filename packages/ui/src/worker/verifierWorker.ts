@@ -36,7 +36,7 @@ async function init() {
   }
 }
 
-async function verifySignature(): Promise<string | null> {
+async function verifySignature(): Promise<string | null> {
   if (!isInitialized) {
     console.error('Worker is not initialized. Please call init() first')
     return null;
