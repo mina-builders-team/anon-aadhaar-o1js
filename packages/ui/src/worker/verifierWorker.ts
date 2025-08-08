@@ -1,5 +1,4 @@
 import * as Comlink from 'comlink';
-import { WorkerStatus } from '@/worker_utils/utils';
 import { hashProgram, AadhaarVerifier, getQRData, prepareRecursiveHashData } from 'anon-aadhaar-o1js';
 import { VerificationKey, Cache } from 'o1js';
 import { TEST_DATA } from 'anon-aadhaar-o1js/build/src/getQRData';
@@ -8,7 +7,6 @@ import { fetchHashCacheFiles, fetchVerifierCacheFiles, MinaFileSystem } from '@/
 let isInitialized = false;
 
 let verificationKey: VerificationKey = VerificationKey.empty();
-
 
 async function init() {
   try {
@@ -32,6 +30,9 @@ async function init() {
     isInitialized = true;
     
     console.log('ready')
+
+    const summary = await AadhaarVerifier.analyzeMethods()
+    console.log(JSON.stringify(summary.verifySignature))
 
     const aadhaarVKString = JSON.stringify(aadhaarVK.verificationKey)
   
@@ -72,26 +73,9 @@ async function verifySignature(): Promise<string | null> {
   }
 }
 
-async function cleanup() {
-  try {
-    // Clear any large objects
-    verificationKey = VerificationKey.empty();
-    
-    // Force garbage collection if available
-    if (typeof global !== 'undefined' && global.gc) {
-      global.gc();
-    }
-    
-    console.log('Verifier worker cleanup completed');
-  } catch (e) {
-    console.log('Cleanup error (non-critical):', e);
-  }
-}
-
 const api = {
   init,
   verifySignature,
-  cleanup, // ✅ Expose cleanup function
 };
 
 export type SignatureWorkerAPI = typeof api;

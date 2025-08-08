@@ -11,14 +11,13 @@ async function verifyProof(
     try {
         console.log('Converting the proof from string to AadhaarVerifierProof')
         const AadhaarProofJson = JSON.parse(extractorProof);
-        console.log('Could reached here')
-        // const AadhaarProof = await AadhaarVerifierProof.fromJSON(AadhaarProofJson as JsonProof);
+
+        const AadhaarProof = await AadhaarVerifierProof.fromJSON(AadhaarProofJson as JsonProof);
+        
         const verificationKeyString = JSON.parse(verificationKey)
         const vk = VerificationKey.fromJSON(verificationKeyString)
-        console.log(vk)    
-        console.log('Could reached here')
-        const result = await verify(AadhaarProofJson, vk)
-        console.log(result)
+
+        const result = await verify(AadhaarProof, vk)
         return result
     } catch (error: unknown) {
         console.log('Extraction failed!')
