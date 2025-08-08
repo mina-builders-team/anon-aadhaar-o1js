@@ -15,6 +15,7 @@ export default function Page() {
   
   const [isInitialized, setIsInitialized] = useState(false);
   const [msg, setMsg] = useState('');
+  const [verificationresult, setVerificationResult] = useState(false);
   useEffect(() => {
     const init = async () => {
       if (!isInitialized) {
@@ -61,8 +62,16 @@ export default function Page() {
       await initializeProofVerificationWorker();
       setMsg('Worker for proof verificaiton is executed correctly')
       setMsg('Proof is being verified now')
-      await verifyProof();
-      setMsg('Proof is verified correctly. YAY! 🎉🎉!!')
+      const result = await verifyProof();
+      if(result){
+        setVerificationResult(result);
+        setMsg(`Proof verification result is: ${result}`)
+      }
+      else{
+        setMsg('Somethings wrong with the proof verification step')
+      }
+      
+      
     } catch (error) {
       console.error('Error in proof verification:', error);
     }

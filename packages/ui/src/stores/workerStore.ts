@@ -5,7 +5,6 @@ import type { SignatureWorkerAPI } from '../worker/verifierWorker';
 import type { ExtractorWorkerAPI } from '../worker/extractorWorker';
 import type { ProofVerificationWorkerAPI } from '@/worker/proofVerificationWorker';
 
-
 let verifierWorker: Worker | null = null;
 let verifierProxy: Comlink.Remote<SignatureWorkerAPI> | null = null;
 
@@ -49,15 +48,17 @@ interface WorkerState {
   
   verifierProxy: Comlink.Remote<SignatureWorkerAPI> | null;
   extractorProxy: Comlink.Remote<ExtractorWorkerAPI> | null;
+  proofVerificationProxy: Comlink.Remote<ProofVerificationWorkerAPI> | null;
   verifySignature: () => Promise<void>;
   extractor: () => Promise<void>;
-  verifyProof: () => Promise<void>;
+  verifyProof: () => Promise<boolean | null>;
 }
 
 export const useWorkerStore = create<WorkerState>((set, get) => ({
   status: { status: 'uninitialized' },
   verifierProxy: null,
   extractorProxy: null,
+  proofVerificationProxy: null,
   
   initializeVerifierWorker: async () => {
     initVerifierWorker();
@@ -85,6 +86,9 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
 
   initializeProofVerificationWorker: async () => {
     initProofVerificationWorker()
+    if (!proofVerificationProxy || !proofVerificationWorker) return;
+
+    set({proofVerificationProxy})
   },
     
 
@@ -148,23 +152,24 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
     }
   },
 
-  verifyProof: async () => {
+  verifyProof: async (): Promise<boolean | null> => {
     if(!proofVerificationWorker || !proofVerificationProxy){
       console.error('Proof verification worker is not initialized')
-      return
+      return null
     }
+    
     try{
       if(!verificationKey || !extractorProof){
         console.error('Verification Key or Extarctor proof is not valid!')
-        return;
+        return null;
       }
       
       const res = await proofVerificationProxy.verifyProof(verificationKey, extractorProof)
-      console.log(res)
+      return res
     } catch(e){
       console.error('Error in proof verification', e)
       set({ status: { status: 'errored', error: e instanceof Error ? e.message : 'Unknown error at proof verification' } });
-
+      return null;
     }
   }
 }));
