@@ -195,15 +195,15 @@ function stateExtractor(nDelimitedData: Field[]) {
   startIndex.assertGreaterThanOrEqual(0);
   startIndex.assertLessThanOrEqual(DATA_ARRAY_SIZE);
   // Under assumption that state data will be at most <256th byte and under 16 bytes.
-  const stateArray = selectSubarray(nDelimitedData.slice(0, 256), startIndex, 16)
+  const stateArray = selectSubarray(nDelimitedData.slice(0, 256), startIndex, 18)
   assert(stateArray[0].equals(DELIMITER_POSITION.STATE * 255));
   // convert bytes after stateData to zero
   const endValue = (DELIMITER_POSITION.STATE + 1) * 255;
   let isEndReached = Bool(false);
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 18; i++) {
     isEndReached = Bool.or(isEndReached, stateArray[i].equals(endValue))
     stateArray[i] = Provable.if(isEndReached.not(), stateArray[i], Field(0))
   }
 
-  return stateArray.slice(1, 16)
+  return stateArray.slice(1,18)
 }
