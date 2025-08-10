@@ -14,7 +14,7 @@ export class AadhaarOutputs extends Struct({
   Age: Field,
   Gender: Field,
   Pincode: Field,
-  State: Provable.Array(Field, 16),
+  State: Provable.Array(Field, 17),
   nullifiedValue: Field,
 }) {}
 
@@ -39,7 +39,7 @@ const AadhaarVerifier = ZkProgram({
 
                 rsaVerify65537(paddedHash, signature, publicKey)
 
-                const emptyArray = Array.from({ length: 16 }, () => Field.from(0))
+                const emptyArray = Array.from({ length: 17 }, () => Field.from(0))
                 return {publicOutput: new AadhaarOutputs({
                     Timestamp: Field.from(0),
                     Age: Field.from(0),
@@ -50,23 +50,10 @@ const AadhaarVerifier = ZkProgram({
                 })}
             },
         },
-        extractor: {
-            privateInputs: [
-                SelfProof, 
-                Provable.Array(Field, DATA_ARRAY_SIZE), 
-                Provable.Array(Field, DELIMITER_ARRAY_SIZE), 
-                Field, 
-                Field, 
-                Field
-            ],
-            async method(
-                earlierProof: SelfProof<unknown,AadhaarOutputs>, 
-                data: Field[], 
-                delimiterIndices: Field[], 
-                currentYear: Field, 
-                currentMonth:Field, 
-                currentDay:Field
-            ){
+        extractor: {
+            privateInputs: [SelfProof, Provable.Array(Field, DATA_ARRAY_SIZE), Field, Field, Field],
+
+            async method( earlierProof: SelfProof<unknown,AadhaarOutputs>, data: Field[], currentYear: Field, currentMonth:Field, currentDay:Field){
                 earlierProof.verify()
                 const nDelimitedData = delimitData(data)
 

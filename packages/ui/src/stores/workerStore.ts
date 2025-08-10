@@ -8,28 +8,18 @@ import type { API } from '../worker/worker';
 
 let verifierWorker: Worker | null = null;
 let verifierProxy: Comlink.Remote<SignatureWorkerAPI> | null = null;
+
 let extractorWorker: Worker | null = null;
 let extractorProxy: Comlink.Remote<ExtractorWorkerAPI> | null = null;
+
 let proofVerificationWorker: Worker | null = null;
 let proofVerificationProxy: Comlink.Remote<ProofVerificationWorkerAPI> | null = null;
 let worker: Worker | null = null;
 let proxy: Comlink.Remote<API> | null = null;
 
-const terminateVerifierWorker = () => {
-  if (verifierWorker) {
-    verifierWorker.terminate();
-    verifierWorker = null;
-    verifierProxy = null;
-  }
-};
-
-const terminateExtractorWorker = () => {
-  if (extractorWorker) {
-    extractorWorker.terminate();
-    extractorWorker = null;
-    extractorProxy = null;
-  }
-};
+let verifierProof: string | null = null;
+let extractorProof: string | null = null;
+let verificationKey: string | null = null;
 
 const initWorker = () => {
   if (typeof window !== 'undefined' && !worker) {
@@ -69,10 +59,10 @@ interface WorkerState {
   
   verifierProxy: Comlink.Remote<SignatureWorkerAPI> | null;
   extractorProxy: Comlink.Remote<ExtractorWorkerAPI> | null;
+  proofVerificationProxy: Comlink.Remote<ProofVerificationWorkerAPI> | null;
   verifySignature: () => Promise<void>;
   extractor: () => Promise<void>;
-  verifyProof: () => Promise<void>;
-  cleanupWorkers: () => void;
+  verifyProof: () => Promise<boolean | null>;
 }
 
 export const useWorkerStore = create<WorkerState>((set, get) => ({
@@ -98,50 +88,37 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
       }
     };
   },
+  proofVerificationProxy: null,
   
   initializeVerifierWorker: async () => {
     initVerifierWorker();
     if (!verifierWorker || !verifierProxy) return;
 
     set({ verifierProxy });
-    
-    await verifierProxy.init();
-    verifierWorker.onmessage = (event) => {
-      try {
-        const status = JSON.parse(event.data);
-        if ('status' in status) {
-          console.log('[VerifierWorker status]', status);
-          set({ status });
-        }
-      } catch {
+    const res = await verifierProxy.init();
 
-      }
-    };
+    if(!res){
+      console.error('Somethings problematic in verificationKey store!')
+      return
+    }
+    verificationKey = res
   },
+
   
   initializeExtractorWorker: async () => {
     initExtractorWorker();
     if (!extractorWorker || !extractorProxy) return;
-    
+  
     set({ extractorProxy });
-    
-    await extractorProxy.init();
 
-    extractorWorker.onmessage = (event) => {
-      try {
-        const status = JSON.parse(event.data);
-        if ('status' in status) {
-          console.log('[ExtractorWorker status]', status);
-          set({ status });
-        }
-      } catch {
-        // Do nothing
-      }
-    };
+    await extractorProxy.init()
   },
 
   initializeProofVerificationWorker: async () => {
     initProofVerificationWorker()
+    if (!proofVerificationProxy || !proofVerificationWorker) return;
+
+    set({proofVerificationProxy})
   },
     
 
@@ -152,35 +129,31 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
       return;
     }
     try {
-      await verifierProxy.verifySignature();
-      set({ status: {status:'computing', message: 'Computing Verifier'} });
-      console.log('Are we here?')
-      console.log('Terminating verifier worker to free WASM memory');
-      terminateVerifierWorker();
+      const resultProof = await verifierProxy.verifySignature();
+
+      if(!resultProof){
+        console.error('Somethings problematic in verifySignature');
+        return;
+      }
+      verifierProof = resultProof
       
+      set({ status: {status:'computed', message: 'Computed Verifier Proof'} });
+      console.log('Terminating verifier worker to free WASM memory');
     } catch (e) {
       console.error('Error verifying signature', e);
 
-      terminateVerifierWorker();
       set({ status: { status: 'errored', error: e instanceof Error ? e.message : 'Unknown error at verification' } });
     }
   },
 
-  cleanupWorkers: () => {
-    terminateVerifierWorker();
-    terminateExtractorWorker();
-  },
-
-  
   extractor: async () => {
     let { extractorProxy } = get();
 
     if (!extractorWorker || !extractorProxy) {
       console.log('Re-initializing extractor worker');
-      get().initializeExtractorWorker();
+      await get().initializeExtractorWorker();
     }
-    
-    set({ status: {status:'computing', message: 'Computing Extractor'}});
+
     const updatedState = get();
     extractorProxy = updatedState.extractorProxy;
 
@@ -188,34 +161,45 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
       console.error('Extractor worker is not initialized');
       return;
     }
-    
+
     try {
-      await extractorProxy.extract();
-      
-      console.log('Terminating extractor worker to free WASM memory');
-      terminateExtractorWorker();
-      
+      if(!verifierProof){
+        console.error('verifierProof does not exist!')
+        return;
+      }
+      const resultProof = await extractorProxy.extract(verifierProof);
+
+      if(!resultProof){
+        console.log('Somethings problematic in extractor store!')
+        return;
+      }
+
+      extractorProof = resultProof
+
     } catch (e) {
       console.error('Error in extraction', e);
-      terminateExtractorWorker();
       set({ status: { status: 'errored', error: e instanceof Error ? e.message : 'Unknown error at extraction' } });
     }
   },
 
-  verifyProof: async () => {
+  verifyProof: async (): Promise<boolean | null> => {
     if(!proofVerificationWorker || !proofVerificationProxy){
       console.error('Proof verification worker is not initialized')
-      return
+      return null
     }
-    set({status: {status:'computing', message: 'Proof verification is being executed'}})
-
+    
     try{
-      const res = await proofVerificationProxy.verifyProof()
-      console.log(res)
+      if(!verificationKey || !extractorProof){
+        console.error('Verification Key or Extarctor proof is not valid!')
+        return null;
+      }
+      
+      const res = await proofVerificationProxy.verifyProof(verificationKey, extractorProof)
+      return res
     } catch(e){
       console.error('Error in proof verification', e)
       set({ status: { status: 'errored', error: e instanceof Error ? e.message : 'Unknown error at proof verification' } });
-
+      return null;
     }
   }
 }));

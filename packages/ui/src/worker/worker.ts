@@ -1,7 +1,6 @@
 import * as Comlink from 'comlink';
 import { AadhaarVerifier, AadharCredential, hashProgram, SignatureVerifier } from 'anon-aadhaar-o1js';
 import { fetchHashCacheFiles, fetchVerifierCacheFiles, MinaFileSystem, WorkerStatus } from '@/worker_utils/utils';
-import { loadVK, saveVK } from '@/worker_utils/dbHelpers';
 
 let isInitialized = false;
 const proofsEnabled = true;

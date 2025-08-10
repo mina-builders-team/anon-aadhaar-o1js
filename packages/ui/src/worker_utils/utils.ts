@@ -13,6 +13,8 @@ export type WorkerStatus =
  * @param files - Object containing cached file data.
  * @returns A Cache-compliant object.
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-empty-pattern */
 export const MinaFileSystem = (files: any): Cache => ({
   read({ persistentId, uniqueId, dataType }: any) {
     // read current uniqueId, return data if it matches
