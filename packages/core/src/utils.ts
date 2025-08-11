@@ -29,6 +29,7 @@ export {
   pack,
   chunk,
   searchElement,
+  bufferToHex
 }
 
 /**
@@ -650,4 +651,8 @@ function searchElement(
   }
 
   return pushValue
+}
+
+function bufferToHex(buf: Buffer): String {
+    return buf.toString('hex');
 }
