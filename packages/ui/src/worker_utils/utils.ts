@@ -4,7 +4,7 @@ import { Cache } from "o1js";
 export type WorkerStatus =
   | { status: 'ready' | 'uninitialized' }
   | { status: 'computing'; message: string }
-  | {status:  'computed'; message: string}
+  | { status: 'computed'; message: string}
   | { status: 'errored'; error: string }
 
 /**

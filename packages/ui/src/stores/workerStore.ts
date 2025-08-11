@@ -4,202 +4,137 @@ import * as Comlink from 'comlink';
 import type { SignatureWorkerAPI } from '../worker/verifierWorker';
 import type { ExtractorWorkerAPI } from '../worker/extractorWorker';
 import type { ProofVerificationWorkerAPI } from '@/worker/proofVerificationWorker';
-import type { API } from '../worker/worker';
+import type { API } from '../worker/credentialWorker';
+import { PrivateKey } from 'o1js';
+import { Credential } from 'mina-attestations';
 
 let verifierWorker: Worker | null = null;
 let verifierProxy: Comlink.Remote<SignatureWorkerAPI> | null = null;
-
 let extractorWorker: Worker | null = null;
 let extractorProxy: Comlink.Remote<ExtractorWorkerAPI> | null = null;
-
 let proofVerificationWorker: Worker | null = null;
 let proofVerificationProxy: Comlink.Remote<ProofVerificationWorkerAPI> | null = null;
-let worker: Worker | null = null;
-let proxy: Comlink.Remote<API> | null = null;
+let credentialWorker: Worker | null = null;
+let credentialProxy: Comlink.Remote<API> | null = null;
 
-let verifierProof: string | null = null;
-let extractorProof: string | null = null;
 let verificationKey: string | null = null;
 
-const initWorker = () => {
-  if (typeof window !== 'undefined' && !worker) {
-    worker = new Worker(new URL('../worker/worker.ts', import.meta.url));
-    proxy = Comlink.wrap<API>(worker);
-  }
-};
-
-function initVerifierWorker() {
-  if (typeof window !== 'undefined' && !verifierWorker){
-    verifierWorker = new Worker(new URL('../worker/verifierWorker.ts', import.meta.url))
+const createWorkers = () => {
+  if (typeof window !== 'undefined' && !credentialWorker) {
+    verifierWorker = new Worker(new URL('../worker/verifierWorker.ts', import.meta.url), { type: 'module' })
     verifierProxy = Comlink.wrap<SignatureWorkerAPI>(verifierWorker)
-  }
-}
-
-function initExtractorWorker() {
-  if (typeof window !== 'undefined' && !extractorWorker) {
-    extractorWorker = new Worker(new URL('../worker/extractorWorker.ts', import.meta.url));
+    extractorWorker = new Worker(new URL('../worker/extractorWorker.ts', import.meta.url), { type: 'module' });
     extractorProxy = Comlink.wrap<ExtractorWorkerAPI>(extractorWorker);
-  }
-}
-
-function initProofVerificationWorker(){
-  if(typeof window !== 'undefined' && !proofVerificationWorker){
-    proofVerificationWorker = new Worker(new URL('../worker/proofVerificationWorker.ts', import.meta.url));
+    proofVerificationWorker = new Worker(new URL('../worker/proofVerificationWorker.ts', import.meta.url), { type: 'module' });
     proofVerificationProxy = Comlink.wrap<ProofVerificationWorkerAPI>(proofVerificationWorker);
-
+    credentialWorker = new Worker(new URL('../worker/credentialWorker.ts', import.meta.url), { type: 'module' });
+    credentialProxy = Comlink.wrap<API>(credentialWorker);
   }
 }
 
 interface WorkerState {
+  isInitialized: boolean;
   status: WorkerStatus;
-  createCredential: () => void;
-  initializeVerifierWorker: () => void;
-  initializeExtractorWorker: () => void;
-  initializeProofVerificationWorker: () => void;
-  
-  verifierProxy: Comlink.Remote<SignatureWorkerAPI> | null;
-  extractorProxy: Comlink.Remote<ExtractorWorkerAPI> | null;
-  proofVerificationProxy: Comlink.Remote<ProofVerificationWorkerAPI> | null;
-  verifySignature: () => Promise<void>;
-  extractor: () => Promise<void>;
-  verifyProof: () => Promise<boolean | null>;
+  initialize: () => Promise<void>;
+  createCredential: (qrNumericString: string) => Promise<
+    { credentialJson: string; aadhaarVerifierProof: string } | undefined
+  >;
+  verifyAadhaarVerifierProof: (aadhaarVerifierProof: string) => Promise<boolean>;
 }
 
 export const useWorkerStore = create<WorkerState>((set, get) => ({
+  isInitialized: false,
   status: { status: 'uninitialized' },
-  verifierProxy: null,
-  extractorProxy: null,
 
-  createCredential: () => {
-    initWorker();
-    if (!worker || !proxy) {
-      return;
-    }
-    proxy.init();
-    worker.onmessage = (event) => {
-      try {
-        const status = JSON.parse(event.data);
-        if (Object.keys(status).includes('status')) {
-          console.log(status);
-          set({ status: status });
-        }
-      } catch {
-        // do nothing
-      }
-    };
-  },
-  proofVerificationProxy: null,
-  
-  initializeVerifierWorker: async () => {
-    initVerifierWorker();
-    if (!verifierWorker || !verifierProxy) return;
+  initialize: async () => {
+    if (get().isInitialized) return;
+    set({ status: { status: 'computing', message: 'Initializing workers' } });
+    createWorkers();
 
-    set({ verifierProxy });
-    const res = await verifierProxy.init();
-
-    if(!res){
-      console.error('Somethings problematic in verificationKey store!')
-      return
-    }
-    verificationKey = res
-  },
-
-  
-  initializeExtractorWorker: async () => {
-    initExtractorWorker();
-    if (!extractorWorker || !extractorProxy) return;
-  
-    set({ extractorProxy });
-
-    await extractorProxy.init()
-  },
-
-  initializeProofVerificationWorker: async () => {
-    initProofVerificationWorker()
-    if (!proofVerificationProxy || !proofVerificationWorker) return;
-
-    set({proofVerificationProxy})
-  },
-    
-
-  verifySignature: async () => {
-    const { verifierProxy } = get();
-    if (!verifierProxy) {
-      console.error('Verifier worker not initialized');
+    if (!verifierProxy || !extractorProxy || !credentialProxy || !proofVerificationProxy) {
+      set({ status: { status: 'errored', error: 'Worker instantiation failed' } });
       return;
     }
     try {
-      const resultProof = await verifierProxy.verifySignature();
-
-      if(!resultProof){
-        console.error('Somethings problematic in verifySignature');
+      const res = await verifierProxy.init();
+      if (!res) {
+        set({ status: { status: 'errored', error: 'Failed to initialize verification key' } });
         return;
       }
-      verifierProof = resultProof
-      
-      set({ status: {status:'computed', message: 'Computed Verifier Proof'} });
-      console.log('Terminating verifier worker to free WASM memory');
-    } catch (e) {
-      console.error('Error verifying signature', e);
+      verificationKey = res;
+      await extractorProxy.init();
+      await credentialProxy.init();
 
-      set({ status: { status: 'errored', error: e instanceof Error ? e.message : 'Unknown error at verification' } });
+      set({ isInitialized: true, status: { status: 'ready' } });
+    } catch (e) {
+      set({ isInitialized: false, status: { status: 'errored', error: e instanceof Error ? e.message : 'Unknown initialization error' } });
     }
   },
 
-  extractor: async () => {
-    let { extractorProxy } = get();
-
-    if (!extractorWorker || !extractorProxy) {
-      console.log('Re-initializing extractor worker');
-      await get().initializeExtractorWorker();
+  createCredential: async (qrNumericString: string) => {
+    if (!get().isInitialized) {
+      await get().initialize();
+      if (!get().isInitialized) return undefined;
     }
-
-    const updatedState = get();
-    extractorProxy = updatedState.extractorProxy;
-
-    if (!extractorProxy) {
-      console.error('Extractor worker is not initialized');
-      return;
+    if (!verifierProxy || !extractorProxy || !credentialProxy || !proofVerificationProxy) {
+      set({ status: { status: 'errored', error: 'Workers not ready' } });
+      return undefined;
     }
-
     try {
-      if(!verifierProof){
-        console.error('verifierProof does not exist!')
-        return;
+      set({ status: { status: 'computing', message: 'Computing Verifier Proof' } });
+      console.time("total time")
+      console.time('verifierWorker took')
+      const vProof = await verifierProxy.verifySignature(qrNumericString);
+      console.timeEnd('verifierWorker took')
+      if (!vProof) {
+        set({ status: { status: 'errored', error: 'Verifier proof failed' } });
+        return undefined;
       }
-      const resultProof = await extractorProxy.extract(verifierProof);
 
-      if(!resultProof){
-        console.log('Somethings problematic in extractor store!')
-        return;
+      set({ status: { status: 'computing', message: 'Computing Extractor Proof' } });
+      console.time('extractorWorker took')
+      const eProof = await extractorProxy.extract(vProof, qrNumericString);
+      console.timeEnd('extractorWorker took')
+      if (!eProof) {
+        set({ status: { status: 'errored', error: 'Extractor proof failed' } });
+        return undefined;
       }
 
-      extractorProof = resultProof
-
+      set({ status: { status: 'computing', message: 'Creating Credential' } });
+      const owner = PrivateKey.random().toPublicKey();
+      console.time('credentialWorker took')
+      const credentialString = await credentialProxy.createCredential(eProof, owner.toBase58());
+      console.timeEnd('credentialWorker took')
+      if (!credentialString) {
+        set({ status: { status: 'errored', error: 'Credential creation failed' } });
+        return undefined;
+      }
+      await Credential.fromJSON(credentialString);
+      console.timeEnd("total time")
+      set({ status: { status: 'computed', message: 'Credential created' } });
+      return { credentialJson: credentialString, aadhaarVerifierProof: eProof };
     } catch (e) {
-      console.error('Error in extraction', e);
-      set({ status: { status: 'errored', error: e instanceof Error ? e.message : 'Unknown error at extraction' } });
+      set({ status: { status: 'errored', error: e instanceof Error ? e.message : 'Unknown error during credential creation' } });
+      return undefined;
     }
   },
 
-  verifyProof: async (): Promise<boolean | null> => {
-    if(!proofVerificationWorker || !proofVerificationProxy){
-      console.error('Proof verification worker is not initialized')
-      return null
+  verifyAadhaarVerifierProof: async (aadhaarVerifierProof: string) => {
+    if (!verificationKey) {
+      set({ status: { status: 'errored', error: 'Missing verification key' } });
+      return false;
     }
-    
-    try{
-      if(!verificationKey || !extractorProof){
-        console.error('Verification Key or Extarctor proof is not valid!')
-        return null;
-      }
-      
-      const res = await proofVerificationProxy.verifyProof(verificationKey, extractorProof)
-      return res
-    } catch(e){
-      console.error('Error in proof verification', e)
-      set({ status: { status: 'errored', error: e instanceof Error ? e.message : 'Unknown error at proof verification' } });
-      return null;
+    if (!proofVerificationProxy) {
+      set({ status: { status: 'errored', error: 'Workers not ready' } });
+      return false;
     }
+    set({ status: { status: 'computing', message: 'Verifying Extractor Proof' } });
+    const ok = await proofVerificationProxy.verifyProof(verificationKey, aadhaarVerifierProof);
+    if (ok === null) {
+      set({ status: { status: 'errored', error: 'Proof verification failed' } });
+      return false;
+    }
+    set({ status: { status: 'computed', message: 'Proof verified' } });
+    return ok;
   }
 }));
