@@ -1,10 +1,11 @@
 import { Spec, Claim, Operation } from 'mina-attestations';
-import { AadharCredential } from './AadharCredential';
+import { AadhaarCredentialFactory } from './AadhaarCredential.js';
 import { UInt64 } from 'o1js';
 
-export const ageMoreThan18Spec = Spec(
+export async function ageMoreThan18Spec() {
+    return Spec(
     {
-      credential: AadharCredential.spec,
+      credential: (await AadhaarCredentialFactory()).spec,
       currentDate: Claim(UInt64),
     },
     ({ credential, currentDate }) => {
@@ -16,3 +17,4 @@ export const ageMoreThan18Spec = Spec(
       return { assert };
     }
   );
+}
