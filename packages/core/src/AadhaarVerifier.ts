@@ -1,4 +1,4 @@
-import { Field, Provable, SelfProof, Struct, UInt32, ZkProgram } from "o1js";
+import { Field, Poseidon, Provable, SelfProof, Struct, UInt32, ZkProgram } from "o1js";
 import { DATA_ARRAY_SIZE, DELIMITER_ARRAY_SIZE } from "./constants.js";
 import { MerkleBlocks } from "./helpers/dataTypes.js";
 import { delimitData, timestampExtractor, ageAndGenderExtractor, pincodeExtractor, stateExtractor } from "./helpers/extractors.js";
@@ -16,6 +16,7 @@ class AadhaarOutputs extends Struct({
   Pincode: Field,
   State: Provable.Array(Field, 17),
   nullifiedValue: Field,
+  pubKeyHash: Field
 }) {}
 
 const AadhaarVerifier = ZkProgram({
@@ -39,6 +40,8 @@ const AadhaarVerifier = ZkProgram({
 
                 rsaVerify65537(paddedHash, signature, publicKey)
 
+                const pubKeyHash = Poseidon.hash(publicKey.fields)
+
                 const emptyArray = Array.from({ length: 17 }, () => Field.from(0))
                 return {publicOutput: new AadhaarOutputs({
                     Timestamp: Field.from(0),
@@ -47,6 +50,7 @@ const AadhaarVerifier = ZkProgram({
                     Pincode: Field.from(0),
                     State: emptyArray,
                     nullifiedValue: Field.from(0),
+                    pubKeyHash: pubKeyHash
                 })}
             },
         },
@@ -80,6 +84,7 @@ const AadhaarVerifier = ZkProgram({
                     Pincode: pincode,
                     State: state,
                     nullifiedValue: nullifiedValue,
+                    pubKeyHash: earlierProof.publicOutput.pubKeyHash
                 }),
                 }           
             }
