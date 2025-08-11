@@ -1,85 +1,18 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useWorkerStore } from '@/stores/workerStore';
+import { TEST_DATA } from 'anon-aadhaar-o1js';
 
 export default function Page() {
-  const {
-    status,
-    initializeVerifierWorker,
-    initializeExtractorWorker,
-    initializeProofVerificationWorker,
-    verifySignature,
-    extractor,
-    verifyProof,
-    createCredential
-  } = useWorkerStore();
-  
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [msg, setMsg] = useState('');
-  const [verificationresult, setVerificationResult] = useState(false);
+  const { status, isInitialized, initialize, createCredential } = useWorkerStore();
   useEffect(() => {
-    const init = async () => {
-      if (!isInitialized) {
-        console.log('Starting worker initialization...');
-        try {
-          // Initialize workers sequentially to avoid race conditions
-          await initializeVerifierWorker();
-          await initializeExtractorWorker();
-          setIsInitialized(true);
-          console.log('All workers initialized successfully');
-        } catch (error) {
-          console.error('Failed to initialize workers:', error);
-          setIsInitialized(false);
-        }
-      }
-    };
-    
-    init();
-  }, [initializeVerifierWorker, initializeExtractorWorker, isInitialized]);
-
-  const handleVerify = async () => {
-    try {
-      setMsg('handleVerify is being executed at the moment.')
-      await verifySignature();
-      setMsg('handleVerify should be ended now')
-    } catch (error) {
-      console.error('Error in verify signature:', error);
+    if (!isInitialized) {
+      initialize();
     }
-  };
-
-  const handleExtract = async () => {
-    try {
-      setMsg('handleExtract is being executed at the moment')
-      await extractor();
-      setMsg('handleExtract should be ended now')
-    } catch (error) {
-      console.error('Error in extractor:', error);
-    }
-  };
-
-  const handleProofVerification = async () => {
-    try {
-      setMsg('handleProofVerification is being executed at the moment, worker initialization is being executed')
-      await initializeProofVerificationWorker();
-      setMsg('Worker for proof verificaiton is executed correctly')
-      setMsg('Proof is being verified now')
-      const result = await verifyProof();
-      if(result){
-        setVerificationResult(result);
-        setMsg(`Proof verification result is: ${verificationresult}`)
-      }
-      else{
-        setMsg('Somethings wrong with the proof verification step')
-      }
-      
-      
-    } catch (error) {
-      console.error('Error in proof verification:', error);
-    }
-  };
+  }, [initialize, isInitialized]);
 
   const handleCreateCredential = async () => {
-    await createCredential()
+    await createCredential(TEST_DATA);
   };
 
   const getStatusColor = (status: string) => {
@@ -99,11 +32,8 @@ export default function Page() {
         
         <div className="text-center">
           <p className={`font-mono ${getStatusColor(status.status)}`}>
-            Status: {status.status}
+            {status.status}: {("message" in status) ? ` ${status.message}` : ''}
           </p>
-            {(status.status === 'computing' || status.status === 'computed') && (
-              <p className="text-center text-gray-300 mt-2">{status.message}</p>
-            )}
           {status.status === 'errored' && status.error && (
             <div className="text-center text-red-300 mt-2 text-sm">
               <p className="font-semibold">Error:</p>
@@ -113,48 +43,16 @@ export default function Page() {
           <p className="text-xs text-gray-400 mt-2">
             Workers initialized: {isInitialized ? '✓' : '✗'}
           </p>
-          <p className='text-xs text-gray-400 mt-2'>
-            Status Message: {msg}
-          </p>
         </div>
 
         <div className="flex flex-col gap-4">
           <button
-            onClick={handleVerify}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white font-medium transition-colors"
-          >
-            {( (status.status === 'computing' && status.message?.includes('Verifier')))
-              ? 'Computing...'
-                : 'Verify Signature'}
-          </button>
-
-          <button
-            onClick={handleExtract}
-            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-md text-white font-medium transition-colors"
-          >
-            {((status.status === 'computing' && status.message?.includes('Extractor')))
-              ? 'Computing...'
-                : 'Run Extractor'}
-            </button>
-
-          <button
-            onClick={handleProofVerification}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white font-medium transition-colors"
-          >
-            {((status.status === 'computing' && status.message?.includes('verification')))
-              ? 'Verifying...'
-                : 'Run Proof Verification'}
-          </button>
-          <button
             onClick={handleCreateCredential}
-            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-md text-white font-medium">
-            create AadhaarCredential
+            disabled={!isInitialized || status.status === 'computing'}
+            className="px-4 py-2 disabled:opacity-50 bg-orange-600 hover:bg-orange-700 disabled:hover:bg-orange-600 rounded-md text-white font-medium">
+            {isInitialized ? (status.status === 'computing' ? 'Working...' : 'Create AadhaarCredential') : 'Initializing workers...'}
           </button>
         </div>
-        
-        {!isInitialized && (
-          <p className="text-center text-yellow-300 text-sm">Initializing workers...</p>
-        )}
       </div>
     </main>
   );
