@@ -3,7 +3,7 @@ import { DATA_ARRAY_SIZE } from '../constants.js'
 import {
   delimitData,
   timestampExtractor,
-  ageAndGenderExtractor,
+  dobAndGenderExtractor,
   pincodeExtractor,
   stateExtractor,
 } from '../helpers/extractors.js'
@@ -40,12 +40,7 @@ const ExtractorCircuit = ZkProgram({
       ) {
         const nDelimitedData = delimitData(data)
         const timestamp = timestampExtractor(nDelimitedData)
-        const [age, gender] = ageAndGenderExtractor(
-          nDelimitedData,
-          year,
-          month,
-          day
-        )
+        const [age, gender] = dobAndGenderExtractor(nDelimitedData)
         const pincode = pincodeExtractor(nDelimitedData)
         const state = stateExtractor(nDelimitedData)
 
