@@ -1,10 +1,18 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useWorkerStore } from '@/stores/workerStore';
 import { TEST_DATA } from 'anon-aadhaar-o1js';
+import { PrivateKey } from 'o1js';
+import { Credential, Presentation, PresentationRequest } from 'mina-attestations';
 
 export default function Page() {
   const { status, isInitialized, initialize, createCredential } = useWorkerStore();
+  const [credentialJson, setCredentialJson] = useState<string | undefined>();
+  const [requestJson, setRequestJson] = useState<string | undefined>();
+  const [presentationJson, setPresentationJson] = useState<string | undefined>();
+  const [outputClaim, setOutputClaim] = useState<string | undefined>();
+  const ownerKey = PrivateKey.random();
+  const owner = ownerKey.toPublicKey();
   useEffect(() => {
     if (!isInitialized) {
       initialize();
@@ -12,7 +20,50 @@ export default function Page() {
   }, [initialize, isInitialized]);
 
   const handleCreateCredential = async () => {
-    await createCredential(TEST_DATA);
+    const res = await createCredential(TEST_DATA, owner);
+    if (res?.credentialJson) setCredentialJson(res.credentialJson);
+  };
+
+  const handleVerifyAge = async () => {
+    try {
+      if (!credentialJson) return;
+      // 1) fetch presentation request from server
+      console.time('fetch request')
+      const res = await fetch('/api/presentation/request', { method: 'POST' });
+      console.timeEnd('fetch request')
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'request_failed');
+      const reqJson = data.requestJson as string;
+      setRequestJson(reqJson);
+
+      // 2) compile and create presentation
+      console.time('compile PresentationRequest')
+      const deserialized = PresentationRequest.fromJSON('https', reqJson);
+      const compiled = await Presentation.compile(deserialized);
+      console.timeEnd('compile PresentationRequest')
+      console.time('create Presentation')
+      const storedCredential = await Credential.fromJSON(credentialJson);
+      const presentation = await Presentation.create(ownerKey, {
+        request: compiled,
+        credentials: [{ ...storedCredential, key: 'credential' }],
+        context: { verifierIdentity: 'anon-aadhaar-o1js.demo' },
+      });
+      console.timeEnd('create Presentation')
+      const presJson = Presentation.toJSON(presentation);
+      setPresentationJson(presJson);
+
+      // 3) verify on server
+      const vres = await fetch('/api/presentation/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestJson: reqJson, presentationJson: presJson })
+      });
+      const vdata = await vres.json();
+      if (!vres.ok || !vdata.ok) throw new Error(vdata?.error || 'verification_failed');
+      setOutputClaim(vdata.outputClaim as string);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -45,13 +96,25 @@ export default function Page() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <button
-            onClick={handleCreateCredential}
-            disabled={!isInitialized || status.status === 'computing'}
-            className="px-4 py-2 disabled:opacity-50 bg-orange-600 hover:bg-orange-700 disabled:hover:bg-orange-600 rounded-md text-white font-medium">
-            {isInitialized ? (status.status === 'computing' ? 'Working...' : 'Create AadhaarCredential') : 'Initializing workers...'}
+        <div className="flex gap-4 justify-center">
+          <button onClick={handleCreateCredential} className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 disabled:opacity-50" disabled={status.status === 'computing' || !isInitialized}>
+            Create Credential
           </button>
+          <button onClick={handleVerifyAge} className="px-4 py-2 bg-green-600 rounded hover:bg-green-500 disabled:opacity-50" disabled={status.status === 'computing' || !credentialJson}>
+            Verify age &gt; 18
+          </button>
+        </div>
+
+        <div className="space-y-2 text-sm text-gray-300">
+          <div>Credential: {credentialJson ? 'ready' : 'not ready'}</div>
+          <div>Request: {requestJson ? 'ready' : 'not ready'}</div>
+          <div>Presentation: {presentationJson ? 'ready' : 'not ready'}</div>
+          {outputClaim && (
+            <div className="mt-2 p-2 bg-gray-700 rounded">
+              <div className="font-semibold">Output Claim</div>
+              <div className="break-all">{outputClaim}</div>
+            </div>
+          )}
         </div>
       </div>
     </main>

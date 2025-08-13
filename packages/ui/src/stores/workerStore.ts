@@ -5,7 +5,7 @@ import type { SignatureWorkerAPI } from '../worker/verifierWorker';
 import type { ExtractorWorkerAPI } from '../worker/extractorWorker';
 import type { ProofVerificationWorkerAPI } from '@/worker/proofVerificationWorker';
 import type { API } from '../worker/credentialWorker';
-import { PrivateKey } from 'o1js';
+import { PublicKey } from 'o1js';
 import { Credential } from 'mina-attestations';
 
 let verifierWorker: Worker | null = null;
@@ -36,7 +36,7 @@ interface WorkerState {
   isInitialized: boolean;
   status: WorkerStatus;
   initialize: () => Promise<void>;
-  createCredential: (qrNumericString: string) => Promise<
+  createCredential: (qrNumericString: string, owner: PublicKey) => Promise<
     { credentialJson: string; aadhaarVerifierProof: string } | undefined
   >;
   verifyAadhaarVerifierProof: (aadhaarVerifierProof: string) => Promise<boolean>;
@@ -71,7 +71,8 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
     }
   },
 
-  createCredential: async (qrNumericString: string) => {
+  createCredential: async (qrNumericString: string, owner: PublicKey) => {
+    console.log('Executing Credential Creation Method, qrNumericString: ', qrNumericString)
     if (!get().isInitialized) {
       await get().initialize();
       if (!get().isInitialized) return undefined;
@@ -101,7 +102,6 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
       }
 
       set({ status: { status: 'computing', message: 'Creating Credential' } });
-      const owner = PrivateKey.random().toPublicKey();
       console.time('credentialWorker took')
       const credentialString = await credentialProxy.createCredential(eProof, owner.toBase58());
       console.timeEnd('credentialWorker took')
