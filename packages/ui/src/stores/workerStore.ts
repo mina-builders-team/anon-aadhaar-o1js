@@ -5,6 +5,7 @@ import type { SignatureWorkerAPI } from '../worker/verifierWorker';
 import type { ExtractorWorkerAPI } from '../worker/extractorWorker';
 import type { ProofVerificationWorkerAPI } from '@/worker/proofVerificationWorker';
 import type { API } from '../worker/credentialWorker';
+import type { PresentationWorkerAPI } from '../worker/presentationWorker';
 import { PublicKey } from 'o1js';
 import { Credential } from 'mina-attestations';
 
@@ -16,6 +17,8 @@ let proofVerificationWorker: Worker | null = null;
 let proofVerificationProxy: Comlink.Remote<ProofVerificationWorkerAPI> | null = null;
 let credentialWorker: Worker | null = null;
 let credentialProxy: Comlink.Remote<API> | null = null;
+let presentationWorker: Worker | null = null;
+let presentationProxy: Comlink.Remote<PresentationWorkerAPI> | null = null;
 
 let verificationKey: string | null = null;
 
@@ -29,6 +32,8 @@ const createWorkers = () => {
     proofVerificationProxy = Comlink.wrap<ProofVerificationWorkerAPI>(proofVerificationWorker);
     credentialWorker = new Worker(new URL('../worker/credentialWorker.ts', import.meta.url), { type: 'module' });
     credentialProxy = Comlink.wrap<API>(credentialWorker);
+    presentationWorker = new Worker(new URL('../worker/presentationWorker.ts', import.meta.url), { type: 'module' });
+    presentationProxy = Comlink.wrap<PresentationWorkerAPI>(presentationWorker);
   }
 }
 
@@ -40,6 +45,7 @@ interface WorkerState {
     { credentialJson: string; aadhaarVerifierProof: string } | undefined
   >;
   verifyAadhaarVerifierProof: (aadhaarVerifierProof: string) => Promise<boolean>;
+  createPresentation: (args: { requestJson: string; credentialJson: string; ownerPrivateKeyBase58: string; }) => Promise<string | undefined>;
 }
 
 export const useWorkerStore = create<WorkerState>((set, get) => ({
@@ -51,7 +57,7 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
     set({ status: { status: 'computing', message: 'Initializing workers' } });
     createWorkers();
 
-    if (!verifierProxy || !extractorProxy || !credentialProxy || !proofVerificationProxy) {
+    if (!verifierProxy || !extractorProxy || !credentialProxy || !proofVerificationProxy || !presentationProxy) {
       set({ status: { status: 'errored', error: 'Worker instantiation failed' } });
       return;
     }
@@ -136,5 +142,26 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
     }
     set({ status: { status: 'computed', message: 'Proof verified' } });
     return ok;
+  },
+
+  createPresentation: async ({ requestJson, credentialJson, ownerPrivateKeyBase58 }) => {
+    if (!presentationProxy || !presentationWorker) {
+      presentationWorker = new Worker(new URL('../worker/presentationWorker.ts', import.meta.url), { type: 'module' });
+      presentationProxy = Comlink.wrap<PresentationWorkerAPI>(presentationWorker);
+    }
+    set({ status: { status: 'computing', message: 'Creating presentation' } });
+    console.time('presentationWorker took');
+    const presJson = await presentationProxy.createPresentation(
+      requestJson,
+      credentialJson,
+      ownerPrivateKeyBase58
+    );
+    console.timeEnd('presentationWorker took');
+    if (!presJson) {
+      set({ status: { status: 'errored', error: 'Presentation creation failed' } });
+      return undefined;
+    }
+    set({ status: { status: 'computed', message: 'Presentation created' } });
+    return presJson;
   }
 }));
