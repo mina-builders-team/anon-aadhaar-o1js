@@ -1,69 +1,47 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useWorkerStore } from '@/stores/workerStore';
+import { useCredentialStore } from '@/stores/credentialStore';
 import { TEST_DATA } from 'anon-aadhaar-o1js';
 import { PrivateKey } from 'o1js';
-import { Credential, Presentation, PresentationRequest } from 'mina-attestations';
+import SpecVerification from './SpecVerification';
+import { Credential } from 'mina-attestations';
 
 export default function Page() {
-  const { status, isInitialized, initialize, createCredential } = useWorkerStore();
-  const [credentialJson, setCredentialJson] = useState<string | undefined>();
-  const [requestJson, setRequestJson] = useState<string | undefined>();
-  const [presentationJson, setPresentationJson] = useState<string | undefined>();
-  const [outputClaim, setOutputClaim] = useState<string | undefined>();
+  const { status, isInitialized, initialize, createCredential, verifyAadhaarVerifierProof } = useWorkerStore();
+  const credentialJson = useCredentialStore((s) => s.credentialJson);
+  const setCredentialJson = useCredentialStore((s) => s.setCredentialJson);
+  const [aadhaarVerifierProof, setAadhaarVerifierProof] = useState<string | undefined>();
+  const [proofVerified, setProofVerified] = useState<boolean | undefined>();
   const ownerKey = PrivateKey.random();
   const owner = ownerKey.toPublicKey();
+
   useEffect(() => {
-    if (!isInitialized) {
-      initialize();
-    }
-  }, [initialize, isInitialized]);
+    initialize();
+  }, []);
 
   const handleCreateCredential = async () => {
+    if (!isInitialized) {
+      await initialize();
+    }
     const res = await createCredential(TEST_DATA, owner);
-    if (res?.credentialJson) setCredentialJson(res.credentialJson);
+    if (res?.credentialJson) {
+      setCredentialJson(res.credentialJson);
+    }
+    if (res?.aadhaarVerifierProof) setAadhaarVerifierProof(res.aadhaarVerifierProof);
   };
 
-  const handleVerifyAge = async () => {
-    try {
-      if (!credentialJson) return;
-      // 1) fetch presentation request from server
-      console.time('fetch request')
-      const res = await fetch('/api/presentation/request', { method: 'POST' });
-      console.timeEnd('fetch request')
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'request_failed');
-      const reqJson = data.requestJson as string;
-      setRequestJson(reqJson);
+  const handleVerifyAadhaarProof = async () => {
+    if (!aadhaarVerifierProof) return;
+    const ok = await verifyAadhaarVerifierProof(aadhaarVerifierProof);
+    setProofVerified(!!ok);
+  };
 
-      // 2) compile and create presentation
-      console.time('compile PresentationRequest')
-      const deserialized = PresentationRequest.fromJSON('https', reqJson);
-      const compiled = await Presentation.compile(deserialized);
-      console.timeEnd('compile PresentationRequest')
-      console.time('create Presentation')
-      const storedCredential = await Credential.fromJSON(credentialJson);
-      const presentation = await Presentation.create(ownerKey, {
-        request: compiled,
-        credentials: [{ ...storedCredential, key: 'credential' }],
-        context: { verifierIdentity: 'anon-aadhaar-o1js.demo' },
-      });
-      console.timeEnd('create Presentation')
-      const presJson = Presentation.toJSON(presentation);
-      setPresentationJson(presJson);
-
-      // 3) verify on server
-      const vres = await fetch('/api/presentation/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestJson: reqJson, presentationJson: presJson })
-      });
-      const vdata = await vres.json();
-      if (!vres.ok || !vdata.ok) throw new Error(vdata?.error || 'verification_failed');
-      setOutputClaim(vdata.outputClaim as string);
-    } catch (e) {
-      console.error(e);
-    }
+  const handleVerifyCredential = async () => {
+    if (!credentialJson) return;
+    console.time('Credential validation');
+    await Credential.validate(await Credential.fromJSON(credentialJson));
+    console.timeEnd('Credential validation');
   };
 
   const getStatusColor = (status: string) => {
@@ -97,24 +75,25 @@ export default function Page() {
         </div>
 
         <div className="flex gap-4 justify-center">
-          <button onClick={handleCreateCredential} className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 disabled:opacity-50" disabled={status.status === 'computing' || !isInitialized}>
+          <button onClick={handleCreateCredential} className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 disabled:opacity-50" disabled={status.status === 'computing'}>
             Create Credential
           </button>
-          <button onClick={handleVerifyAge} className="px-4 py-2 bg-green-600 rounded hover:bg-green-500 disabled:opacity-50" disabled={status.status === 'computing' || !credentialJson}>
-            Verify age &gt; 18
+          <button onClick={handleVerifyAadhaarProof} className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 disabled:opacity-50" disabled={status.status === 'computing' || !aadhaarVerifierProof}>
+            Verify aadhaarVerifierProof
+          </button>
+          <button onClick={handleVerifyCredential} className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 disabled:opacity-50" disabled={status.status === 'computing' || !credentialJson}>
+            Verify credential
           </button>
         </div>
 
         <div className="space-y-2 text-sm text-gray-300">
           <div>Credential: {credentialJson ? 'ready' : 'not ready'}</div>
-          <div>Request: {requestJson ? 'ready' : 'not ready'}</div>
-          <div>Presentation: {presentationJson ? 'ready' : 'not ready'}</div>
-          {outputClaim && (
-            <div className="mt-2 p-2 bg-gray-700 rounded">
-              <div className="font-semibold">Output Claim</div>
-              <div className="break-all">{outputClaim}</div>
-            </div>
-          )}
+          <div>Verifier proof: {aadhaarVerifierProof ? 'ready' : 'not ready'}</div>
+        </div>
+
+        <div className="pt-6">
+          <h2 className="text-lg font-semibold mb-2">Spec Verification</h2>
+          <SpecVerification credentialJson={credentialJson} ownerKey={ownerKey} />
         </div>
       </div>
     </main>
