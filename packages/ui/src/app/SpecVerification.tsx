@@ -4,6 +4,11 @@ import { Credential } from 'mina-attestations';
 import { PrivateKey } from 'o1js';
 import { useWorkerStore } from '@/stores/workerStore';
 
+interface OutputClaim {
+  pubKeyHash: string;
+  owner: string;
+}
+
 type Props = {
   credentialJson?: string;
   ownerKey: PrivateKey;
@@ -12,14 +17,14 @@ type Props = {
 export default function SpecVerification({ credentialJson, ownerKey }: Props) {
   const [requestJson, setRequestJson] = useState<string | undefined>();
   const [presentationJson, setPresentationJson] = useState<string | undefined>();
-  const [outputClaim, setOutputClaim] = useState<string | undefined>();
-  const [busy, setBusy] = useState(false);
+  const [outputClaim, setOutputClaim] = useState<OutputClaim | undefined>();
+  const [buttonText, setButtonText] = useState('Verify age > 18');
   const { createPresentation } = useWorkerStore();
 
   const handleVerifyAge = async () => {
     try {
       if (!credentialJson) return;
-      setBusy(true);
+      setButtonText('Fetching presentation requests...');
       // 1) fetch presentation request from server
       const res = await fetch('/api/presentation/request', { method: 'POST' });
       const data = await res.json();
@@ -27,49 +32,62 @@ export default function SpecVerification({ credentialJson, ownerKey }: Props) {
       const reqJson = data.requestJson as string;
       setRequestJson(reqJson);
 
-      // 2) create presentation in worker (compile off main thread)
+      setButtonText('Creating presentation...');
+      // 2) create presentation in worker
+      console.time("presentation creation took")
       await Credential.fromJSON(credentialJson); // validate locally before offloading
       const presJson = await createPresentation({
         requestJson: reqJson,
         credentialJson,
         ownerPrivateKeyBase58: ownerKey.toBase58(),
       });
+      console.timeEnd("presentation creation took")
       if (!presJson) throw new Error('presentation_create_failed');
       setPresentationJson(presJson);
 
+      setButtonText('Verifying presentation...');
       // 3) verify on server
+      console.time('verifying on server')
       const vres = await fetch('/api/presentation/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ requestJson: reqJson, presentationJson: presJson })
       });
+      console.timeEnd('verifying on server')
       const vdata = await vres.json();
-      if (!vres.ok || !vdata.ok) throw new Error(vdata?.error || 'verification_failed');
-      setOutputClaim(vdata.outputClaim as string);
+      if (!vdata.ok) throw new Error(vdata?.error || 'verification_failed');
+      console.log("vdata.outputClaim.pubKeyHash", vdata)
+      setOutputClaim(JSON.parse(vdata.outputClaim));
+      setButtonText('Verified');
     } catch (e) {
       console.error(e);
-    } finally {
-      setBusy(false);
+      setButtonText('Verify age > 18');
     }
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex gap-4 justify-center">
-        <button onClick={handleVerifyAge} className="px-4 py-2 bg-green-600 rounded hover:bg-green-500 disabled:opacity-50" disabled={busy || !credentialJson}>
-          Verify age &gt; 18
-        </button>
-      </div>
-      <div className="space-y-2 text-sm text-gray-300">
-        <div>Request: {requestJson ? 'ready' : 'not ready'}</div>
-        <div>Presentation: {presentationJson ? 'ready' : 'not ready'}</div>
-        {outputClaim && (
-          <div className="mt-2 p-2 bg-gray-700 rounded">
-            <div className="font-semibold">Output Claim</div>
-            <div className="break-all">{outputClaim}</div>
+    <div className="flex flex-col items-center gap-6 p-6 max-w-2xl mx-auto">
+      <button
+        onClick={handleVerifyAge}
+        className="px-6 py-3 bg-green-600 text-white font-medium rounded-lg shadow-sm hover:bg-green-500 disabled:opacity-50 transition-colors"
+        disabled={buttonText !== 'Verify age > 18' || !credentialJson}
+      >
+        {buttonText}
+      </button>
+      {outputClaim && (
+        <div className="w-full p-4 rounded-lg borde shadow-sm">
+          <div className="space-y-3">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">Owner:</span>
+              <span className="font-mono text-sm break-all text-gray-500">{outputClaim.owner}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">Issuer Public Key Hash:</span>
+              <span className="font-mono text-sm break-all text-gray-500">{outputClaim.pubKeyHash}</span>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

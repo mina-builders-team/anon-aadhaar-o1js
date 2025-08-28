@@ -7,7 +7,13 @@ import { PrivateKey } from 'o1js';
 import SpecVerification from './SpecVerification';
 import { Credential } from 'mina-attestations';
 
+type VerificationType = 'https' | 'zkapp';
+type VerificationStep = 'aadhaar' | 'credential' | null;
+
 export default function Page() {
+  const [activeTab, setActiveTab] = useState<VerificationType>('https');
+  const [activeVerificationStep, setActiveVerificationStep] = useState<VerificationStep>(null);
+
   const { status, isInitialized, initialize, createCredential, verifyAadhaarVerifierProof } = useWorkerStore();
   const credentialJson = useCredentialStore((s) => s.credentialJson);
   const setCredentialJson = useCredentialStore((s) => s.setCredentialJson);
@@ -76,14 +82,14 @@ export default function Page() {
 
         <div className="flex gap-4 justify-center">
           <button onClick={handleCreateCredential} className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 disabled:opacity-50" disabled={status.status === 'computing'}>
-            Create Credential
-          </button>
+              Create Credential
+            </button>
           <button onClick={handleVerifyAadhaarProof} className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 disabled:opacity-50" disabled={status.status === 'computing' || !aadhaarVerifierProof}>
             Verify aadhaarVerifierProof
-          </button>
+                    </button>
           <button onClick={handleVerifyCredential} className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 disabled:opacity-50" disabled={status.status === 'computing' || !credentialJson}>
             Verify credential
-          </button>
+                    </button>
         </div>
 
         <div className="space-y-2 text-sm text-gray-300">
@@ -91,10 +97,35 @@ export default function Page() {
           <div>Verifier proof: {aadhaarVerifierProof ? 'ready' : 'not ready'}</div>
         </div>
 
-        <div className="pt-6">
-          <h2 className="text-lg font-semibold mb-2">Spec Verification</h2>
-          <SpecVerification credentialJson={credentialJson} ownerKey={ownerKey} />
-        </div>
+        <div className="border-b border-gray-700">
+            <nav className="-mb-px flex space-x-1" aria-label="Tabs">
+              <button
+                onClick={() => setActiveTab('https')}
+                className={`px-8 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'https' 
+                  ? 'text-green-400 bg-gray-800/50 border-green-500 hover:bg-gray-800 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-green-500/20 after:blur-sm' 
+                  : 'text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-700'}`}
+              >
+                HTTPS Verification
+              </button>
+              <button
+                onClick={() => setActiveTab('zkapp')}
+                className={`px-8 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'zkapp' 
+                  ? 'text-green-400 bg-gray-800/50 border-green-500 hover:bg-gray-800 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-green-500/20 after:blur-sm' 
+                  : 'text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-700'}`}
+              >
+                zkApp Verification
+              </button>
+            </nav>
+          </div>
+          <div className="pt-8">
+            {activeTab === 'https' ? (
+              <SpecVerification credentialJson={credentialJson} ownerKey={ownerKey} />
+            ) : (
+              <div className="text-gray-400 text-center py-8">
+                ...
+              </div>
+            )}
+          </div>
       </div>
     </main>
   );
