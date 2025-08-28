@@ -38,11 +38,17 @@ export async function ageMoreThan18Spec() {
       const age = calculateAge(currentYear, currentMonth, currentDay, dobYear, dobMonth, dobDay)
 
       Provable.asProver(() => {
-        console.log("Age: ", age.toString())
+        console.log("ageMoreThan18Spec.Age: ", age.toString())
       })
-      const assert = Operation.lessThanEq(Operation.constant(Field(18)), age)
+      const ageMoreThan18 = Operation.lessThanEq(Operation.constant(Field(18)), age)
 
-      return { assert, outputClaim: Operation.property(credential, "pubKeyHash") };
+      return { 
+        assert: [ageMoreThan18],
+        outputClaim: Operation.record({
+          pubKeyHash: Operation.property(credential, "pubKeyHash"),
+          owner: Operation.owner
+        }) 
+      };
     } 
   );
 }

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useWorkerStore } from '@/stores/workerStore';
 import { useCredentialStore } from '@/stores/credentialStore';
-import { TEST_DATA } from 'anon-aadhaar-o1js';
+import { DEMO_PRIVATEKEY, TEST_DATA } from 'anon-aadhaar-o1js';
 import { PrivateKey } from 'o1js';
 import SpecVerification from './SpecVerification';
 import { Credential } from 'mina-attestations';
@@ -13,7 +13,7 @@ export default function Page() {
   const setCredentialJson = useCredentialStore((s) => s.setCredentialJson);
   const [aadhaarVerifierProof, setAadhaarVerifierProof] = useState<string | undefined>();
   const [proofVerified, setProofVerified] = useState<boolean | undefined>();
-  const ownerKey = PrivateKey.random();
+  const ownerKey = PrivateKey.fromBase58(DEMO_PRIVATEKEY);
   const owner = ownerKey.toPublicKey();
 
   useEffect(() => {

@@ -43,11 +43,8 @@ async function extract(
 
         const data = createPaddedQRData(paddedData).map(Field)
 
-        const currentYear = Field.from(2024)
-        const currentMonth = Field.from(1)
-        const currentDay = Field.from(1)
         console.time('extractor')
-        const { proof } = await AadhaarVerifier.extractor(verifierProof, data, currentYear, currentMonth, currentDay)
+        const { proof } = await AadhaarVerifier.extractor(verifierProof, data)
         console.timeEnd('extractor')
         const proofString = JSON.stringify(proof.toJSON())
 
