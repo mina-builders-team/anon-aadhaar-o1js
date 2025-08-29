@@ -12,7 +12,7 @@ import {
 export {
   delimitData,
   timestampExtractor,
-  ageAndGenderExtractor,
+  dobAndGenderExtractor,
   pincodeExtractor,
   stateExtractor,
 }
@@ -98,17 +98,9 @@ function timestampExtractor(nDelimitedData: Field[]) {
  * Rows: 9416
  *
  * @param {Field[]} nDelimitedData - The delimited input data array.
- * @param {Field} currentYear - Current year as a Field.
- * @param {Field} currentMonth - Current month as a Field.
- * @param {Field} currentDay - Current day as a Field.
  * @returns {[Field, Field]} A tuple: [calculated age, extracted gender].
  */
-function ageAndGenderExtractor(
-  nDelimitedData: Field[],
-  currentYear: Field,
-  currentMonth: Field,
-  currentDay: Field
-) {
+function dobAndGenderExtractor(nDelimitedData: Field[]) {
   const ageData: Field[] = []
   const startIndex = Provable.witness(Field, () => {
     return  nDelimitedData.findIndex((value) => value.toBigInt() === BigInt(DELIMITER_POSITION.DOB * 255))
@@ -122,13 +114,13 @@ function ageAndGenderExtractor(
     const agePushValue = searchElement(nDelimitedData, currentIndex, 256)
     ageData.push(agePushValue)
   }
-  const years = digitBytesToInt(
+  const dobYear = digitBytesToInt(
     [ageData[7], ageData[8], ageData[9], ageData[10]],
     4
   )
 
-  const months = digitBytesToInt([ageData[4], ageData[5]], 2)
-  const days = digitBytesToInt([ageData[1], ageData[2]], 2)
+  const dobMonth = digitBytesToInt([ageData[4], ageData[5]], 2)
+  const dobDay = digitBytesToInt([ageData[1], ageData[2]], 2)
 
   assert(ageData[0].equals(Field(DELIMITER_POSITION.DOB * 255)))
   assert(ageData[11].equals(Field((DELIMITER_POSITION.DOB + 1) * 255)))
@@ -136,18 +128,7 @@ function ageAndGenderExtractor(
   const genderIndex = startIndex.add(12)
   const gender = searchElement(nDelimitedData, genderIndex, 256)
 
-  // Calculate age based on year
-  const ageByYear = currentYear.sub(years).sub(Field(1))
-
-  // Check if current month > DOB month or if same month and current day >= DOB day
-  const monthGt = currentMonth.greaterThan(months).toField()
-  const monthEq = currentMonth.equals(months).toField()
-  const dayGt = currentDay.add(Field(1)).greaterThan(days).toField()
-  const isHigherDayOnSameMonth = monthEq.mul(dayGt)
-
-  // Final age calculation
-  const age = ageByYear.add(monthGt.add(isHigherDayOnSameMonth))
-  return [age, gender]
+  return [dobDay, dobMonth, dobYear, gender]
 }
 
 /**

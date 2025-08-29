@@ -3,7 +3,7 @@ import { DELIMITER_POSITION } from '../src/constants.js'
 import { getDelimiterIndices } from '../src/utils.js'
 import { getQRData, TEST_DATA } from '../src/getQRData.js'
 import {
-  ageAndGenderExtractor,
+  dobAndGenderExtractor,
   delimitData,
   pincodeExtractor,
   stateExtractor,
@@ -69,15 +69,13 @@ describe('Extractor circuit tests', () => {
     })
   })
 
-  describe('Age and Gender Extractor Circuit tests', () => {
-    it('should extract age and gender correctly', async () => {
-      const day = Field.from(1)
-      const month = Field.from(1)
-      const year = Field.from(2024)
+  describe('DOB and Gender Extractor Circuit tests', () => {
+    it('should extract DOB and gender correctly', async () => {
+      const [dobDay, dobMonth, dobYear, gender] = dobAndGenderExtractor(nDelimitedData)
 
-      const [age, gender] = ageAndGenderExtractor(nDelimitedData, year, month, day)
-
-      expect(age.toBigInt()).toEqual(40n)
+      expect(dobDay.toBigInt()).toEqual(1n)
+      expect(dobMonth.toBigInt()).toEqual(1n)
+      expect(dobYear.toBigInt()).toEqual(1984n)
       expect(String.fromCharCode(Number(gender))).toEqual('M')
     })
   })

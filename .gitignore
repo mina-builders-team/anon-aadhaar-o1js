@@ -14,3 +14,6 @@ keys
 
 # Turbo
 .turbo
+
+# Ignore pk cache files
+**/ui/public/*/*-pk-*

@@ -1,8 +1,7 @@
 import * as Comlink from 'comlink';
-import { hashProgram, AadhaarVerifier, getQRData, prepareRecursiveHashData } from 'anon-aadhaar-o1js';
 import { Cache } from 'o1js';
-import { TEST_DATA } from 'anon-aadhaar-o1js/build/src/getQRData';
 import { fetchHashCacheFiles, fetchVerifierCacheFiles, MinaFileSystem } from '@/worker_utils/utils';
+import { AadhaarVerifier, hashProgram, prepareRecursiveHashData, getQRData } from 'anon-aadhaar-o1js';
 
 let isInitialized = false;
 
@@ -15,15 +14,15 @@ async function init() {
     const hashCache = MinaFileSystem(hashCacheFiles) as Cache;
     const verifierCache = MinaFileSystem(verifierCacheFiles) as Cache;
 
-    console.log('Compiling "hashProgram" Circuit')
-
+    console.time('hashProgram Compilation')
     await hashProgram.compile({ cache: hashCache});
+    console.timeEnd('hashProgram Compilation')
 
-    console.log('Compiling "AadhaarVerifier" Circuit')
-
+    console.time('AadhaarVerifier Compilation')
     const aadhaarVK = await AadhaarVerifier.compile({ cache: verifierCache})
-
-    console.log('Compiled "AadhaarVerifier" Circuit')
+    console.timeEnd('AadhaarVerifier Compilation')
+  
+    console.log('Verifier Worker is ready')
     
     isInitialized = true;
 
@@ -36,32 +35,31 @@ async function init() {
   }
 }
 
-async function verifySignature(): Promise<string | null> {
+async function verifySignature(qrNumericString: string) {
   if (!isInitialized) {
     console.error('Worker is not initialized. Please call init() first')
-    return null;
+    return;
   }
   
   try {
     console.log('Executing Signature Verification Method')
 
-    const inputs = getQRData(TEST_DATA)
+    const inputs = getQRData(qrNumericString)
     const blocks = prepareRecursiveHashData(inputs.signedData)
-
+    console.time('verifySignature')
     const { proof } = await AadhaarVerifier.verifySignature(blocks, inputs.signatureBigint, inputs.publicKeyBigint)
+    console.timeEnd('verifySignature')
     const proofString = JSON.stringify(proof.toJSON())
 
-    console.log('Executed Signature Verification ')
+    console.log('verifySignature proof ready')
 
     return proofString
 
   } catch (error: unknown) {
     if (error instanceof Error) {
       console.log(error.message)
-      return null
     } else {
       console.log('Verification failed!' ) 
-      return null
     }
   }
 }

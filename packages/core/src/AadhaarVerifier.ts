@@ -1,7 +1,7 @@
 import { Field, Poseidon, Provable, SelfProof, Struct, UInt32, ZkProgram } from "o1js";
 import { DATA_ARRAY_SIZE, DELIMITER_ARRAY_SIZE } from "./constants.js";
 import { MerkleBlocks } from "./helpers/dataTypes.js";
-import { delimitData, timestampExtractor, ageAndGenderExtractor, pincodeExtractor, stateExtractor } from "./helpers/extractors.js";
+import { delimitData, timestampExtractor, dobAndGenderExtractor, pincodeExtractor, stateExtractor } from "./helpers/extractors.js";
 import { nullifier } from "./helpers/nullifier.js";
 import { hashBlocks, BLOCKS_PER_RECURSIVE_PROOF } from "./helpers/sha256Hash.js";
 import { Bigint2048, rsaVerify65537 } from "./helpers/rsa.js";
@@ -9,9 +9,11 @@ import { state32ToBytes,pkcs1v15Pad } from "./utils.js";
 
 export { AadhaarVerifier, AadhaarVerifierProof }
 
-class AadhaarOutputs extends Struct({
+export class AadhaarOutputs extends Struct({
   Timestamp: Field,
-  Age: Field,
+  DobYear: Field,
+  DobMonth: Field,
+  DobDay: Field,
   Gender: Field,
   Pincode: Field,
   State: Provable.Array(Field, 17),
@@ -45,7 +47,9 @@ const AadhaarVerifier = ZkProgram({
                 const emptyArray = Array.from({ length: 17 }, () => Field.from(0))
                 return {publicOutput: new AadhaarOutputs({
                     Timestamp: Field.from(0),
-                    Age: Field.from(0),
+                    DobYear: Field.from(0),
+                    DobMonth: Field.from(0),
+                    DobDay: Field.from(0),
                     Gender: Field.from(0),
                     Pincode: Field.from(0),
                     State: emptyArray,
@@ -54,21 +58,16 @@ const AadhaarVerifier = ZkProgram({
                 })}
             },
         },
-        extractor: {
-            privateInputs: [SelfProof, Provable.Array(Field, DATA_ARRAY_SIZE), Field, Field, Field],
+        extractor: {
+            privateInputs: [SelfProof, Provable.Array(Field, DATA_ARRAY_SIZE)],
 
-            async method( earlierProof: SelfProof<unknown,AadhaarOutputs>, data: Field[], currentYear: Field, currentMonth:Field, currentDay:Field){
+            async method( earlierProof: SelfProof<unknown,AadhaarOutputs>, data: Field[]){
                 earlierProof.verify()
                 const nDelimitedData = delimitData(data)
 
                 const timestamp = timestampExtractor(nDelimitedData)
 
-                const [age, gender] = ageAndGenderExtractor(
-                nDelimitedData,
-                currentYear,
-                currentMonth,
-                currentDay
-                );
+                const [dobDay, dobMonth, dobYear, gender] = dobAndGenderExtractor(nDelimitedData);
                 const pincode = pincodeExtractor(nDelimitedData)
                 const state = stateExtractor(nDelimitedData)
 
@@ -79,7 +78,9 @@ const AadhaarVerifier = ZkProgram({
                 return {
                 publicOutput: new AadhaarOutputs({
                     Timestamp: timestamp,
-                    Age: age,
+                    DobDay: dobDay,
+                    DobMonth: dobMonth,
+                    DobYear: dobYear,
                     Gender: gender,
                     Pincode: pincode,
                     State: state,

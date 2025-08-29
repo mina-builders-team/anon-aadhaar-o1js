@@ -12,9 +12,10 @@ async function verifyProof(
         const AadhaarProofJson = JSON.parse(extractorProof);
 
         const AadhaarProof = await AadhaarVerifierProof.fromJSON(AadhaarProofJson as JsonProof);
-        
+        console.time('verifyProof')
         const verificationKeyString = JSON.parse(verificationKey)
         const vk = VerificationKey.fromJSON(verificationKeyString)
+        console.timeEnd('verifyProof')
 
         const result = await verify(AadhaarProof, vk)
         return result

@@ -14,8 +14,10 @@
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run build:cache",
+    "build:no-cache": "tsc",
     "dev": "tsc --watch",
+    "build:cache": "for i in $(seq 1 5); do node build/src/cache/cacheVerifier.js; done",
     "example": "npm run build && node build/src/examples/run.js",
     "coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "format": "prettier --write --ignore-unknown **/*",

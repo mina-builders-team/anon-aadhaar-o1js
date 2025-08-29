@@ -6,7 +6,7 @@ import {
   prepareRecursiveHashData,
 } from '../tests/testUtils.js'
 import {
-  ageAndGenderExtractor,
+  dobAndGenderExtractor,
   delimitData,
   pincodeExtractor,
   stateExtractor,
@@ -82,17 +82,13 @@ function timestampExtractorConstraints() {
   timestampExtractor(dataArray)
 }
 
-function ageAndGenderExtractorConstraints() {
+function dobAndGenderExtractorConstraints() {
   const delimitedDataArray = Provable.witness(
     Provable.Array(Field, DATA_ARRAY_SIZE),
     () => nDelimitedData
   )
 
-  const day = Provable.witness(Field, () => Field.from(1))
-  const month = Provable.witness(Field, () => Field.from(1))
-  const year = Provable.witness(Field, () => Field.from(2024))
-
-  ageAndGenderExtractor(delimitedDataArray, year, month, day)
+  dobAndGenderExtractor(delimitedDataArray)
 }
 
 function pincodeExtractorConstraints() {
@@ -119,9 +115,9 @@ const delimitDataParameters = await getBenchmarkParameters(
   delimitDataConstraints
 )
 
-const ageAndGenderExtractorParameters = await getBenchmarkParameters(
-  'Age and Gender',
-  ageAndGenderExtractorConstraints
+const dobAndGenderExtractorParameters = await getBenchmarkParameters(
+  'DOB and Gender',
+  dobAndGenderExtractorConstraints
 )
 
 const timestampParameters = await getBenchmarkParameters(
@@ -152,7 +148,7 @@ const nullifierParameters = await getBenchmarkParameters(
 
 const benchmarkResults = [
   delimitDataParameters,
-  ageAndGenderExtractorParameters,
+  dobAndGenderExtractorParameters,
   timestampParameters,
   pincodeExtractorParameters,
   stateExtractorParameters,

@@ -1,80 +1,53 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useWorkerStore } from '@/stores/workerStore';
+import { useCredentialStore } from '@/stores/credentialStore';
+import { DEMO_PRIVATEKEY, TEST_DATA } from 'anon-aadhaar-o1js';
+import { PrivateKey } from 'o1js';
+import SpecVerification from './SpecVerification';
+import { Credential } from 'mina-attestations';
+
+type VerificationType = 'https' | 'zkapp';
+type VerificationStep = 'aadhaar' | 'credential' | null;
 
 export default function Page() {
-  const {
-    status,
-    initializeVerifierWorker,
-    initializeExtractorWorker,
-    initializeProofVerificationWorker,
-    verifySignature,
-    extractor,
-    verifyProof,
-  } = useWorkerStore();
-  
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [msg, setMsg] = useState('');
-  const [verificationresult, setVerificationResult] = useState(false);
+  const [activeTab, setActiveTab] = useState<VerificationType>('https');
+  const [activeVerificationStep, setActiveVerificationStep] = useState<VerificationStep>(null);
+
+  const { status, isInitialized, initialize, createCredential, verifyAadhaarVerifierProof } = useWorkerStore();
+  const credentialJson = useCredentialStore((s) => s.credentialJson);
+  const setCredentialJson = useCredentialStore((s) => s.setCredentialJson);
+  const [aadhaarVerifierProof, setAadhaarVerifierProof] = useState<string | undefined>();
+  const [proofVerified, setProofVerified] = useState<boolean | undefined>();
+  const ownerKey = PrivateKey.fromBase58(DEMO_PRIVATEKEY);
+  const owner = ownerKey.toPublicKey();
+
   useEffect(() => {
-    const init = async () => {
-      if (!isInitialized) {
-        console.log('Starting worker initialization...');
-        try {
-          // Initialize workers sequentially to avoid race conditions
-          await initializeVerifierWorker();
-          await initializeExtractorWorker();
-          setIsInitialized(true);
-          console.log('All workers initialized successfully');
-        } catch (error) {
-          console.error('Failed to initialize workers:', error);
-          setIsInitialized(false);
-        }
-      }
-    };
-    
-    init();
-  }, [initializeVerifierWorker, initializeExtractorWorker, isInitialized]);
+    initialize();
+  }, []);
 
-  const handleVerify = async () => {
-    try {
-      setMsg('handleVerify is being executed at the moment.')
-      await verifySignature();
-      setMsg('handleVerify should be ended now')
-    } catch (error) {
-      console.error('Error in verify signature:', error);
+  const handleCreateCredential = async () => {
+    if (!isInitialized) {
+      await initialize();
     }
+    const res = await createCredential(TEST_DATA, owner);
+    if (res?.credentialJson) {
+      setCredentialJson(res.credentialJson);
+    }
+    if (res?.aadhaarVerifierProof) setAadhaarVerifierProof(res.aadhaarVerifierProof);
   };
 
-  const handleExtract = async () => {
-    try {
-      setMsg('handleExtract is being executed at the moment')
-      await extractor();
-      setMsg('handleExtract should be ended now')
-    } catch (error) {
-      console.error('Error in extractor:', error);
-    }
+  const handleVerifyAadhaarProof = async () => {
+    if (!aadhaarVerifierProof) return;
+    const ok = await verifyAadhaarVerifierProof(aadhaarVerifierProof);
+    setProofVerified(!!ok);
   };
 
-  const handleProofVerification = async () => {
-    try {
-      setMsg('handleProofVerification is being executed at the moment, worker initialization is being executed')
-      await initializeProofVerificationWorker();
-      setMsg('Worker for proof verificaiton is executed correctly')
-      setMsg('Proof is being verified now')
-      const result = await verifyProof();
-      if(result){
-        setVerificationResult(result);
-        setMsg(`Proof verification result is: ${verificationresult}`)
-      }
-      else{
-        setMsg('Somethings wrong with the proof verification step')
-      }
-      
-      
-    } catch (error) {
-      console.error('Error in proof verification:', error);
-    }
+  const handleVerifyCredential = async () => {
+    if (!credentialJson) return;
+    console.time('Credential validation');
+    await Credential.validate(await Credential.fromJSON(credentialJson));
+    console.timeEnd('Credential validation');
   };
 
   const getStatusColor = (status: string) => {
@@ -94,11 +67,8 @@ export default function Page() {
         
         <div className="text-center">
           <p className={`font-mono ${getStatusColor(status.status)}`}>
-            Status: {status.status}
+            {status.status}: {("message" in status) ? ` ${status.message}` : ''}
           </p>
-            {(status.status === 'computing' || status.status === 'computed') && (
-              <p className="text-center text-gray-300 mt-2">{status.message}</p>
-            )}
           {status.status === 'errored' && status.error && (
             <div className="text-center text-red-300 mt-2 text-sm">
               <p className="font-semibold">Error:</p>
@@ -108,44 +78,54 @@ export default function Page() {
           <p className="text-xs text-gray-400 mt-2">
             Workers initialized: {isInitialized ? '✓' : '✗'}
           </p>
-          <p className='text-xs text-gray-400 mt-2'>
-            Status Message: {msg}
-          </p>
         </div>
 
-        <div className="flex flex-col gap-4">
-            <button
-                onClick={handleVerify}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white font-medium transition-colors"
-              >
-                {( (status.status === 'computing' && status.message?.includes('Verifier')))
-                  ? 'Computing...'
-                  : 'Verify Signature'}
-              </button>
-
-              <button
-                onClick={handleExtract}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-md text-white font-medium transition-colors"
-              >
-                {((status.status === 'computing' && status.message?.includes('Extractor')))
-                  ? 'Computing...'
-                  : 'Run Extractor'}
-              </button>
-
-              <button
-                onClick={handleProofVerification}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white font-medium transition-colors"
-              >
-                {((status.status === 'computing' && status.message?.includes('verification')))
-                  ? 'Verifying...'
-                  : 'Run Proof Verification'}
-              </button>
-
+        <div className="flex gap-4 justify-center">
+          <button onClick={handleCreateCredential} className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 disabled:opacity-50" disabled={status.status === 'computing'}>
+              Create Credential
+            </button>
+          <button onClick={handleVerifyAadhaarProof} className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 disabled:opacity-50" disabled={status.status === 'computing' || !aadhaarVerifierProof}>
+            Verify aadhaarVerifierProof
+                    </button>
+          <button onClick={handleVerifyCredential} className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 disabled:opacity-50" disabled={status.status === 'computing' || !credentialJson}>
+            Verify credential
+                    </button>
         </div>
-        
-        {!isInitialized && (
-          <p className="text-center text-yellow-300 text-sm">Initializing workers...</p>
-        )}
+
+        <div className="space-y-2 text-sm text-gray-300">
+          <div>Credential: {credentialJson ? 'ready' : 'not ready'}</div>
+          <div>Verifier proof: {aadhaarVerifierProof ? 'ready' : 'not ready'}</div>
+        </div>
+
+        <div className="border-b border-gray-700">
+            <nav className="-mb-px flex space-x-1" aria-label="Tabs">
+              <button
+                onClick={() => setActiveTab('https')}
+                className={`px-8 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'https' 
+                  ? 'text-green-400 bg-gray-800/50 border-green-500 hover:bg-gray-800 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-green-500/20 after:blur-sm' 
+                  : 'text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-700'}`}
+              >
+                HTTPS Verification
+              </button>
+              <button
+                onClick={() => setActiveTab('zkapp')}
+                className={`px-8 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'zkapp' 
+                  ? 'text-green-400 bg-gray-800/50 border-green-500 hover:bg-gray-800 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-green-500/20 after:blur-sm' 
+                  : 'text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-700'}`}
+              >
+                zkApp Verification
+              </button>
+            </nav>
+          </div>
+          <div className="pt-8">
+            {activeTab === 'https' ? (
+              <SpecVerification credentialJson={credentialJson} ownerKey={ownerKey} />
+            ) : (
+              <div className="text-gray-400 text-center py-8">
+                ...
+              </div>
+            )}
+          </div>
       </div>
     </main>
   );
