@@ -76,6 +76,17 @@ export function fetchVerifierCacheFiles() {
   return fetchFiles(files, 'VerifierCache');
 }
 
+export function fetchZkappCacheFiles() {
+  const files = [
+    {name: 'lagrange-basis-fp-1024', type: 'string'},
+    {name: 'step-vk-counterzkapp-initialize', type: 'string'},
+    {name: 'step-vk-counterzkapp-verifyaadhaar', type: 'string'},
+    {name: 'wrap-vk-counterzkapp', type: 'string'},
+  ]
+  return fetchFiles(files, 'CounterCache');
+}
+
+
 /**
  * Fetches cache file headers and data from a specified folder.
  *
