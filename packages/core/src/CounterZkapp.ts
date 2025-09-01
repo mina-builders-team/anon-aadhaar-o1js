@@ -3,6 +3,10 @@ import { ageMoreThan18Spec } from "./presentationSpecs.js";
 import { Field, method,Permissions, SmartContract, State, state } from "o1js";
 export { zkappFactory }
 
+
+export type CounterZkapp = Awaited<ReturnType<typeof zkappFactory>>['CounterZkapp'];
+
+
 async function zkappFactory(){
     const spec = await ageMoreThan18Spec();
 
