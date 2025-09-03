@@ -6,6 +6,7 @@ import { DEMO_PRIVATEKEY, TEST_DATA } from 'anon-aadhaar-o1js';
 import { PrivateKey } from 'o1js';
 import SpecVerification from './SpecVerification';
 import { Credential } from 'mina-attestations';
+import { QrScannerModal } from '@/components/QrScannerModal';
 
 type VerificationType = 'https' | 'zkapp';
 type VerificationStep = 'aadhaar' | 'credential' | null;
@@ -13,6 +14,8 @@ type VerificationStep = 'aadhaar' | 'credential' | null;
 export default function Page() {
   const [activeTab, setActiveTab] = useState<VerificationType>('https');
   const [activeVerificationStep, setActiveVerificationStep] = useState<VerificationStep>(null);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [qrNumericString, setQrNumericString] = useState<string | null>(null);
 
   const { status, isInitialized, initialize, createCredential, verifyAadhaarVerifierProof } = useWorkerStore();
   const credentialJson = useCredentialStore((s) => s.credentialJson);
@@ -26,15 +29,28 @@ export default function Page() {
     initialize();
   }, []);
 
-  const handleCreateCredential = async () => {
+  const handleOpenQrModal = () => {
+    setIsQrModalOpen(true);
+  };
+
+  const handleQrScan = (scannedQrString: string) => {
+    setQrNumericString(scannedQrString);
+    handleCreateCredential(scannedQrString);
+  };
+
+  const handleCreateCredential = async (qrData: string = TEST_DATA) => {
     if (!isInitialized) {
       await initialize();
     }
-    const res = await createCredential(TEST_DATA, owner);
+    
+    const res = await createCredential(qrData, owner);
     if (res?.credentialJson) {
       setCredentialJson(res.credentialJson);
     }
     if (res?.aadhaarVerifierProof) setAadhaarVerifierProof(res.aadhaarVerifierProof);
+    
+    // Reset QR data after successful credential creation
+    setQrNumericString(null);
   };
 
   const handleVerifyAadhaarProof = async () => {
@@ -63,7 +79,7 @@ export default function Page() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-10 bg-gray-900 text-white">
       <div className="w-full max-w-xl p-6 space-y-6 bg-gray-800 rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold text-center">Aadhaar Proof Process</h1>
+        <h1 className="text-2xl font-bold text-center">Anon Aadhaar</h1>
         
         <div className="text-center">
           <p className={`font-mono ${getStatusColor(status.status)}`}>
@@ -80,19 +96,32 @@ export default function Page() {
           </p>
         </div>
 
-        <div className="flex gap-4 justify-center">
-          <button onClick={handleCreateCredential} className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 disabled:opacity-50" disabled={status.status === 'computing'}>
-              Create Credential
-            </button>
-          <button onClick={handleVerifyAadhaarProof} className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 disabled:opacity-50" disabled={status.status === 'computing' || !aadhaarVerifierProof}>
+        <div className="flex gap-4 justify-center flex-wrap">
+          <button 
+            onClick={handleOpenQrModal} 
+            className="px-4 py-2 bg-green-600 rounded hover:bg-green-500 disabled:opacity-50" 
+            disabled={false}
+          >
+            Create Credential
+          </button>
+          <button 
+            onClick={handleVerifyAadhaarProof} 
+            className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 disabled:opacity-50" 
+            disabled={status.status === 'computing' || !aadhaarVerifierProof}
+          >
             Verify aadhaarVerifierProof
-                    </button>
-          <button onClick={handleVerifyCredential} className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 disabled:opacity-50" disabled={status.status === 'computing' || !credentialJson}>
+          </button>
+          <button 
+            onClick={handleVerifyCredential} 
+            className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 disabled:opacity-50" 
+            disabled={status.status === 'computing' || !credentialJson}
+          >
             Verify credential
-                    </button>
+          </button>
         </div>
 
         <div className="space-y-2 text-sm text-gray-300">
+          <div>QR Data: {qrNumericString ? 'scanned' : 'not scanned'}</div>
           <div>Credential: {credentialJson ? 'ready' : 'not ready'}</div>
           <div>Verifier proof: {aadhaarVerifierProof ? 'ready' : 'not ready'}</div>
         </div>
@@ -127,6 +156,13 @@ export default function Page() {
             )}
           </div>
       </div>
+      
+      {/* QR Scanner Modal */}
+      <QrScannerModal 
+        isOpen={isQrModalOpen} 
+        onClose={() => setIsQrModalOpen(false)} 
+        onScan={handleQrScan} 
+      />
     </main>
   );
 }
