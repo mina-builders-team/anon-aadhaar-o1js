@@ -168,11 +168,11 @@ export const QrUploader = ({ onScan, isEnabled = true }: QrUploaderProps) => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto mt-4">
+    <div className="w-full max-w-md mx-auto min-h-[360px]">
       <div className="flex items-center justify-center w-full">
         <label 
           htmlFor="qr-file-upload"
-          className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer 
+          className={`flex flex-col items-center justify-center w-full h-[300px] border-2 border-dashed rounded-lg cursor-pointer 
             ${isEnabled ? 'border-gray-300 hover:bg-gray-50' : 'border-gray-200 bg-gray-100 cursor-not-allowed'}`}
         >
           <div className="flex flex-col items-center justify-center pt-5 pb-6">

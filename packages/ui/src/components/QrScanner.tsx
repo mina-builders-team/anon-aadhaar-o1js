@@ -163,7 +163,7 @@ export const QrScanner = ({
   }, [isEnabled]);
 
   return (
-    <div className="relative w-full max-w-md mx-auto">
+    <div className="relative w-full max-w-md mx-auto min-h-[360px]">
       {!isEnabled && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 rounded-lg">
           <p className="text-white font-medium">Scanner disabled</p>
