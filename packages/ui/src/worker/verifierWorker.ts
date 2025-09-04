@@ -35,7 +35,7 @@ async function init() {
   }
 }
 
-async function verifySignature(qrNumericString: string) {
+async function verifySignature(qrNumericString: string, publicKeyHex: string) {
   if (!isInitialized) {
     console.error('Worker is not initialized. Please call init() first')
     return;
@@ -44,7 +44,7 @@ async function verifySignature(qrNumericString: string) {
   try {
     console.log('Executing Signature Verification Method')
 
-    const inputs = getQRData(qrNumericString)
+    const inputs = getQRData(qrNumericString, publicKeyHex)
     const blocks = prepareRecursiveHashData(inputs.signedData)
     console.time('verifySignature')
     const { proof } = await AadhaarVerifier.verifySignature(blocks, inputs.signatureBigint, inputs.publicKeyBigint)

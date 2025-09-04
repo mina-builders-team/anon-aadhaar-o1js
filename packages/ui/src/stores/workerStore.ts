@@ -41,7 +41,7 @@ interface WorkerState {
   isInitialized: boolean;
   status: WorkerStatus;
   initialize: () => Promise<void>;
-  createCredential: (qrNumericString: string, owner: PublicKey) => Promise<
+  createCredential: (qrNumericString: string, owner: PublicKey, publicKeyHex: string) => Promise<
     { credentialJson: string; aadhaarVerifierProof: string } | undefined
   >;
   verifyAadhaarVerifierProof: (aadhaarVerifierProof: string) => Promise<boolean>;
@@ -77,7 +77,7 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
     }
   },
 
-  createCredential: async (qrNumericString: string, owner: PublicKey) => {
+  createCredential: async (qrNumericString: string, owner: PublicKey, publicKeyHex: string) => {
     console.log('Executing Credential Creation Method, qrNumericString: ', qrNumericString)
     if (!get().isInitialized) {
       await get().initialize();
@@ -91,7 +91,7 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
       set({ status: { status: 'computing', message: 'Computing Verifier Proof' } });
       console.time("total time")
       console.time('verifierWorker took')
-      const vProof = await verifierProxy.verifySignature(qrNumericString);
+      const vProof = await verifierProxy.verifySignature(qrNumericString, publicKeyHex);
       console.timeEnd('verifierWorker took')
       if (!vProof) {
         set({ status: { status: 'errored', error: 'Verifier proof failed' } });
@@ -100,7 +100,7 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
 
       set({ status: { status: 'computing', message: 'Computing Extractor Proof' } });
       console.time('extractorWorker took')
-      const eProof = await extractorProxy.extract(vProof, qrNumericString);
+      const eProof = await extractorProxy.extract(vProof, qrNumericString, publicKeyHex);
       console.timeEnd('extractorWorker took')
       if (!eProof) {
         set({ status: { status: 'errored', error: 'Extractor proof failed' } });

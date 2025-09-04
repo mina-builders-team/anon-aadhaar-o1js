@@ -10,9 +10,11 @@ interface QrScannerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onScan: (qrNumericString: string) => void;
+  publicKeyHex: string;
+  aadhaarMode: 'test' | 'prod';
 }
 
-export const QrScannerModal = ({ isOpen, onClose, onScan }: QrScannerModalProps) => {
+export const QrScannerModal = ({ isOpen, onClose, onScan, publicKeyHex, aadhaarMode }: QrScannerModalProps) => {
   const [mode, setMode] = useState<'scan' | 'upload'>('scan');
   const [qrNumericString, setQrNumericString] = useState<string | null>(null);
   const [aadhaarDetails, setAadhaarDetails] = useState<{name: string} | null>(null);
@@ -21,7 +23,7 @@ export const QrScannerModal = ({ isOpen, onClose, onScan }: QrScannerModalProps)
   // Extract Aadhaar details from QR data for display
   const extractAadhaarDetails = (qrString: string) => {
     try {
-      const qrData = getQRData(qrString);
+      const qrData = getQRData(qrString, publicKeyHex);
       
       // Find delimiter positions in the signed data
       // Delimiters in Aadhaar QR are typically 0xFF bytes
@@ -83,7 +85,7 @@ export const QrScannerModal = ({ isOpen, onClose, onScan }: QrScannerModalProps)
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Scan Aadhaar QR Code">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Scan ${aadhaarMode === 'test' ? 'Test ' : ''}Aadhaar QR Code`}>
       {/* Mode selection tabs */}
       <div className="flex border-b border-gray-700 mb-4">
         <button

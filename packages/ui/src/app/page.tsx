@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useWorkerStore } from '@/stores/workerStore';
 import { useCredentialStore } from '@/stores/credentialStore';
-import { DEMO_PRIVATEKEY, DELIMITER_POSITION, getQRData } from 'anon-aadhaar-o1js';
+import { DEMO_PRIVATEKEY, DELIMITER_POSITION, getQRData, AADHAAR_TEST_PUBLIC_KEY, AADHAAR_PROD_PUBLIC_KEY } from 'anon-aadhaar-o1js';
 import { PrivateKey } from 'o1js';
 import SpecVerification from './SpecVerification';
 import { Credential } from 'mina-attestations';
@@ -16,6 +16,7 @@ export default function Page() {
   const [qrNumericString, setQrNumericString] = useState<string | null>(null);
   const [aadhaarName, setAadhaarName] = useState<string | null>(null);
   const [creationStep, setCreationStep] = useState<boolean>(false);
+  const [aadhaarEnv, setAadhaarEnv] = useState<'test' | 'prod'>('test');
 
   const { status, isInitialized, initialize, createCredential, verifyAadhaarVerifierProof } = useWorkerStore();
   const credentialJson = useCredentialStore((s) => s.credentialJson);
@@ -36,7 +37,8 @@ export default function Page() {
     setQrNumericString(scannedQrString);
     // Extract name for Step 1 display
     try {
-      const qrData = getQRData(scannedQrString);
+      const selectedKey = aadhaarEnv === 'test' ? AADHAAR_TEST_PUBLIC_KEY : AADHAAR_PROD_PUBLIC_KEY;
+      const qrData = getQRData(scannedQrString, selectedKey);
       const signedData = qrData.signedData;
       const delimiterPositions: number[] = [];
       for (let i = 0; i < signedData.length; i++) {
@@ -62,7 +64,8 @@ export default function Page() {
       await initialize();
     }
     
-    const res = await createCredential(qrData, owner);
+    const selectedKey = aadhaarEnv === 'test' ? AADHAAR_TEST_PUBLIC_KEY : AADHAAR_PROD_PUBLIC_KEY;
+    const res = await createCredential(qrData, owner, selectedKey);
     if (res?.credentialJson) {
       setCredentialJson(res.credentialJson);
     }
@@ -101,12 +104,30 @@ export default function Page() {
       <div className="w-full max-w-xl p-6 space-y-6 bg-gray-800 rounded-lg shadow-lg">
         <h1 className="text-2xl font-bold text-center">Anon Aadhaar</h1>
         <p className="text-sm text-gray-400 text-center mt-1">Prove facts about your Aadhaar without revealing it.</p>
+        {/* Mode toggle */}
+        <div className="mt-2 flex justify-center items-center gap-2">
+          <span className="text-xs text-gray-400">Mode:</span>
+          <div className="inline-flex rounded overflow-hidden border border-gray-700">
+            <button
+              onClick={() => setAadhaarEnv('test')}
+              className={`px-3 py-1 text-xs ${aadhaarEnv === 'test' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+            >
+              Test
+            </button>
+            <button
+              onClick={() => setAadhaarEnv('prod')}
+              className={`px-3 py-1 text-xs ${aadhaarEnv === 'prod' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+            >
+              Prod
+            </button>
+          </div>
+        </div>
         {/* Status indicators moved to Step 2 */}
         
         <div className="space-y-6 mt-4">
           {/* Step 1 */}
           <div className="p-4 rounded-lg bg-gray-800/60 border border-gray-700">
-            <h2 className="text-lg font-semibold">Step 1 — Scan or upload your Aadhaar QR</h2>
+            <h2 className="text-lg font-semibold">Step 1 — Scan or upload your {aadhaarEnv === 'test' ? 'Test ' : ''}Aadhaar QR</h2>
             <p className="text-sm text-gray-400 mt-1">We only parse the QR locally in your browser.</p>
             <div className="mt-3 flex gap-3 flex-wrap">
               <button 
@@ -214,7 +235,9 @@ export default function Page() {
       <QrScannerModal 
         isOpen={isQrModalOpen} 
         onClose={() => setIsQrModalOpen(false)} 
-        onScan={handleQrScan} 
+        onScan={handleQrScan}
+        publicKeyHex={aadhaarEnv === 'test' ? AADHAAR_TEST_PUBLIC_KEY : AADHAAR_PROD_PUBLIC_KEY}
+        aadhaarMode={aadhaarEnv}
       />
     </main>
   );

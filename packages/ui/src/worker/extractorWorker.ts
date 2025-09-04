@@ -28,7 +28,8 @@ async function init() {
 
 async function extract(
   verifierProofString: string,
-  qrNumericString: string
+  qrNumericString: string,
+  publicKeyHex: string
 ): Promise<string | null> {
     if (!isInitialized) {
         console.log('Extractor worker seems to be not initialized. Please call init() first!')
@@ -38,7 +39,7 @@ async function extract(
         console.log('Executing Extraction Method')
         const vp: JsonProof = JSON.parse(verifierProofString)
         const verifierProof = await AadhaarVerifierProof.fromJSON(vp) 
-        const inputs = getQRData(qrNumericString)
+        const inputs = getQRData(qrNumericString, publicKeyHex)
         const paddedData = inputs.paddedData.toBytes()
 
         const data = createPaddedQRData(paddedData).map(Field)
