@@ -10,7 +10,8 @@ coverage
 .DS_Store
 
 # Never commit keys to Git!
-keys
+keys/*
+!keys/.gitkeep
 
 # Turbo
 .turbo

@@ -21,3 +21,6 @@ export {
 }
 
 export const DEMO_PRIVATEKEY = "EKFZg3P2XGXXsDVSuZX55tww9mpB8a7nwEZ9KYdzpwK3hJNDTshR"
+
+export const MINA_NODE_ENDPOINT = 'https://api.minascan.io/node/devnet/v1/graphql';
+export const MINA_ARCHIVE_ENDPOINT = 'https://api.minascan.io/archive/devnet/v1/graphql';
