@@ -129,6 +129,36 @@ export default function Page() {
           <div className="p-4 rounded-lg bg-gray-800/60 border border-gray-700">
             <h2 className="text-lg font-semibold">Step 1 — Scan or upload your {aadhaarEnv === 'test' ? 'Test ' : ''}Aadhaar QR</h2>
             <p className="text-sm text-gray-400 mt-1">We only parse the QR locally in your browser.</p>
+            {/* Where to get a QR based on mode */}
+            <div className="mt-2 text-sm">
+              {aadhaarEnv === 'test' ? (
+                <p className="text-gray-300">
+                  Don't have a test QR?{' '}
+                  <a
+                    href="https://documentation.anon-aadhaar.pse.dev/docs/generate-qr"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-green-400 hover:underline"
+                  >
+                    Generate one here
+                  </a>
+                  .
+                </p>
+              ) : (
+                <p className="text-gray-300">
+                  Get your official QR from the mAadhaar app (My Aadhaar → Generate QR Code → Share and Save the QR image).{' '}
+                  <a
+                    href="https://play.google.com/store/apps/details?id=in.gov.uidai.mAadhaarPlus"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-green-400 hover:underline"
+                  >
+                    Install/open mAadhaar
+                  </a>
+                  .
+                </p>
+              )}
+            </div>
             <div className="mt-3 flex gap-3 flex-wrap">
               <button 
                 onClick={handleOpenQrModal}
