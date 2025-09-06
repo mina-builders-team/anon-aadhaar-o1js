@@ -2,6 +2,8 @@ import { readFileSync } from 'fs'
 import crypto from 'crypto'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { Poseidon } from 'o1js'
+import { Bigint2048 } from '../helpers/rsa.js'
 
 const certificateName = process.argv[2]
 if (!certificateName) {
@@ -18,6 +20,7 @@ const pk = crypto.createPublicKey(pkData)
 const jwk = pk.export({ format: 'jwk' }) as unknown as { n: string }
 const pubKey = '0x' + Buffer.from(jwk.n, 'base64url').toString('hex')
 
-console.log(pubKey)
+console.log("pubKey: ", pubKey)
 
+console.log("pubKeyHash: ", Poseidon.hash(Bigint2048.from(BigInt(pubKey)).fields).toString())
 // node build/src/scripts/extractPublicKey.js ./src/assets/uidai_offline_publickey_17022026.cer

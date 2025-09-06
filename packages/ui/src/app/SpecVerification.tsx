@@ -12,9 +12,10 @@ interface OutputClaim {
 type Props = {
   credentialJson?: string;
   ownerKey: PrivateKey;
+  aadhaarEnv: 'test' | 'prod';
 };
 
-export default function SpecVerification({ credentialJson, ownerKey }: Props) {
+export default function SpecVerification({ credentialJson, ownerKey, aadhaarEnv }: Props) {
   const [requestJson, setRequestJson] = useState<string | undefined>();
   const [presentationJson, setPresentationJson] = useState<string | undefined>();
   const [outputClaim, setOutputClaim] = useState<OutputClaim | undefined>();
@@ -51,7 +52,7 @@ export default function SpecVerification({ credentialJson, ownerKey }: Props) {
       const vres = await fetch('/api/presentation/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestJson: reqJson, presentationJson: presJson })
+        body: JSON.stringify({ requestJson: reqJson, presentationJson: presJson, environment: aadhaarEnv })
       });
       console.timeEnd('verifying on server')
       const vdata = await vres.json();

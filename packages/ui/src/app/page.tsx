@@ -252,7 +252,7 @@ export default function Page() {
           </div>
           <div className="pt-8">
             {activeTab === 'https' ? (
-              <SpecVerification credentialJson={credentialJson} ownerKey={ownerKey} />
+              <SpecVerification credentialJson={credentialJson} ownerKey={ownerKey} aadhaarEnv={aadhaarEnv} />
             ) : (
               <div className="text-gray-400 text-center py-8">
                 ...
