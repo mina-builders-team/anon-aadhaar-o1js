@@ -3,10 +3,6 @@ import { ageMoreThan18Spec } from "./presentationSpecs.js";
 import { Field, method,Permissions, SmartContract, State, state } from "o1js";
 export { zkappFactory }
 
-
-export type CounterZkapp = Awaited<ReturnType<typeof zkappFactory>>['CounterZkapp'];
-
-
 async function zkappFactory(){
     const spec = await ageMoreThan18Spec();
 
@@ -17,15 +13,23 @@ async function zkappFactory(){
     class CounterZkapp extends SmartContract{
         @state(Field) public counter = State<Field>();
 
-        @method async initialize(){
+        
+        async deploy(){
+            super.deploy();
             this.account.permissions.set({
                 ...Permissions.default(),
-            })
+                send: Permissions.none(),
+            });
+        }
+        
+        @method async initialize(){
+            
             const isInitialized = this.account.provedState.getAndRequireEquals();
             isInitialized.assertFalse('This ZkApp is already initialized.');
 
-            this.counter.set(Field.from(0));
             super.init();
+
+            this.counter.set(Field.from(0));
         }
 
         @method async verifyAadhaar(presentation: ProvablePresentation){
