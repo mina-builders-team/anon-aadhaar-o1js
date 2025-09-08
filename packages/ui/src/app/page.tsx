@@ -1,39 +1,54 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useWorkerStore } from '@/stores/workerStore';
 import { useCredentialStore } from '@/stores/credentialStore';
 import { DEMO_PRIVATEKEY, TEST_DATA } from 'anon-aadhaar-o1js';
-import { PrivateKey } from 'o1js';
+import { PrivateKey, PublicKey } from 'o1js';
 import SpecVerification from './SpecVerification';
 import { Credential } from 'mina-attestations';
+import SpecSettlement from './SpecSettlement';
+import { MinaWallet } from '@/worker_utils/walletTypes';
 
 type VerificationType = 'https' | 'zkapp';
-type VerificationStep = 'aadhaar' | 'credential' | null;
+
+// This will be hard-coded - but for now leave it like this.
+const zkAppPublicKey = PrivateKey.random().toPublicKey();
+
+declare global {
+  interface Window {
+    mina?: MinaWallet;
+  }
+}
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<VerificationType>('https');
-  const [activeVerificationStep, setActiveVerificationStep] = useState<VerificationStep>(null);
-
   const { status, isInitialized, initialize, createCredential, verifyAadhaarVerifierProof } = useWorkerStore();
   const credentialJson = useCredentialStore((s) => s.credentialJson);
   const setCredentialJson = useCredentialStore((s) => s.setCredentialJson);
   const [aadhaarVerifierProof, setAadhaarVerifierProof] = useState<string | undefined>();
   const [proofVerified, setProofVerified] = useState<boolean | undefined>();
-  const ownerKey = PrivateKey.fromBase58(DEMO_PRIVATEKEY);
-  const owner = ownerKey.toPublicKey();
-
-  useEffect(() => {
-    initialize();
-  }, []);
 
   const handleCreateCredential = async () => {
+    const mina = window.mina;
+
+    const accounts = await mina?.requestAccounts() as string[];
+    if(!accounts) return;
+    
+    console.log(accounts);
+    if(!accounts) return;
+    let owner = PublicKey.fromBase58(accounts[0]); 
+
+    console.log(owner);
+    
     if (!isInitialized) {
       await initialize();
     }
+
     const res = await createCredential(TEST_DATA, owner);
     if (res?.credentialJson) {
       setCredentialJson(res.credentialJson);
     }
+
     if (res?.aadhaarVerifierProof) setAadhaarVerifierProof(res.aadhaarVerifierProof);
   };
 
@@ -41,6 +56,7 @@ export default function Page() {
     if (!aadhaarVerifierProof) return;
     const ok = await verifyAadhaarVerifierProof(aadhaarVerifierProof);
     setProofVerified(!!ok);
+
   };
 
   const handleVerifyCredential = async () => {
@@ -49,7 +65,7 @@ export default function Page() {
     await Credential.validate(await Credential.fromJSON(credentialJson));
     console.timeEnd('Credential validation');
   };
-
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ready': return 'text-green-400';
@@ -98,10 +114,10 @@ export default function Page() {
         </div>
 
         <div className="border-b border-gray-700">
-            <nav className="-mb-px flex space-x-1" aria-label="Tabs">
+            <nav className="-mb-px flex" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab('https')}
-                className={`px-8 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'https' 
+                className={`flex-1 px-8 py-3 text-sm font-medium border-b-2 transition-colors relative ${activeTab === 'https' 
                   ? 'text-green-400 bg-gray-800/50 border-green-500 hover:bg-gray-800 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-green-500/20 after:blur-sm' 
                   : 'text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-700'}`}
               >
@@ -109,7 +125,7 @@ export default function Page() {
               </button>
               <button
                 onClick={() => setActiveTab('zkapp')}
-                className={`px-8 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'zkapp' 
+                className={`flex-1 px-8 py-3 text-sm font-medium border-b-2 transition-colors relative ${activeTab === 'zkapp' 
                   ? 'text-green-400 bg-gray-800/50 border-green-500 hover:bg-gray-800 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-green-500/20 after:blur-sm' 
                   : 'text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-700'}`}
               >
@@ -117,9 +133,11 @@ export default function Page() {
               </button>
             </nav>
           </div>
-          <div className="pt-8">
+          <div className="pt-8 justify-center">
             {activeTab === 'https' ? (
-              <SpecVerification credentialJson={credentialJson} ownerKey={ownerKey} />
+              <SpecVerification credentialJson={credentialJson} ownerKey={PrivateKey.fromBase58(DEMO_PRIVATEKEY)} />
+            ) : activeTab === 'zkapp' ? (
+              <SpecSettlement credentialJson={credentialJson} zkAppPublicKey={zkAppPublicKey} />
             ) : (
               <div className="text-gray-400 text-center py-8">
                 ...
