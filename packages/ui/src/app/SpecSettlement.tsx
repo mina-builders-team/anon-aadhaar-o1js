@@ -1,47 +1,45 @@
 'use client';
 import { MinaWallet } from "@/worker_utils/walletTypes";
 import { ageMoreThan18Spec } from "anon-aadhaar-o1js";
-import { Presentation, PresentationRequest, StoredCredential } from "mina-attestations";
-import { PresentationRequestSchema } from "mina-attestations/validation";
-import { Field, NetworkId, PublicKey } from "o1js";
+import { PresentationRequest, StoredCredential } from "mina-attestations";
+import { Field, PublicKey } from "o1js";
 
+const getCredentialRequirements = (presReq: string) => {
 
+  const presentationRequest = JSON.parse(presReq);
 
-  const getCredentialRequirements = (presentationRequest: any) => {
-    const extractDataFields = (data: any) => {
-      if (!data) return [];
+  const extractDataFields = (data: any) => {
+    if (!data) return [];
 
-      if (data._type === "Struct" && data.properties) {
-        return Object.keys(data.properties);
-      }
-
-      if (data._type === "DynamicRecord" && data.knownShape) {
-        return Object.keys(data.knownShape);
-      }
-      return Object.keys(data);
-    };
-    const requirements = [];
-    for (const [key, input] of Object.entries(
-      presentationRequest.spec.inputs
-    ) as any) {
-      if (input.type === "credential" && input.credentialType && input.data) {
-        requirements.push({
-          inputKey: key,
-          type: input.credentialType,
-          dataFields: extractDataFields(input.data),
-        });
-      }
+    if (data._type === "Struct" && data.properties) {
+      return Object.keys(data.properties);
     }
-    return requirements;
+
+    if (data._type === "DynamicRecord" && data.knownShape) {
+      return Object.keys(data.knownShape);
+    }
+    return Object.keys(data);
   };
+  const requirements = [];
 
-
+  for (const [key, input] of Object.entries(
+    presentationRequest.spec.inputs
+  ) as any) {
+    if (input.type === "credential" && input.credentialType && input.data) {
+      requirements.push({
+        inputKey: key,
+        type: input.credentialType,
+        dataFields: extractDataFields(input.data),
+      });
+    }
+  }
+  return requirements;
+};
 
 export default function SpecSettlement({credentialJson, zkAppPublicKey}: Props){
     const handleSettlement = async () => {
       try {
 
-        await window.mina?.requestAccounts();
         if (!credentialJson) throw new Error("No valid credential is provided!");
 
         const credential: StoredCredential = JSON.parse(credentialJson);
@@ -53,8 +51,6 @@ export default function SpecSettlement({credentialJson, zkAppPublicKey}: Props){
         const stored = await window.mina?.storePrivateCredential({
           credential: credential
         }).catch((err: any) => err);
-
-        console.log(stored);
 
         const presentation = await requestPresentation(zkAppPublicKey.toBase58()).catch((err: any) => err);
 
@@ -76,22 +72,19 @@ export default function SpecSettlement({credentialJson, zkAppPublicKey}: Props){
     </div>
   );
 }
-
 async function requestPresentation(zkAppAddress: string){
 
   const zkAppPublicKey = PublicKey.fromBase58(zkAppAddress);
 
   const spec = await ageMoreThan18Spec();
 
-  const precompiled = await Presentation.precompile(spec);
-
   const now = new Date();
   const currentDay = Field.from(now.getUTCDate());
   const currentMonth = Field.from(now.getUTCMonth() + 1);
   const currentYear = Field.from(now.getUTCFullYear());
 
-  const request = PresentationRequest.zkAppFromCompiled(
-    precompiled,
+  const request = PresentationRequest.zkApp(
+    spec,
     {
       currentDay,
       currentMonth,
@@ -106,11 +99,11 @@ async function requestPresentation(zkAppAddress: string){
 
   const reqJson = PresentationRequest.toJSON(request);
 
-  const req = getCredentialRequirements(request);
-  console.log(req);
+  const req = getCredentialRequirements(reqJson);
+  console.log('Credential json is here: ',req);
 
   console.log("presentation request will be sent!");
-  
+  console.log(JSON.parse(reqJson));
   const presentation = await window.mina?.requestPresentation({
     presentation:{
       presentationRequest: JSON.parse(reqJson),
