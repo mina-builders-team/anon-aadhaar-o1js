@@ -1,54 +1,65 @@
-"use client";
-import { useState } from "react";
+'use client'
+import { useState } from 'react'
 
-export type StepStatus = "active" | "done" | "error";
+export type StepStatus = 'active' | 'done' | 'error'
 
 export type StepItem = {
-  id: string;
-  label: string;
-  status: StepStatus;
-};
+  id: string
+  label: string
+  status: StepStatus
+}
 
 type Props = {
-  title?: string;
-  steps: StepItem[];
-  collapsible?: boolean;
-  defaultCollapsed?: boolean;
-};
+  title?: string
+  steps: StepItem[]
+  collapsible?: boolean
+  defaultCollapsed?: boolean
+}
 
-export function ProgressSteps({ title, steps, collapsible = true, defaultCollapsed = false }: Props) {
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+export function ProgressSteps({
+  title,
+  steps,
+  collapsible = true,
+  defaultCollapsed = false,
+}: Props) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed)
 
   const statusIcon = (status: StepStatus) => {
     switch (status) {
-      case "done":
+      case 'done':
         return (
-          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-600 text-white text-xs">✓</span>
-        );
-      case "active":
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-600 text-white text-xs">
+            ✓
+          </span>
+        )
+      case 'active':
         return (
           <span className="inline-block w-4 h-4 border-2 border-blue-300 border-t-transparent rounded-full animate-spin" />
-        );
-      case "error":
+        )
+      case 'error':
         return (
-          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-600 text-white text-xs">!</span>
-        );
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-600 text-white text-xs">
+            !
+          </span>
+        )
       default:
-        return null;
+        return null
     }
-  };
+  }
 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between">
-        {title && <h3 className="text-sm font-semibold text-gray-300">{title}</h3>}
+        {title && (
+          <h3 className="text-sm font-semibold text-gray-300">{title}</h3>
+        )}
         {collapsible && (
           <button
             className="text-xs text-gray-400 hover:text-gray-200"
             onClick={() => setCollapsed((c) => !c)}
-            aria-label={collapsed ? "Expand" : "Collapse"}
+            aria-label={collapsed ? 'Expand' : 'Collapse'}
           >
-            {collapsed ? "Show" : "Hide"}
+            {collapsed ? 'Show' : 'Hide'}
           </button>
         )}
       </div>
@@ -65,5 +76,5 @@ export function ProgressSteps({ title, steps, collapsible = true, defaultCollaps
         </ul>
       )}
     </div>
-  );
+  )
 }
