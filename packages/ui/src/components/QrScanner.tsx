@@ -34,7 +34,7 @@ export const QrScanner = ({
       try {
         controlsRef.current?.stop();
       } catch {
-        // ignore
+        console.error('Failed to stop video controls');
       }
       controlsRef.current = null;
       readerRef.current = null;
@@ -42,7 +42,9 @@ export const QrScanner = ({
       if (v) {
         try {
           v.pause();
-        } catch {}
+        } catch {
+          console.error('Failed to pause video');
+        }
         if (v.srcObject) {
           (v.srcObject as MediaStream)
             .getTracks()
@@ -97,7 +99,7 @@ export const QrScanner = ({
         if (cancelled) return;
 
         // Configure ZXing
-        const hints = new Map<DecodeHintType, any>();
+        const hints = new Map<DecodeHintType, BarcodeFormat[] | boolean>();
         hints.set(DecodeHintType.POSSIBLE_FORMATS, [
           BarcodeFormat.QR_CODE,
         ]);
@@ -142,11 +144,11 @@ export const QrScanner = ({
           return;
         }
         controlsRef.current = controls;
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (!cancelled) {
           setError(
             'Could not start video stream: ' +
-              (e?.message || String(e))
+              ((e as Error)?.message || String(e))
           );
           setScanning(false);
           console.error(e);
@@ -212,7 +214,9 @@ async function waitForVideoReady(
       reject(
         new Error(
           'Video error: ' +
-            ((e as any)?.message || (e as any)?.name || 'unknown')
+            ((e as Event & { message?: string; name?: string })?.message ||
+              (e as Event & { message?: string; name?: string })?.name ||
+              'unknown')
         )
       );
     };

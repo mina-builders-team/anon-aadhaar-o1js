@@ -19,7 +19,7 @@ export default function Page() {
   const [aadhaarName, setAadhaarName] = useState<string | null>(null);
   const [aadhaarEnv, setAadhaarEnv] = useState<'test' | 'prod'>('test');
 
-  const { status, isInitialized, initialize, createCredential, verifyAadhaarVerifierProof } = useWorkerStore();
+  const { status, initialize, createCredential, verifyAadhaarVerifierProof } = useWorkerStore();
   const credentialJson = useCredentialStore((s) => s.credentialJson);
   const setCredentialJson = useCredentialStore((s) => s.setCredentialJson);
   const [aadhaarVerifierProof, setAadhaarVerifierProof] = useState<string | undefined>();
@@ -31,13 +31,13 @@ export default function Page() {
 
   useEffect(() => {
     initialize();
-  }, []);
+  }, [initialize]);
 
   // Reflect worker status as steps only when progress is active (after user clicks Create)
   useEffect(() => {
     if (!progressActive) return;
     const newStatus = status;
-    const prev = prevStatusRef.current;
+    prevStatusRef.current = newStatus;
     setSteps((prevSteps) => {
       const updated = [...prevSteps];
       const markLastActive = (state: 'done' | 'error', labelOverride?: string) => {
@@ -65,8 +65,7 @@ export default function Page() {
       }
       return updated;
     });
-    prevStatusRef.current = newStatus;
-  }, [status]);
+  }, [status, progressActive]);
 
   const handleOpenQrModal = () => {
     setIsQrModalOpen(true);
@@ -165,14 +164,14 @@ export default function Page() {
             <div className="mt-2 text-sm">
               {aadhaarEnv === 'test' ? (
                 <p className="text-gray-300">
-                  Don't have a test QR?{' '}
+                  Generate a test QR code using {' '}
                   <a
                     href="https://documentation.anon-aadhaar.pse.dev/docs/generate-qr"
                     target="_blank"
                     rel="noreferrer"
                     className="text-green-400 hover:underline"
                   >
-                    Generate one here
+                    this Link
                   </a>
                   .
                 </p>

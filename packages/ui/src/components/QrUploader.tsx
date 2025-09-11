@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/browser';
-import { BarcodeFormat, DecodeHintType } from '@zxing/library';
+import { BarcodeFormat, DecodeHintType, Result } from '@zxing/library';
 
 interface QrUploaderProps {
   onScan?: (qrNumericString: string) => void;
@@ -58,8 +58,8 @@ export const QrUploader = ({ onScan, isEnabled = true }: QrUploaderProps) => {
         
         // Downscale very large images to improve detection
         const MAX_DIM = 1280;
-        const naturalW = (img as any).naturalWidth || img.width;
-        const naturalH = (img as any).naturalHeight || img.height;
+        const naturalW = img.naturalWidth || img.width;
+        const naturalH = img.naturalHeight || img.height;
         const maxSide = Math.max(naturalW, naturalH);
         const scale = maxSide > MAX_DIM ? MAX_DIM / maxSide : 1;
         
@@ -87,13 +87,13 @@ export const QrUploader = ({ onScan, isEnabled = true }: QrUploaderProps) => {
           
           try {
             // Attempt decode on original image
-            let result = await codeReader.decodeFromCanvas(canvas);
+            const result: Result = await codeReader.decodeFromCanvas(canvas);
             if (result) {
               decodedText = result.getText();
               break;
             }
-          } catch (err: any) {
-            if (!err || err.name !== 'NotFoundException') {
+          } catch (err: unknown) {
+            if (!err || (err as Error).name !== 'NotFoundException') {
               // Rethrow non-NotFound errors
               throw err;
             }
@@ -108,13 +108,13 @@ export const QrUploader = ({ onScan, isEnabled = true }: QrUploaderProps) => {
                 // alpha unchanged
               }
               ctx.putImageData(imgData, 0, 0);
-              const result2 = await codeReader.decodeFromCanvas(canvas);
+              const result2: Result = await codeReader.decodeFromCanvas(canvas);
               if (result2) {
                 decodedText = result2.getText();
                 break;
               }
-            } catch (err2: any) {
-              if (!err2 || err2.name !== 'NotFoundException') {
+            } catch (err2: unknown) {
+              if (!err2 || (err2 as Error).name !== 'NotFoundException') {
                 throw err2;
               }
               // Will try next angle
@@ -125,12 +125,12 @@ export const QrUploader = ({ onScan, isEnabled = true }: QrUploaderProps) => {
         // Final fallback: try the raw image element
         if (!decodedText) {
           try {
-            const result = await codeReader.decodeFromImageElement(img);
+            const result: Result = await codeReader.decodeFromImageElement(img);
             if (result) {
               decodedText = result.getText();
             }
-          } catch (err: any) {
-            if (!err || err.name !== 'NotFoundException') {
+          } catch (err: unknown) {
+            if (!err || (err as Error).name !== 'NotFoundException') {
               throw err;
             }
           }
@@ -142,11 +142,11 @@ export const QrUploader = ({ onScan, isEnabled = true }: QrUploaderProps) => {
         } else {
           setError('No QR code found in the image. Please upload a clearer image.');
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         let errorMessage = 'Could not read QR code from image. Please try another image.';
-        if (err?.name === 'ChecksumException') {
+        if ((err as Error)?.name === 'ChecksumException') {
           errorMessage = 'QR code detected but data is corrupted. Please try a clearer image.';
-        } else if (err?.name === 'FormatException') {
+        } else if ((err as Error)?.name === 'FormatException') {
           errorMessage = 'QR code format not recognized. Please ensure this is an Aadhaar QR code.';
         }
         setError(errorMessage);
@@ -155,8 +155,8 @@ export const QrUploader = ({ onScan, isEnabled = true }: QrUploaderProps) => {
         // Clean up the object URL
         URL.revokeObjectURL(imageUrl);
       }
-    } catch (err: any) {
-      setError('Error processing image: ' + err.message);
+    } catch (err: unknown) {
+      setError('Error processing image: ' + (err as Error).message);
       console.error('File processing error:', err);
     } finally {
       setIsProcessing(false);
