@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useWorkerStore } from '@/stores/workerStore';
 import { useCredentialStore } from '@/stores/credentialStore';
 import { DEMO_PRIVATEKEY, DELIMITER_POSITION, getQRData, AADHAAR_TEST_PUBLIC_KEY, AADHAAR_PROD_PUBLIC_KEY } from 'anon-aadhaar-o1js';
@@ -7,6 +7,8 @@ import { PrivateKey } from 'o1js';
 import SpecVerification from './SpecVerification';
 import { Credential } from 'mina-attestations';
 import { QrScannerModal } from '@/components/QrScannerModal';
+import { ProgressSteps, type StepItem } from '@/components/ProgressSteps';
+import type { WorkerStatus } from '@/worker_utils/utils';
 
 type VerificationType = 'https' | 'zkapp';
 
@@ -15,7 +17,6 @@ export default function Page() {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [qrNumericString, setQrNumericString] = useState<string | null>(null);
   const [aadhaarName, setAadhaarName] = useState<string | null>(null);
-  const [creationStep, setCreationStep] = useState<boolean>(false);
   const [aadhaarEnv, setAadhaarEnv] = useState<'test' | 'prod'>('test');
 
   const { status, isInitialized, initialize, createCredential, verifyAadhaarVerifierProof } = useWorkerStore();
@@ -24,15 +25,52 @@ export default function Page() {
   const [aadhaarVerifierProof, setAadhaarVerifierProof] = useState<string | undefined>();
   const ownerKey = PrivateKey.fromBase58(DEMO_PRIVATEKEY);
   const owner = ownerKey.toPublicKey();
+  const [steps, setSteps] = useState<StepItem[]>([]);
+  const [progressActive, setProgressActive] = useState(false);
+  const prevStatusRef = useRef<WorkerStatus | undefined>(undefined);
 
   useEffect(() => {
     initialize();
   }, []);
 
+  // Reflect worker status as steps only when progress is active (after user clicks Create)
+  useEffect(() => {
+    if (!progressActive) return;
+    const newStatus = status;
+    const prev = prevStatusRef.current;
+    setSteps((prevSteps) => {
+      const updated = [...prevSteps];
+      const markLastActive = (state: 'done' | 'error', labelOverride?: string) => {
+        const last = updated.at(-1);
+        if (last && last.status === 'active') {
+          updated[updated.length - 1] = {
+            ...last,
+            status: state === 'done' ? 'done' : 'error',
+            label: labelOverride ?? last.label,
+          };
+        }
+      };
+
+      if (newStatus.status === 'computing') {
+        markLastActive('done');
+        updated.push({
+          id: `worker-${updated.length + 1}`,
+          label: newStatus.message,
+          status: 'active',
+        });
+      } else if (newStatus.status === 'computed') {
+        markLastActive('done', newStatus.message);
+      } else if (newStatus.status === 'errored') {
+        markLastActive('error');
+      }
+      return updated;
+    });
+    prevStatusRef.current = newStatus;
+  }, [status]);
+
   const handleOpenQrModal = () => {
     setIsQrModalOpen(true);
   };
-
   const handleQrScan = (scannedQrString: string) => {
     setQrNumericString(scannedQrString);
     // Extract name for Step 1 display
@@ -59,11 +97,17 @@ export default function Page() {
 
   const handleCreateCredential = async (qrData: string) => {
     console.log('Creating credential...');
-    setCreationStep(true);
-    if (!isInitialized) {
-      await initialize();
-    }
-    
+    // Reset steps and seed with scan step
+    setProgressActive(true);
+    await initialize();
+    setSteps([
+      {
+        id: 'init',
+        label: 'Initializing workers',
+        status: 'done',
+      },
+    ]);
+
     const selectedKey = aadhaarEnv === 'test' ? AADHAAR_TEST_PUBLIC_KEY : AADHAAR_PROD_PUBLIC_KEY;
     const res = await createCredential(qrData, owner, selectedKey);
     if (res?.credentialJson) {
@@ -71,9 +115,7 @@ export default function Page() {
     }
     if (res?.aadhaarVerifierProof) setAadhaarVerifierProof(res.aadhaarVerifierProof);
     
-    // Keep scanned QR so Step 1 can continue showing Aadhaar name
-    // setQrNumericString(null);
-    setCreationStep(false);
+    setProgressActive(false);
   };
 
   const handleVerifyAadhaarProof = async () => {
@@ -87,16 +129,6 @@ export default function Page() {
     console.time('Credential validation');
     await Credential.validate(await Credential.fromJSON(credentialJson));
     console.timeEnd('Credential validation');
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ready': return 'text-green-400';
-      case 'errored': return 'text-red-400';
-      case 'computing': return 'text-blue-400';
-      case 'uninitialized': return 'text-yellow-400';
-      default: return 'text-gray-400';
-    }
   };
 
   return (
@@ -186,7 +218,7 @@ export default function Page() {
               <button 
                 onClick={() => qrNumericString && handleCreateCredential(qrNumericString)}
                 className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 disabled:opacity-50"
-                disabled={!qrNumericString || creationStep}
+                disabled={!qrNumericString || progressActive}
               >
                 Create Credential
               </button>
@@ -196,11 +228,10 @@ export default function Page() {
                 </div>
               )}
             </div>
-            {/* Worker status and spinner */}
-            {status.status === 'computing' && (
-              <div className="mt-3 flex items-center gap-2 text-sm text-blue-300">
-                <span className="inline-block w-4 h-4 border-2 border-blue-300 border-t-transparent rounded-full animate-spin" />
-                <span className={getStatusColor(status.status)}>{status.message}</span>
+            {/* Progress list for this flow */}
+            {progressActive && (
+              <div className="mt-4">
+                <ProgressSteps title="Progress" steps={steps} />
               </div>
             )}
             {status.status === 'errored' && status.error && (
@@ -252,7 +283,7 @@ export default function Page() {
           </div>
           <div className="pt-8">
             {activeTab === 'https' ? (
-              <SpecVerification credentialJson={credentialJson} ownerKey={ownerKey} aadhaarEnv={aadhaarEnv} />
+              <SpecVerification credentialJson={credentialJson} ownerKey={ownerKey} aadhaarEnv={aadhaarEnv} disabled={progressActive}/>
             ) : (
               <div className="text-gray-400 text-center py-8">
                 ...
