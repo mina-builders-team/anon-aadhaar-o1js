@@ -141,8 +141,10 @@ export default function BenchmarkPage() {
     }
   }
 
-  const fmt = (n?: number) =>
-    typeof n === 'number' && isFinite(n) ? `${n.toFixed(0)} ms` : '—'
+  const fmt = (n?: number) => {
+    if (typeof n !== 'number' || !isFinite(n)) return '—'
+    return `${(n / 1000).toFixed(3)}s`
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-10 bg-gray-900 text-white">
@@ -171,17 +173,17 @@ export default function BenchmarkPage() {
           <h2 className="text-lg font-semibold">Results</h2>
           <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
             <div className="text-gray-400">Init:</div>
-            <div className="text-white">{fmt(times.init)}</div>
+            <div className="text-white font-mono text-xs">{fmt(times.init)}</div>
             <div className="text-gray-400">Verifier:</div>
-            <div className="text-white">{fmt(times.verifier)}</div>
+            <div className="text-white font-mono text-xs">{fmt(times.verifier)}</div>
             <div className="text-gray-400">Extractor:</div>
-            <div className="text-white">{fmt(times.extractor)}</div>
+            <div className="text-white font-mono text-xs">{fmt(times.extractor)}</div>
             <div className="text-gray-400">Credential:</div>
-            <div className="text-white">{fmt(times.credential)}</div>
-            <div className="text-gray-400">Total:</div>
-            <div className="text-white">{fmt(times.total)}</div>
-            <div className="text-gray-400">Total + init:</div>
-            <div className="text-white">{fmt(times.totalAll)}</div>
+            <div className="text-white font-mono text-xs">{fmt(times.credential)}</div>
+            <div className="text-gray-400">Total (excl. init):</div>
+            <div className="text-white font-mono text-xs">{fmt(times.total)}</div>
+            <div className="text-gray-400">Total (incl. init):</div>
+            <div className="text-white font-mono text-xs">{fmt(times.totalAll)}</div>
           </div>
           {resultOk === true && (
             <p className="text-green-400 text-sm mt-2">
