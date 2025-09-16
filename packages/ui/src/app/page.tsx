@@ -3,14 +3,19 @@ import { useEffect, useRef, useState } from 'react';
 import { useWorkerStore } from '@/stores/workerStore';
 import { useCredentialStore } from '@/stores/credentialStore';
 import { DEMO_PRIVATEKEY, DELIMITER_POSITION, getQRData, AADHAAR_TEST_PUBLIC_KEY, AADHAAR_PROD_PUBLIC_KEY } from 'anon-aadhaar-o1js';
-import { PrivateKey } from 'o1js';
+import { PrivateKey, PublicKey } from 'o1js';
 import SpecVerification from './SpecVerification';
+import { SpecSettlement } from './SpecSettlement';
 import { Credential } from 'mina-attestations';
 import { QrScannerModal } from '@/components/QrScannerModal';
 import { ProgressSteps, type StepItem } from '@/components/ProgressSteps';
 import type { WorkerStatus } from '@/worker_utils/utils';
+import { useMinaProvider } from '@/context/MinaProviderContext';
 
 type VerificationType = 'https' | 'zkapp';
+
+const zkAppPublicKey: string = "B62qoTZCq4gg7LhDso8YSA64zJV4DaqJFvXTAaKwMWJsXMyYQQud4PZ";
+
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<VerificationType>('https');
@@ -18,16 +23,16 @@ export default function Page() {
   const [qrNumericString, setQrNumericString] = useState<string | null>(null);
   const [aadhaarName, setAadhaarName] = useState<string | null>(null);
   const [aadhaarEnv, setAadhaarEnv] = useState<'test' | 'prod'>('test');
-
   const { status, initialize, createCredential, verifyAadhaarVerifierProof } = useWorkerStore();
   const credentialJson = useCredentialStore((s) => s.credentialJson);
   const setCredentialJson = useCredentialStore((s) => s.setCredentialJson);
   const [aadhaarVerifierProof, setAadhaarVerifierProof] = useState<string | undefined>();
   const ownerKey = PrivateKey.fromBase58(DEMO_PRIVATEKEY);
-  const owner = ownerKey.toPublicKey();
   const [steps, setSteps] = useState<StepItem[]>([]);
   const [progressActive, setProgressActive] = useState(false);
   const prevStatusRef = useRef<WorkerStatus | undefined>(undefined);
+
+  const { provider } = useMinaProvider();
 
   useEffect(() => {
     initialize();
@@ -106,6 +111,10 @@ export default function Page() {
         status: 'done',
       },
     ]);
+    const accounts = await provider?.requestAccounts().catch(err => err);
+    if(!accounts) return;
+
+    const owner = accounts[0];
 
     const selectedKey = aadhaarEnv === 'test' ? AADHAAR_TEST_PUBLIC_KEY : AADHAAR_PROD_PUBLIC_KEY;
     const res = await createCredential(qrData, owner, selectedKey);
@@ -264,7 +273,7 @@ export default function Page() {
             <nav className="-mb-px flex space-x-1" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab('https')}
-                className={`px-8 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'https' 
+                className={`px-8 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors flex-1 relative ${activeTab === 'https' 
                   ? 'text-green-400 bg-gray-800/50 border-green-500 hover:bg-gray-800 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-green-500/20 after:blur-sm' 
                   : 'text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-700'}`}
               >
@@ -272,7 +281,7 @@ export default function Page() {
               </button>
               <button
                 onClick={() => setActiveTab('zkapp')}
-                className={`px-8 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'zkapp' 
+                className={`px-8 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors flex-1 relative ${activeTab === 'zkapp' 
                   ? 'text-green-400 bg-gray-800/50 border-green-500 hover:bg-gray-800 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-green-500/20 after:blur-sm' 
                   : 'text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-700'}`}
               >
@@ -280,9 +289,11 @@ export default function Page() {
               </button>
             </nav>
           </div>
-          <div className="pt-8">
+          <div className="pt-8 justify-center">
             {activeTab === 'https' ? (
-              <SpecVerification credentialJson={credentialJson} ownerKey={ownerKey} aadhaarEnv={aadhaarEnv} disabled={progressActive}/>
+              <SpecVerification credentialJson={credentialJson} ownerKey={PrivateKey.fromBase58(DEMO_PRIVATEKEY)} aadhaarEnv={aadhaarEnv} disabled={progressActive} />
+            ) : activeTab === 'zkapp' ? (
+              <SpecSettlement credentialJson={credentialJson} zkAppPublicKey={PublicKey.fromBase58(zkAppPublicKey)} />
             ) : (
               <div className="text-gray-400 text-center py-8">
                 ...
