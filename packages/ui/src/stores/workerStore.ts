@@ -61,7 +61,7 @@ interface WorkerState {
   initialize: () => Promise<void>
   createCredential: (
     qrNumericString: string,
-    owner: PublicKey,
+    owner: string,
     publicKeyHex: string
   ) => Promise<
     { credentialJson: string; aadhaarVerifierProof: string } | undefined
@@ -125,7 +125,7 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
 
   createCredential: async (
     qrNumericString: string,
-    owner: PublicKey,
+    owner: string,
     publicKeyHex: string
   ) => {
     console.log(
@@ -180,7 +180,7 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
       console.time('credentialWorker took')
       const credentialString = await credentialProxy.createCredential(
         eProof,
-        owner.toBase58()
+        owner
       )
       console.timeEnd('credentialWorker took')
       if (!credentialString) {

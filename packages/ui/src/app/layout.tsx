@@ -1,3 +1,4 @@
+import { AuroMinaProvider } from '@/context/MinaProviderContext'
 import './global.css'
 
 export default function RootLayout({
@@ -7,7 +8,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuroMinaProvider>
+          {children}
+        </AuroMinaProvider>
+      </body>
     </html>
   )
 }
