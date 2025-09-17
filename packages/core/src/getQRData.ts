@@ -2,6 +2,7 @@ import { Bytes, Gadgets } from 'o1js'
 import { decompressByteArray } from './utils.js'
 import { Bigint2048 } from './helpers/rsa.js'
 import { bufferToHex } from './utils.js'
+import { AADHAAR_PROD_PUBLIC_KEY, AADHAAR_TEST_PUBLIC_KEY } from './constants.js'
 
 export { getQRData, TEST_DATA, TEST_DATA_2 }
 
@@ -32,14 +33,9 @@ const TEST_DATA_2 =
  * - This is designed to work with Aadhaar QR code V2 data formats.
  * - The function assumes the last 256 bytes of the decompressed QR data represent the digital signature.
  */
-function getQRData(testQRData: string) {
-  // Hard-coded public key and QR data that can be obtained from certiifcates.
-  const publicKeyHex =
-    '95e81f7506595cc262addcfddd35d804055b2adf46dc719c56b58eee199995efa1a3254710620ac7801e976f44e3be454db0f190e3f7d4e3598972117344de52fcf7826f849488a959a7b3d21eb6dd03451662ea883eeeefde889a1499b9a47f9504c5f096c262b96d23d19750332d9e97eb6141d261de97994d4c4163ca9cbe3e077221b44253dcf81609428b68351ee3e9b60d2b351fdaa6ee8c28a845239f97de7cc0fe5d144e474813fb43ec583f81b4ee328c22167334898d210ba017a26ec68940f05df22bd9cc86bbc3a4354392372d566167769b735ba12ca3580f919c1bd8ba70c4c2ab0acf2b09bc2fae981f3c0295a6e1e9f248f50073094ffaf1'
-
+function getQRData(testQRData: string, publicKeyHex = AADHAAR_TEST_PUBLIC_KEY) {
   // Convert QR data to bigintx
   const QRData = BigInt(testQRData)
-
   // Parse qr data and convert it to decompressed bytes step by step (using Aadhaar SDK)
   // Convert QR data bigint to byte array and decompress it
   const qrDataBytes = Bytes.fromHex(QRData.toString(16)).toBytes()

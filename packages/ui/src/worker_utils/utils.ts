@@ -1,10 +1,9 @@
-import { Cache } from "o1js";
-
+import { Cache } from 'o1js'
 
 export type WorkerStatus =
   | { status: 'ready' | 'uninitialized' }
   | { status: 'computing'; message: string }
-  | { status: 'computed'; message: string}
+  | { status: 'computed'; message: string }
   | { status: 'errored'; error: string }
 
 /**
@@ -19,29 +18,24 @@ export const MinaFileSystem = (files: any): Cache => ({
   read({ persistentId, uniqueId, dataType }: any) {
     // read current uniqueId, return data if it matches
     if (!files[persistentId]) {
-
-      return undefined;
+      return undefined
     }
 
-    const currentId = files[persistentId].header;
+    const currentId = files[persistentId].header
 
     if (currentId !== uniqueId) {
-
-      return undefined;
+      return undefined
     }
 
     if (dataType === 'string') {
-
-      return new TextEncoder().encode(files[persistentId].data);
+      return new TextEncoder().encode(files[persistentId].data)
     }
 
-    return undefined;
+    return undefined
   },
-  write({}: any, _data: any) {
-
-  },
+  write({}: any, _data: any) {},
   canWrite: true,
-});
+})
 
 /**
  * Fetches zkApp cache files required for contract interaction.
@@ -58,8 +52,8 @@ export function fetchHashCacheFiles() {
     { name: 'step-vk-hash-program-hashbase', type: 'string' },
     { name: 'step-vk-hash-program-hashrecursive', type: 'string' },
     { name: 'wrap-vk-hash-program', type: 'string' },
-  ];
-  return fetchFiles(files, 'HashCache');
+  ]
+  return fetchFiles(files, 'HashCache')
 }
 
 /**
@@ -72,8 +66,8 @@ export function fetchVerifierCacheFiles() {
     { name: 'step-vk-aadhaar-verifier-extractor', type: 'string' },
     { name: 'step-vk-aadhaar-verifier-verifysignature', type: 'string' },
     { name: 'wrap-vk-aadhaar-verifier', type: 'string' },
-  ];
-  return fetchFiles(files, 'VerifierCache');
+  ]
+  return fetchFiles(files, 'VerifierCache')
 }
 
 /**
@@ -87,19 +81,18 @@ export function fetchFiles(
   files: Array<{ name: string; type: string }>,
   folder: string
 ) {
-  
   return Promise.all(
     files.map((file) => {
       return Promise.all([
         fetch(`/${folder}/${file.name}.header`).then((res) => res.text()),
         fetch(`/${folder}/${file.name}`).then((res) => res.text()),
-      ]).then(([header, data]) => ({ file, header, data }));
+      ]).then(([header, data]) => ({ file, header, data }))
     })
   ).then((cacheList) =>
     cacheList.reduce((acc: any, { file, header, data }) => {
-      acc[file.name] = { file, header, data };
+      acc[file.name] = { file, header, data }
 
-      return acc;
+      return acc
     }, {})
-  );
+  )
 }

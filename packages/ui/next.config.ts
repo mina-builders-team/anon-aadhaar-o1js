@@ -1,21 +1,21 @@
-import type { NextConfig } from "next";
-import path from "path";
+import type { NextConfig } from 'next'
+import path from 'path'
 
 const nextConfig: NextConfig = {
   /* config options here */
   webpack(config, { isServer }) {
-      if (!isServer) {
-        config.resolve.alias = {
-          ...config.resolve.alias,
-          o1js: path.resolve(__dirname, "node_modules/o1js/dist/web/index.js"),
-        };
-      } else {
-        config.externals.push("o1js"); // https://nextjs.org/docs/app/api-reference/next-config-js/serverExternalPackages
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        o1js: path.resolve(__dirname, 'node_modules/o1js/dist/web/index.js'),
       }
-      config.experiments = { ...config.experiments, topLevelAwait: true };
-      config.optimization.minimizer = [];
-      return config;
-    },
+    } else {
+      config.externals.push('o1js') // https://nextjs.org/docs/app/api-reference/next-config-js/serverExternalPackages
+    }
+    config.experiments = { ...config.experiments, topLevelAwait: true }
+    config.optimization.minimizer = []
+    return config
+  },
   async headers() {
     return [
       {
@@ -31,8 +31,8 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-    ];
+    ]
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig
