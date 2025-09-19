@@ -7,7 +7,10 @@ import { prepareRecursiveHashData, createPaddedQRData } from '../tests/testUtils
 import { AadhaarCredentialFactory } from './AadhaarCredential.js';
 export * from './presentationSpecs.js';
 export * from './constants.js'
+import { CounterZkapp } from './CounterZkapp.js';
+
 export { SignatureVerifier,
+         CounterZkapp,
          hashProgram,
          AadhaarVerifier,
          AadhaarVerifierProof,

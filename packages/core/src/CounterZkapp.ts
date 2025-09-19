@@ -1,0 +1,42 @@
+import { Field, method,Permissions, SmartContract, State, state } from "o1js";
+import { AadhaarVerifierProof } from "./AadhaarVerifier.js";
+export {CounterZkapp};
+
+
+class CounterZkapp extends SmartContract{
+    @state(Field) public counter = State<Field>();
+
+    
+    async deploy(){
+        super.deploy();
+        this.account.permissions.set({
+            ...Permissions.default(),
+            send: Permissions.none(),
+        });
+    }
+    
+    @method async initialize(){
+        
+        const isInitialized = this.account.provedState.getAndRequireEquals();
+        isInitialized.assertFalse('This ZkApp is already initialized.');
+
+        super.init();
+
+        this.counter.set(Field.from(0));
+    }
+
+    @method async verifyAadhaar(aadhaarProof: AadhaarVerifierProof){
+        aadhaarProof.verify();
+
+        aadhaarProof.publicOutput.Timestamp.greaterThan(0);
+
+        const counterValue = this.counter.getAndRequireEquals();
+        
+        counterValue.add(Field.from(1));
+        
+        this.counter.set(counterValue);
+    }
+};
+
+
+
