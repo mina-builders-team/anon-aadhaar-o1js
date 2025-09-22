@@ -1,12 +1,11 @@
-import { Field, Poseidon, Provable, SelfProof, Struct, UInt32, ZkProgram } from "o1js";
-import { DATA_ARRAY_SIZE, DELIMITER_ARRAY_SIZE } from "./constants.js";
+import { assert, Field, Poseidon, Provable, SelfProof, Struct, UInt32, ZkProgram } from "o1js";
+import { DATA_ARRAY_SIZE } from "./constants.js";
 import { MerkleBlocks } from "./helpers/dataTypes.js";
 import { delimitData, timestampExtractor, dobAndGenderExtractor, pincodeExtractor, stateExtractor } from "./helpers/extractors.js";
-import { nullifier } from "./helpers/nullifier.js";
 import { hashBlocks, BLOCKS_PER_RECURSIVE_PROOF } from "./helpers/sha256Hash.js";
 import { Bigint2048, rsaVerify65537 } from "./helpers/rsa.js";
 import { state32ToBytes,pkcs1v15Pad } from "./utils.js";
-
+import { calculatePaddedDataHash } from "./helpers/paddedDataHash.js";
 export { AadhaarVerifier, AadhaarVerifierProof }
 
 export class AadhaarOutputs extends Struct({
@@ -53,7 +52,7 @@ const AadhaarVerifier = ZkProgram({
                     Gender: Field.from(0),
                     Pincode: Field.from(0),
                     State: emptyArray,
-                    nullifiedValue: Field.from(0),
+                    nullifiedValue: blocks.hash,
                     pubKeyHash: pubKeyHash
                 })}
             },
@@ -74,7 +73,9 @@ const AadhaarVerifier = ZkProgram({
                 // This can/should be given as an input to the circuit.
                 const nullifierSeed = Field.from(123124124214)
 
-                const nullifiedValue = nullifier(nDelimitedData, nullifierSeed)
+                const dataHash = calculatePaddedDataHash(data);
+                assert(dataHash.equals(earlierProof.publicOutput.nullifiedValue))
+
                 return {
                 publicOutput: new AadhaarOutputs({
                     Timestamp: timestamp,
@@ -84,7 +85,7 @@ const AadhaarVerifier = ZkProgram({
                     Gender: gender,
                     Pincode: pincode,
                     State: state,
-                    nullifiedValue: nullifiedValue,
+                    nullifiedValue: Poseidon.hash([nullifierSeed, dataHash]),
                     pubKeyHash: earlierProof.publicOutput.pubKeyHash
                 }),
                 }           
