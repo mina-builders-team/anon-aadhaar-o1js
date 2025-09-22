@@ -1,6 +1,6 @@
 import { Field, Provable, UInt32 } from "o1js"
-import { Block32 } from "./dataTypes"
-import { chunk, commitBlock256 } from "../utils"
+import { Block32 } from "./dataTypes.js"
+import { chunk, commitBlock256 } from "../utils.js"
 
 /**
  * Calculates the hash of the padded data, Such that it is matches with the MerkleBlocks.hash

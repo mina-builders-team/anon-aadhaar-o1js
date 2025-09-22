@@ -20,5 +20,5 @@
     "allowSyntheticDefaultImports": true,
     "useDefineForClassFields": false,
   },
-  "include": ["./src", "tests/extractor.test.ts"],
+  "include": ["./src", "tests/extractor.test.ts", "tests/paddedDataHash.test.ts"],
 }
