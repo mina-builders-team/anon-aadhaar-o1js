@@ -15,7 +15,6 @@ import {
   charBytesToInt,
   createPaddedQRData,
 } from './testUtils.js'
-import { nullifier } from '../src/helpers/nullifier.js'
 
 describe('Extractor circuit tests', () => {
   let nDelimitedData: Field[]
@@ -95,14 +94,6 @@ describe('Extractor circuit tests', () => {
       expect(intToCharString(stateValue, 5)).toEqual('Delhi')
       // the remaining bytes should be zero
       expect(state.slice(5).every((x) => x.equals(Field(0)))).toBeTruthy()
-    })
-  })
-
-  describe('Nullifier Circuit tests', () => {
-    it('should compute nullifier correctly', async () => {
-      const nullifierSeed = Field(12345678)
-      const nullifierHash = nullifier(nDelimitedData, nullifierSeed)
-      console.log(nullifierHash.value)
     })
   })
 })
