@@ -1,11 +1,10 @@
-import { Field, method,Permissions, SmartContract, State, state } from "o1js";
+import { Field, method,Permissions, Provable, SmartContract, State, state } from "o1js";
 import { AadhaarVerifierProof } from "./AadhaarVerifier.js";
 export {CounterZkapp};
 
 
 class CounterZkapp extends SmartContract{
     @state(Field) public counter = State<Field>();
-
     
     async deploy(){
         super.deploy();
@@ -32,9 +31,9 @@ class CounterZkapp extends SmartContract{
 
         const counterValue = this.counter.getAndRequireEquals();
         
-        counterValue.add(Field.from(1));
-        
-        this.counter.set(counterValue);
+        const updatedNum = counterValue.add(Field.from(1));
+
+        this.counter.set(updatedNum);
     }
 };
 
