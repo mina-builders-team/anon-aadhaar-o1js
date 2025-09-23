@@ -4,6 +4,8 @@ import fs from 'fs';
 import {MINA_NODE_ENDPOINT, MINA_ARCHIVE_ENDPOINT} from '../constants.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { AadhaarVerifier } from "../AadhaarVerifier.js";
+import { hashProgram } from "../helpers/sha256Hash.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const keysPath = path.join(__dirname, '../../../src/keys/');
 
@@ -41,8 +43,9 @@ const network = Mina.Network(
 
 Mina.setActiveInstance(network);
 await fetchAccount({publicKey: publicKey});
-
-const {verificationKey} = await CounterZkapp.compile({forceRecompile: true});
+await hashProgram.compile();
+await AadhaarVerifier.compile();
+const { verificationKey } = await CounterZkapp.compile({forceRecompile: true});
 
 const zkApp = new CounterZkapp(zkAppPublicKey);
 
