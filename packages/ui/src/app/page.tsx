@@ -2,16 +2,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { useWorkerStore } from '@/stores/workerStore';
 import { useCredentialStore } from '@/stores/credentialStore';
-import { DEMO_PRIVATEKEY, DELIMITER_POSITION, getQRData, AADHAAR_TEST_PUBLIC_KEY, AADHAAR_PROD_PUBLIC_KEY } from 'anon-aadhaar-o1js';
+import { DEMO_PRIVATEKEY, DELIMITER_POSITION, getQRData, AADHAAR_TEST_PUBLIC_KEY, AADHAAR_PROD_PUBLIC_KEY, AadhaarVerifier } from 'anon-aadhaar-o1js';
 import { PrivateKey } from 'o1js';
 import SpecVerification from './SpecVerification';
 import { Credential } from 'mina-attestations';
 import { QrScannerModal } from '@/components/QrScannerModal';
 import { ProgressSteps, type StepItem } from '@/components/ProgressSteps';
+import SpecSettlement from './SpecSetllement';
 import type { WorkerStatus } from '@/worker_utils/utils';
 
 type VerificationType = 'https' | 'zkapp';
 
+let zkAppPublicKey = 'B62qmFYgkGXtkwQixZ5M1ngC9VPfNfjdaXHPrfJMcxUhfuHaV2hthYB';
 export default function Page() {
   const [activeTab, setActiveTab] = useState<VerificationType>('https');
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -30,7 +32,7 @@ export default function Page() {
   const prevStatusRef = useRef<WorkerStatus | undefined>(undefined);
 
   useEffect(() => {
-    initialize();
+    initialize(zkAppPublicKey);
   }, [initialize]);
 
   // Reflect worker status as steps only when progress is active (after user clicks Create)
@@ -98,7 +100,7 @@ export default function Page() {
     console.log('Creating credential...');
     // Reset steps and seed with scan step
     setProgressActive(true);
-    await initialize();
+    await initialize(zkAppPublicKey);
     setSteps([
       {
         id: 'init',
@@ -108,7 +110,7 @@ export default function Page() {
     ]);
 
     const selectedKey = aadhaarEnv === 'test' ? AADHAAR_TEST_PUBLIC_KEY : AADHAAR_PROD_PUBLIC_KEY;
-    const res = await createCredential(qrData, owner, selectedKey);
+    const res = await createCredential(qrData, owner, selectedKey, zkAppPublicKey);
     if (res?.credentialJson) {
       setCredentialJson(res.credentialJson);
     }
@@ -283,6 +285,8 @@ export default function Page() {
           <div className="pt-8">
             {activeTab === 'https' ? (
               <SpecVerification credentialJson={credentialJson} ownerKey={ownerKey} aadhaarEnv={aadhaarEnv} disabled={progressActive}/>
+            ) : activeTab === 'zkapp' ? (
+              <SpecSettlement proofJson={aadhaarVerifierProof as string} zkAppPublicKey={zkAppPublicKey} />
             ) : (
               <div className="text-gray-400 text-center py-8">
                 ...
