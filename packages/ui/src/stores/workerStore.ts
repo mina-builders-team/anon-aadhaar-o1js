@@ -6,8 +6,9 @@ import type { ExtractorWorkerAPI } from '../worker/extractorWorker'
 import type { ProofVerificationWorkerAPI } from '@/worker/proofVerificationWorker'
 import type { API } from '../worker/credentialWorker'
 import type { PresentationWorkerAPI } from '../worker/presentationWorker'
-import { PublicKey } from 'o1js'
+import { PublicKey, VerificationKey } from 'o1js'
 import { Credential } from 'mina-attestations'
+import { ZkappWorkerAPI } from '@/worker/worker'
 
 let verifierWorker: Worker | null = null
 let verifierProxy: Comlink.Remote<SignatureWorkerAPI> | null = null
@@ -20,8 +21,12 @@ let credentialWorker: Worker | null = null
 let credentialProxy: Comlink.Remote<API> | null = null
 let presentationWorker: Worker | null = null
 let presentationProxy: Comlink.Remote<PresentationWorkerAPI> | null = null
+let zkappWorker: Worker | null = null;
+let zkAppProxy: Comlink.Remote<ZkappWorkerAPI> | null = null;
+
 
 let verificationKey: string | null = null
+let contractVK: VerificationKey | null = null
 
 const createWorkers = () => {
   if (typeof window !== 'undefined' && !credentialWorker) {
@@ -52,17 +57,24 @@ const createWorkers = () => {
       { type: 'module' }
     )
     presentationProxy = Comlink.wrap<PresentationWorkerAPI>(presentationWorker)
+    
+    zkappWorker = new Worker(
+      new URL('../worker/worker.ts', import.meta.url),
+      { type: 'module' }
+    );
+    zkAppProxy = Comlink.wrap<ZkappWorkerAPI>(zkappWorker);
   }
 }
 
 interface WorkerState {
   isInitialized: boolean
   status: WorkerStatus
-  initialize: () => Promise<void>
+  initialize: (zkAppPublicKey: string) => Promise<void>
   createCredential: (
     qrNumericString: string,
     owner: PublicKey,
-    publicKeyHex: string
+    publicKeyHex: string,
+    zkAppPublicKey: string
   ) => Promise<
     { credentialJson: string; aadhaarVerifierProof: string } | undefined
   >
@@ -72,13 +84,14 @@ interface WorkerState {
     credentialJson: string
     ownerPrivateKeyBase58: string
   }) => Promise<string | undefined>
+  settleProof: (aadhaarVerifierProof: string, zkAppPublicKey: string, senderAddress: string) => Promise<string>
 }
 
 export const useWorkerStore = create<WorkerState>((set, get) => ({
   isInitialized: false,
   status: { status: 'uninitialized' },
 
-  initialize: async () => {
+  initialize: async (zkAppPublicKey: string) => {
     if (get().isInitialized) return
     set({ status: { status: 'computing', message: 'Initializing workers' } })
     createWorkers()
@@ -88,7 +101,8 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
       !extractorProxy ||
       !credentialProxy ||
       !proofVerificationProxy ||
-      !presentationProxy
+      !presentationProxy ||
+      !zkAppProxy
     ) {
       set({
         status: { status: 'errored', error: 'Worker instantiation failed' },
@@ -109,6 +123,11 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
       verificationKey = res
       await extractorProxy.init()
       await credentialProxy.init()
+      const vk = await zkAppProxy.init(zkAppPublicKey);
+      if(!vk){
+        return;
+      }
+      contractVK = vk;
 
       set({ isInitialized: true, status: { status: 'ready' } })
     } catch (e) {
@@ -126,14 +145,15 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
   createCredential: async (
     qrNumericString: string,
     owner: PublicKey,
-    publicKeyHex: string
+    publicKeyHex: string,
+    zkAppPublicKey: string
   ) => {
     console.log(
       'Executing Credential Creation Method, qrNumericString: ',
       qrNumericString
     )
     if (!get().isInitialized) {
-      await get().initialize()
+      await get().initialize(zkAppPublicKey)
       if (!get().isInitialized) return undefined
     }
     if (
@@ -260,5 +280,24 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
     }
     set({ status: { status: 'computed', message: 'Presentation created' } })
     return presJson
+  },
+  settleProof: async (proofJson: string, zkAppPublicKey: string, senderAddress: string) => {
+    if (!contractVK) {
+      set({ status: { status: 'errored', error: 'Missing verification key' } })
+      return false
+    }
+    if (!proofVerificationProxy) {
+      set({ status: { status: 'errored', error: 'Workers not ready' } })
+      return false
+    }
+
+    
+    const txResult = await zkAppProxy?.settleProof(proofJson, zkAppPublicKey, senderAddress);
+    if(!txResult){
+      console.log("wot, no result?")
+      return false;
+    }
+    return txResult;
+
   },
 }))
