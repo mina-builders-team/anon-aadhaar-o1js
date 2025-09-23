@@ -10,6 +10,7 @@
     "clean": "rm -rf .next node_modules"
   },
   "dependencies": {
+    "@aurowallet/mina-provider": "^1.0.12",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
     "anon-aadhaar-o1js": "workspace:*",
