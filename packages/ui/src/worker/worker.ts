@@ -56,7 +56,7 @@ async function settleProof(proofJson: string, zkAppPubKey: string, senderAddress
         Mina.setActiveInstance(network);
         await fetchAccount({publicKey: zkAppAddress});
 
-        console.log(zkAppInstance.counter.get())
+        console.log('Value in the counter: ', zkAppInstance.counter.get())
 
         const settlementTx = await Mina.transaction({sender: sender, fee:1e9}, async () => {
             await zkAppInstance.verifyAadhaar(aadhaarProof);
