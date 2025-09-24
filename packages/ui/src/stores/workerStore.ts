@@ -78,6 +78,11 @@ interface WorkerState {
   ) => Promise<
     { credentialJson: string; aadhaarVerifierProof: string } | undefined
   >
+  createProof: (
+    qrNumericString: string,
+    publicKeyHex: string,
+    zkAppPublicKey: string
+  ) => Promise <string |undefined>,
   verifyAadhaarVerifierProof: (aadhaarVerifierProof: string) => Promise<boolean>
   createPresentation: (args: {
     requestJson: string
@@ -225,6 +230,82 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
       })
       return undefined
     }
+  },
+
+  createProof: async (
+    qrNumericString: string,
+    publicKeyHex: string,
+    zkAppPublicKey: string
+  ): Promise<string | undefined> => {
+    console.log(
+      'Executing Proof Creation Method, qrNumericString: ',
+      qrNumericString
+    )
+    if (!get().isInitialized) {
+      await get().initialize(zkAppPublicKey)
+      if (!get().isInitialized ) {console.log("Initialization error!"); return undefined}
+    }
+    if (
+      !verifierProxy ||
+      !extractorProxy ||
+      !credentialProxy ||
+      !proofVerificationProxy
+    ) {
+      set({ status: { status: 'errored', error: 'Workers not ready' } })
+      {console.log("Error in proxies"); return undefined}
+    }
+    try {
+      set({
+        status: { status: 'computing', message: 'Computing Verifier Proof' },
+      })
+      console.time('total time')
+      console.time('verifierWorker took')
+      const vProof = await verifierProxy.verifySignature(
+        qrNumericString,
+        publicKeyHex
+      )
+      console.timeEnd('verifierWorker took')
+      if (!vProof) {
+        set({ status: { status: 'errored', error: 'Verifier proof failed' } })
+        console.log("Verifier proof failed");
+        return undefined  
+      }
+
+      set({
+        status: { status: 'computing', message: 'Computing Extractor Proof' },
+      })
+      console.time('extractorWorker took')
+      const eProof = await extractorProxy.extract(
+        vProof,
+        qrNumericString,
+        publicKeyHex
+      )
+      console.timeEnd('extractorWorker took')
+      if (!eProof) {
+        set({ status: { status: 'errored', error: 'Extractor proof failed' } })
+        console.log("Extractor proof failed");
+        return undefined
+      }
+
+      set({
+        status: { status: 'computed', message: 'Computed Aadhaar Proof' },
+      })
+      console.timeEnd('total time')
+      return eProof 
+    } catch (e) {
+      set({
+        status: {
+          status: 'errored',
+          error:
+            e instanceof Error
+              ? e.message
+              : 'Unknown error during proof creation',
+        },
+      })
+      console.log('Unknown error during proof creation');
+      return undefined
+    }
+    
   },
 
   verifyAadhaarVerifierProof: async (aadhaarVerifierProof: string) => {
