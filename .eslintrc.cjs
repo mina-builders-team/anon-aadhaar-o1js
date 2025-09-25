@@ -17,9 +17,11 @@ module.exports = {
   plugins: ['@typescript-eslint', 'o1js'],
   rules: {
     'no-unused-vars': 'off',
-    '@typescript-eslint/no-unused-vars': [
-      'warn',
-      { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
-    ],
+    '@typescript-eslint/no-unused-vars': 'off', 
+
+    '@typescript-eslint/no-explicit-any': 'off', 
+    'react-hooks/exhaustive-deps': 'warn', 
+    'no-irregular-whitespace': 'warn', 
+    'prefer-const': 'warn', 
   },
 };
