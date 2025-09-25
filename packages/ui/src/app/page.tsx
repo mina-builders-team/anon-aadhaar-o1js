@@ -10,11 +10,12 @@ import { QrScannerModal } from '@/components/QrScannerModal';
 import { ProgressSteps, type StepItem } from '@/components/ProgressSteps';
 import SpecSettlement from './SpecSetllement';
 import type { WorkerStatus } from '@/worker_utils/utils';
-import ZkAppCounterDisplay from '@/components/zkAppCounter';
+import ZkAppCounterDisplay from '@/components/ZkappCounter';
 
 type VerificationType = 'https' | 'zkapp';
 
 let zkAppPublicKey = 'B62qr1FKUf1RrmYwoJLTvGdibRfhVH4SRwtER7AqxpVKRboqsdJd5KQ';
+
 export default function Page() {
   const [activeTab, setActiveTab] = useState<VerificationType>('https');
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -33,6 +34,10 @@ export default function Page() {
   const [progressActive, setProgressActive] = useState(false);
   const prevStatusRef = useRef<WorkerStatus | undefined>(undefined);
 
+  useEffect(() => {
+    console.log('initializing workers')
+    initialize(zkAppPublicKey)
+  },[])
   // Reflect worker status as steps only when progress is active (after user clicks Create)
   useEffect(() => {
     if (!progressActive) return;
@@ -70,6 +75,7 @@ export default function Page() {
   const handleOpenQrModal = () => {
     setIsQrModalOpen(true);
   };
+  
   const handleQrScan = (scannedQrString: string) => {
     setQrNumericString(scannedQrString);
     // Extract name for Step 1 display
@@ -288,7 +294,7 @@ export default function Page() {
             <nav className="-mb-px flex space-x-1" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab('https')}
-                className={`px-8 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'https' 
+                className={`px-8 py-3 text-sm flex-1 font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'https' 
                   ? 'text-green-400 bg-gray-800/50 border-green-500 hover:bg-gray-800 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-green-500/20 after:blur-sm' 
                   : 'text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-700'}`}
               >
@@ -296,7 +302,7 @@ export default function Page() {
               </button>
               <button
                 onClick={() => setActiveTab('zkapp')}
-                className={`px-8 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'zkapp' 
+                className={`px-8 py-3 text-sm flex-1 font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'zkapp' 
                   ? 'text-green-400 bg-gray-800/50 border-green-500 hover:bg-gray-800 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-green-500/20 after:blur-sm' 
                   : 'text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-700'}`}
               >
@@ -314,6 +320,9 @@ export default function Page() {
                 ...
               </div>
             )}
+          </div>
+          <div className="pt-8">
+            <ZkAppCounterDisplay zkAppPublicKey={zkAppPublicKey} ></ZkAppCounterDisplay>
           </div>
       </div>
       
