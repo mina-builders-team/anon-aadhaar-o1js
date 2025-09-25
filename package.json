@@ -7,6 +7,8 @@
   ],
   "scripts": {
     "build": "turbo run build",
+    "complete:core": "cd packages/core && pnpm install && pnpm run build",
+    "complete:ui": "cd packages/ui && pnpm install && pnpm run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",

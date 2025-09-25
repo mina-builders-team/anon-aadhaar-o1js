@@ -20,11 +20,11 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
           
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-        
-      - name: Build project
-        run: pnpm run build
+      - name: Install dependencies and build core
+        run: pnpm complete:core
+      
+      - name:  Install dependencies and build ui
+        run: pnpm complete:ui
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
