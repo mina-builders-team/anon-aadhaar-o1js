@@ -7,8 +7,8 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "complete:core": "cd packages/core && pnpm install && pnpm run build",
-    "complete:ui": "cd packages/ui && pnpm install && pnpm run build",
+    "complete:core": "pnpm --filter anon-aadhaar-o1js install && pnpm --filter anon-aadhaar-o1js build",
+    "complete:ui": "pnpm --filter anon-aadhaar-ui install && pnpm --filter anon-aadhaar-ui build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
