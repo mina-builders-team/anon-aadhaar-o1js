@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useWorkerStore } from '@/stores/workerStore';
 import { useCredentialStore } from '@/stores/credentialStore';
-import { DEMO_PRIVATEKEY, DELIMITER_POSITION, getQRData, AADHAAR_TEST_PUBLIC_KEY, AADHAAR_PROD_PUBLIC_KEY, AadhaarVerifier } from 'anon-aadhaar-o1js';
+import { DEMO_PRIVATEKEY, DELIMITER_POSITION, getQRData, AADHAAR_TEST_PUBLIC_KEY, AADHAAR_PROD_PUBLIC_KEY } from 'anon-aadhaar-o1js';
 import { PrivateKey } from 'o1js';
 import SpecVerification from './SpecVerification';
 import { Credential } from 'mina-attestations';

@@ -1,7 +1,7 @@
 'use client';
 import { useWorkerStore } from "@/stores/workerStore";
 import { useMinaProvider } from "@/context/MinaProviderContext";
-import { Mina, Transaction } from 'o1js';
+import { Mina } from 'o1js';
 import { MINA_ARCHIVE_ENDPOINT, MINA_NODE_ENDPOINT } from 'anon-aadhaar-o1js';
 import { useState } from 'react';
 
@@ -73,7 +73,6 @@ export default function SpecSettlement({proofJson, zkAppPublicKey}: Props){
     }
   };
 
-  // Function to get explorer URL based on network
   const getExplorerUrl = (hash: string) => {
 
     return `https://minascan.io/devnet/tx/${hash}?type=zk-tx`;
