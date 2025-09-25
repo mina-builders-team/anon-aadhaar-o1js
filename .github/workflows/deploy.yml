@@ -1,32 +1,35 @@
 name: Deploy Next.js to GitHub Pages (monorepo)
-
 on:
   push:
     branches: ["devnet-zkApp"]
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: packages/ui 
+        working-directory: packages/ui
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+        
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
-
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile  
-
+        run: pnpm install --frozen-lockfile
+        
       - name: Build project
         run: pnpm run build
-
+        
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: packages/ui/out   
+          publish_dir: packages/ui/out
