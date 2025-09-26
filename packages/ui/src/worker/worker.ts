@@ -1,7 +1,7 @@
 import { fetchHashCacheFiles, fetchVerifierCacheFiles, fetchZkappCacheFiles, MinaFileSystem } from '@/worker_utils/utils';
 import { AadhaarVerifier, AadhaarVerifierProof, CounterZkapp, hashProgram, MINA_ARCHIVE_ENDPOINT, MINA_NODE_ENDPOINT } from 'anon-aadhaar-o1js'
 import * as Comlink from 'comlink'
-import { Cache, fetchAccount, Mina, PublicKey } from 'o1js'
+import { Cache, fetchAccount, Field, Mina, PublicKey } from 'o1js'
 
 let isInitialized = false
 
@@ -57,8 +57,14 @@ async function settleProof(proofJson: string, zkAppPubKey: string, senderAddress
 
         console.log('Value in the counter: ', zkAppInstance.counter.get())
 
+        const now = new Date()
+        const currentDay = Field.from(now.getUTCDate())
+        const currentMonth = Field.from(now.getUTCMonth() + 1)
+        const currentYear = Field.from(now.getUTCFullYear())
+
+
         const settlementTx = await Mina.transaction({sender: sender, fee:1e9}, async () => {
-            await zkAppInstance.verifyAadhaar(aadhaarProof);
+            await zkAppInstance.verifyAadhaar(aadhaarProof, currentYear, currentMonth, currentDay);
         });
 
         // Prove the transaction in the worker (this is computationally intensive)

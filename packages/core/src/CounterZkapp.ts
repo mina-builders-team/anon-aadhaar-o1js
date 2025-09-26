@@ -30,13 +30,37 @@ class CounterZkapp extends SmartContract {
     this.counter.set(Field.from(0))
   }
 
-  @method async verifyAadhaar(aadhaarProof: AadhaarVerifierProof) {
+  @method async verifyAadhaar(aadhaarProof: AadhaarVerifierProof, currentYear: Field, currentMonth: Field, currentDay: Field) {
     aadhaarProof.verify()
 
-    aadhaarProof.publicOutput.Timestamp.greaterThan(0)
+    const publicOutputs = aadhaarProof.publicOutput;
 
+    publicOutputs.Timestamp.greaterThan(0)
+
+    const dobYear = publicOutputs.DobYear;
+    const dobMonth = publicOutputs.DobMonth;
+    const dobday = publicOutputs.DobDay;
+
+    // Calculate age based on year
+
+    const ageByYear = currentYear.sub(dobYear).sub(Field(1));
+
+    // Check if current month > DOB month or if same month and current day >= DOB day
+
+    const monthGt = currentMonth.greaterThan(dobMonth).toField();
+
+    const monthEq = currentMonth.equals(dobMonth).toField();
+
+    const dayGt = currentDay.add(Field(1)).greaterThan(dobday).toField();
+
+    const isHigherDayOnSameMonth = monthEq.mul(dayGt);
+    // Final age calculation
+
+    const age = ageByYear.add(monthGt.add(isHigherDayOnSameMonth));
+
+    const updateValue = Provable.if(age.greaterThan(18), Field, Field.from(1), Field.from(0));
     const counterValue = this.counter.getAndRequireEquals()
-    const updatedNum = counterValue.add(Field.from(1))
+    const updatedNum = counterValue.add(updateValue)
 
     this.counter.set(updatedNum)
   }

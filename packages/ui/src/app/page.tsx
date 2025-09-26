@@ -14,7 +14,7 @@ import ZkAppCounterDisplay from '@/components/ZkappCounter';
 
 type VerificationType = 'https' | 'zkapp';
 
-let zkAppPublicKey = 'B62qr1FKUf1RrmYwoJLTvGdibRfhVH4SRwtER7AqxpVKRboqsdJd5KQ';
+let zkAppPublicKey = 'B62qqnxnpStpuzbnXnK4j3y7q5FXVzwrBjx7jr9L6E2GK5y6qGH6xZZ';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<VerificationType>('https');
@@ -34,10 +34,6 @@ export default function Page() {
   const [progressActive, setProgressActive] = useState(false);
   const prevStatusRef = useRef<WorkerStatus | undefined>(undefined);
 
-  useEffect(() => {
-    console.log('initializing workers')
-    initialize(zkAppPublicKey)
-  },[])
   // Reflect worker status as steps only when progress is active (after user clicks Create)
   useEffect(() => {
     if (!progressActive) return;
