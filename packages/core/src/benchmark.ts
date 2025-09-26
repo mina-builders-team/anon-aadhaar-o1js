@@ -20,27 +20,17 @@ import {
 import { ConstraintSystemSummary } from 'o1js/dist/node/lib/provable/core/provable-context.js'
 import { SignatureVerifier } from './helpers/signatureVerifier.js'
 import { hashProgram } from './helpers/sha256Hash.js'
-import { nullifier } from './helpers/nullifier.js'
+import { AadhaarVerifier } from './AadhaarVerifier.js'
+import { calculatePaddedDataHash } from './helpers/paddedDataHash.js'
 
 interface BenchmarkResults {
   methodName: string
   rowSize: ConstraintSystemSummary
 }
 
-interface CompilationResults {
-  circuitName: string
-  time: string
-}
-
-// Proof Generation Configuration
-const proofsEnabled = true
-const forceRecompile = true
-
 // Input Preparation
 const inputs = getQRData(TEST_DATA)
 const qrDataPadded = inputs.paddedData.toBytes()
-const signature = inputs.signatureBigint
-const publicKey = inputs.publicKeyBigint
 const qrData = createPaddedQRData(qrDataPadded)
 const delimiterIndices = getDelimiterIndices(qrDataPadded).map(Field)
 
@@ -135,15 +125,13 @@ const stateExtractorParameters = await getBenchmarkParameters(
   stateExtractorConstraints
 )
 
-// Analyzers for nullifier
-function nullifierConstraints() {
-  const nullifierSeed = Provable.witness(Field, () => Field.random())
-  nullifier(nDelimitedData, nullifierSeed)
+function calculatePaddedDataHashConstraints() {
+  calculatePaddedDataHash(nDelimitedData)
 }
 
-const nullifierParameters = await getBenchmarkParameters(
-  'Nullifier',
-  nullifierConstraints
+const paddedDataHashParameters = await getBenchmarkParameters(
+  'paddedDataHash',
+  calculatePaddedDataHashConstraints
 )
 
 const benchmarkResults = [
@@ -152,7 +140,7 @@ const benchmarkResults = [
   timestampParameters,
   pincodeExtractorParameters,
   stateExtractorParameters,
-  nullifierParameters,
+  paddedDataHashParameters,  
 ]
 
 console.table(
@@ -169,34 +157,9 @@ const dataBlocksForHashBase = prepareRecursiveHashData(
   inputs.signedData.slice(0, 448)
 )
 
-const programCompilationTimes: CompilationResults[] = []
 
 async function hashAnalysis() {
   try {
-    // Compile circuit and record time
-    let start = performance.now()
-    await hashProgram.compile({ proofsEnabled, forceRecompile })
-    let end = performance.now()
-    const compileTime = ((end - start) / 1000).toFixed(3) + ' s'
-
-    // hashRecursive timing
-    start = performance.now()
-    await hashProgram.hashRecursive(dataBlocks)
-    end = performance.now()
-    const hashRecursiveTime = ((end - start) / 1000).toFixed(3) + ' s'
-
-    // hashBase timing
-    start = performance.now()
-    await hashProgram.hashBase(dataBlocksForHashBase)
-    end = performance.now()
-    const hashBaseTime = ((end - start) / 1000).toFixed(3) + ' s'
-
-    // Prepare array for hashProgram methods and print table
-    programCompilationTimes.push({
-      circuitName: 'hashProgram',
-      time: compileTime,
-    })
-
     const hashProgramAnalysis = await hashProgram.analyzeMethods()
 
     console.log('hashProgram Method data')
@@ -204,12 +167,10 @@ async function hashAnalysis() {
       {
         methodName: 'hashRecursive',
         rows: hashProgramAnalysis.hashRecursive.rows,
-        time: hashRecursiveTime,
       },
       {
         methodName: 'hashBase',
         rows: hashProgramAnalysis.hashBase.rows,
-        time: hashBaseTime,
       },
     ]
     console.table(hashProgramMethods)
@@ -225,30 +186,12 @@ async function hashAnalysis() {
 
 async function verifierAnalysis() {
   try {
-    // Compile SignatureVerifier and record time
-    let start = performance.now()
-    await SignatureVerifier.compile({ proofsEnabled })
-    let end = performance.now()
-    const compileTime = ((end - start) / 1000).toFixed(3) + ' s'
-
-    // Record verifySignature execution time
-    start = performance.now()
-    await SignatureVerifier.verifySignature(dataBlocks, signature, publicKey)
-    end = performance.now()
-    const verifyTime = ((end - start) / 1000).toFixed(3) + ' s'
-
-    programCompilationTimes.push({
-      circuitName: 'SignatueVerifier',
-      time: compileTime,
-    })
-
     const signatureVerifierAnalysis = await SignatureVerifier.analyzeMethods()
-
+    console.log('signatureVerifier Method data')
     const signatureVerifierconstraint = [
       {
         circuitName: 'verifySignature',
         rows: signatureVerifierAnalysis.verifySignature.rows,
-        time: verifyTime,
       },
     ]
     console.table(signatureVerifierconstraint)
@@ -262,10 +205,31 @@ async function verifierAnalysis() {
   }
 }
 
+async function AadhaarVerifierAnalysis() {
+  try {
+    const AadhaarVerifierAnalysis = await AadhaarVerifier.analyzeMethods()
+    console.log('AadhaarVerifier Method data')
+    const aadhaarVerifierMethods = [
+      {
+        circuitName: 'verifySignature',
+        rows: AadhaarVerifierAnalysis.verifySignature.rows,
+      },
+      {
+        circuitName: 'extractor',
+        rows: AadhaarVerifierAnalysis.extractor.rows,
+      },
+    ]
+    console.table(aadhaarVerifierMethods)
+  } catch (e) {
+    console.error('Error in AadhaarVerifier analysis step:', e)
+  }
+}
+
+
 async function main() {
   await hashAnalysis()
   await verifierAnalysis()
-  console.table(programCompilationTimes)
+  await AadhaarVerifierAnalysis()
 }
 
 await main()

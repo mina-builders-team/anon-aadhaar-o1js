@@ -9,7 +9,6 @@ import {
 } from '../helpers/extractors.js'
 import { getQRData, TEST_DATA } from '../getQRData.js'
 import { createPaddedQRData } from '../../tests/testUtils.js'
-import { nullifier } from '../helpers/nullifier.js'
 
 class ExtractorOutputs extends Struct({
   Timestamp: Field,
@@ -47,7 +46,6 @@ const ExtractorCircuit = ZkProgram({
         // This can/should be given as an input to the circuit.
         const nullifierSeed = Field.from(123124124214)
 
-        const nullifiedValue = nullifier(nDelimitedData, nullifierSeed)
         return {
           publicOutput: new ExtractorOutputs({
             Timestamp: timestamp,
@@ -55,7 +53,7 @@ const ExtractorCircuit = ZkProgram({
             Gender: gender,
             Pincode: pincode,
             State: state,
-            nullifiedValue: nullifiedValue,
+            nullifiedValue: nullifierSeed,
           }),
         }
       },
