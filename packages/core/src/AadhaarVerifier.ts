@@ -1,11 +1,25 @@
-import { Field, Poseidon, Provable, SelfProof, Struct, UInt32, ZkProgram } from "o1js";
-import { DATA_ARRAY_SIZE, DELIMITER_ARRAY_SIZE } from "./constants.js";
-import { MerkleBlocks } from "./helpers/dataTypes.js";
-import { delimitData, timestampExtractor, dobAndGenderExtractor, pincodeExtractor, stateExtractor } from "./helpers/extractors.js";
-import { nullifier } from "./helpers/nullifier.js";
-import { hashBlocks, BLOCKS_PER_RECURSIVE_PROOF } from "./helpers/sha256Hash.js";
-import { Bigint2048, rsaVerify65537 } from "./helpers/rsa.js";
-import { state32ToBytes,pkcs1v15Pad } from "./utils.js";
+import {
+  Field,
+  Poseidon,
+  Provable,
+  SelfProof,
+  Struct,
+  UInt32,
+  ZkProgram,
+} from 'o1js'
+import { DATA_ARRAY_SIZE, DELIMITER_ARRAY_SIZE } from './constants.js'
+import { MerkleBlocks } from './helpers/dataTypes.js'
+import {
+  delimitData,
+  timestampExtractor,
+  dobAndGenderExtractor,
+  pincodeExtractor,
+  stateExtractor,
+} from './helpers/extractors.js'
+import { nullifier } from './helpers/nullifier.js'
+import { hashBlocks, BLOCKS_PER_RECURSIVE_PROOF } from './helpers/sha256Hash.js'
+import { Bigint2048, rsaVerify65537 } from './helpers/rsa.js'
+import { state32ToBytes, pkcs1v15Pad } from './utils.js'
 
 export { AadhaarVerifier, AadhaarVerifierProof }
 
@@ -18,79 +32,85 @@ export class AadhaarOutputs extends Struct({
   Pincode: Field,
   State: Provable.Array(Field, 17),
   nullifiedValue: Field,
-  pubKeyHash: Field
+  pubKeyHash: Field,
 }) {}
 
 const AadhaarVerifier = ZkProgram({
-    name: 'aadhaar-verifier',
-    publicOutput: AadhaarOutputs,
+  name: 'aadhaar-verifier',
+  publicOutput: AadhaarOutputs,
 
-    methods: {
-        verifySignature: {
-            privateInputs: [MerkleBlocks, Bigint2048, Bigint2048],
+  methods: {
+    verifySignature: {
+      privateInputs: [MerkleBlocks, Bigint2048, Bigint2048],
 
-            async method(
-                blocks: MerkleBlocks,
-                signature: Bigint2048,
-                publicKey: Bigint2048
-            ) {
-                const hashState = await hashBlocks(blocks, BLOCKS_PER_RECURSIVE_PROOF)
+      async method(
+        blocks: MerkleBlocks,
+        signature: Bigint2048,
+        publicKey: Bigint2048
+      ) {
+        const hashState = await hashBlocks(blocks, BLOCKS_PER_RECURSIVE_PROOF)
 
-                const finalHash = state32ToBytes(hashState)
+        const finalHash = state32ToBytes(hashState)
 
-                const paddedHash = pkcs1v15Pad(finalHash)
+        const paddedHash = pkcs1v15Pad(finalHash)
 
-                rsaVerify65537(paddedHash, signature, publicKey)
+        rsaVerify65537(paddedHash, signature, publicKey)
 
-                const pubKeyHash = Poseidon.hash(publicKey.fields)
+        const pubKeyHash = Poseidon.hash(publicKey.fields)
 
-                const emptyArray = Array.from({ length: 17 }, () => Field.from(0))
-                return {publicOutput: new AadhaarOutputs({
-                    Timestamp: Field.from(0),
-                    DobYear: Field.from(0),
-                    DobMonth: Field.from(0),
-                    DobDay: Field.from(0),
-                    Gender: Field.from(0),
-                    Pincode: Field.from(0),
-                    State: emptyArray,
-                    nullifiedValue: Field.from(0),
-                    pubKeyHash: pubKeyHash
-                })}
-            },
-        },
-        extractor: {
-            privateInputs: [SelfProof, Provable.Array(Field, DATA_ARRAY_SIZE)],
-
-            async method( earlierProof: SelfProof<unknown,AadhaarOutputs>, data: Field[]){
-                earlierProof.verify()
-                const nDelimitedData = delimitData(data)
-
-                const timestamp = timestampExtractor(nDelimitedData)
-
-                const [dobDay, dobMonth, dobYear, gender] = dobAndGenderExtractor(nDelimitedData);
-                const pincode = pincodeExtractor(nDelimitedData)
-                const state = stateExtractor(nDelimitedData)
-
-                // This can/should be given as an input to the circuit.
-                const nullifierSeed = Field.from(123124124214)
-
-                const nullifiedValue = nullifier(nDelimitedData, nullifierSeed)
-                return {
-                publicOutput: new AadhaarOutputs({
-                    Timestamp: timestamp,
-                    DobDay: dobDay,
-                    DobMonth: dobMonth,
-                    DobYear: dobYear,
-                    Gender: gender,
-                    Pincode: pincode,
-                    State: state,
-                    nullifiedValue: nullifiedValue,
-                    pubKeyHash: earlierProof.publicOutput.pubKeyHash
-                }),
-                }           
-            }
+        const emptyArray = Array.from({ length: 17 }, () => Field.from(0))
+        return {
+          publicOutput: new AadhaarOutputs({
+            Timestamp: Field.from(0),
+            DobYear: Field.from(0),
+            DobMonth: Field.from(0),
+            DobDay: Field.from(0),
+            Gender: Field.from(0),
+            Pincode: Field.from(0),
+            State: emptyArray,
+            nullifiedValue: Field.from(0),
+            pubKeyHash: pubKeyHash,
+          }),
         }
-    }
-});
+      },
+    },
+    extractor: {
+      privateInputs: [SelfProof, Provable.Array(Field, DATA_ARRAY_SIZE)],
 
-class AadhaarVerifierProof extends ZkProgram.Proof(AadhaarVerifier){}
+      async method(
+        earlierProof: SelfProof<unknown, AadhaarOutputs>,
+        data: Field[]
+      ) {
+        earlierProof.verify()
+        const nDelimitedData = delimitData(data)
+
+        const timestamp = timestampExtractor(nDelimitedData)
+
+        const [dobDay, dobMonth, dobYear, gender] =
+          dobAndGenderExtractor(nDelimitedData)
+        const pincode = pincodeExtractor(nDelimitedData)
+        const state = stateExtractor(nDelimitedData)
+
+        // This can/should be given as an input to the circuit.
+        const nullifierSeed = Field.from(123124124214)
+
+        const nullifiedValue = nullifier(nDelimitedData, nullifierSeed)
+        return {
+          publicOutput: new AadhaarOutputs({
+            Timestamp: timestamp,
+            DobDay: dobDay,
+            DobMonth: dobMonth,
+            DobYear: dobYear,
+            Gender: gender,
+            Pincode: pincode,
+            State: state,
+            nullifiedValue: nullifiedValue,
+            pubKeyHash: earlierProof.publicOutput.pubKeyHash,
+          }),
+        }
+      },
+    },
+  },
+})
+
+class AadhaarVerifierProof extends ZkProgram.Proof(AadhaarVerifier) {}

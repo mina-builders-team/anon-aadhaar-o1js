@@ -1,41 +1,43 @@
-import { Field, method,Permissions, Provable, SmartContract, State, state } from "o1js";
-import { AadhaarVerifierProof } from "./AadhaarVerifier.js";
-export {CounterZkapp};
+import {
+  Field,
+  method,
+  Permissions,
+  Provable,
+  SmartContract,
+  State,
+  state,
+} from 'o1js'
+import { AadhaarVerifierProof } from './AadhaarVerifier.js'
+export { CounterZkapp }
 
+class CounterZkapp extends SmartContract {
+  @state(Field) public counter = State<Field>()
 
-class CounterZkapp extends SmartContract{
-    @state(Field) public counter = State<Field>();
-    
-    async deploy(){
-        super.deploy();
-        this.account.permissions.set({
-            ...Permissions.default(),
-            send: Permissions.none(),
-        });
-    }
-    
-    @method async initialize(){
-        
-        const isInitialized = this.account.provedState.getAndRequireEquals();
-        isInitialized.assertFalse('This ZkApp is already initialized.');
+  async deploy() {
+    super.deploy()
+    this.account.permissions.set({
+      ...Permissions.default(),
+      send: Permissions.none(),
+    })
+  }
 
-        super.init();
+  @method async initialize() {
+    const isInitialized = this.account.provedState.getAndRequireEquals()
+    isInitialized.assertFalse('This ZkApp is already initialized.')
 
-        this.counter.set(Field.from(0));
-    }
+    super.init()
 
-    @method async verifyAadhaar(aadhaarProof: AadhaarVerifierProof){
-        aadhaarProof.verify();
+    this.counter.set(Field.from(0))
+  }
 
-        aadhaarProof.publicOutput.Timestamp.greaterThan(0);
+  @method async verifyAadhaar(aadhaarProof: AadhaarVerifierProof) {
+    aadhaarProof.verify()
 
-        const counterValue = this.counter.getAndRequireEquals();
-        
-        const updatedNum = counterValue.add(Field.from(1));
+    aadhaarProof.publicOutput.Timestamp.greaterThan(0)
 
-        this.counter.set(updatedNum);
-    }
-};
+    const counterValue = this.counter.getAndRequireEquals()
+    const updatedNum = counterValue.add(Field.from(1))
 
-
-
+    this.counter.set(updatedNum)
+  }
+}

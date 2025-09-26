@@ -71,7 +71,8 @@ describe('Extractor circuit tests', () => {
 
   describe('DOB and Gender Extractor Circuit tests', () => {
     it('should extract DOB and gender correctly', async () => {
-      const [dobDay, dobMonth, dobYear, gender] = dobAndGenderExtractor(nDelimitedData)
+      const [dobDay, dobMonth, dobYear, gender] =
+        dobAndGenderExtractor(nDelimitedData)
 
       expect(dobDay.toBigInt()).toEqual(1n)
       expect(dobMonth.toBigInt()).toEqual(1n)

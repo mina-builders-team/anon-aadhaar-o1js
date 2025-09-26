@@ -20,7 +20,10 @@ const pk = crypto.createPublicKey(pkData)
 const jwk = pk.export({ format: 'jwk' }) as unknown as { n: string }
 const pubKey = '0x' + Buffer.from(jwk.n, 'base64url').toString('hex')
 
-console.log("pubKey: ", pubKey)
+console.log('pubKey: ', pubKey)
 
-console.log("pubKeyHash: ", Poseidon.hash(Bigint2048.from(BigInt(pubKey)).fields).toString())
+console.log(
+  'pubKeyHash: ',
+  Poseidon.hash(Bigint2048.from(BigInt(pubKey)).fields).toString()
+)
 // node build/src/scripts/extractPublicKey.js ./src/assets/uidai_offline_publickey_17022026.cer

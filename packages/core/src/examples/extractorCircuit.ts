@@ -32,12 +32,7 @@ const ExtractorCircuit = ZkProgram({
         Field,
         Field,
       ],
-      async method(
-        data: Field[],
-        year: Field,
-        month: Field,
-        day: Field
-      ) {
+      async method(data: Field[], year: Field, month: Field, day: Field) {
         const nDelimitedData = delimitData(data)
         const timestamp = timestampExtractor(nDelimitedData)
         const [age, gender] = dobAndGenderExtractor(nDelimitedData)
@@ -66,7 +61,6 @@ const ExtractorCircuit = ZkProgram({
 const inputs = getQRData(TEST_DATA)
 const qrDataPadded = inputs.paddedData.toBytes()
 
-
 const qrData = createPaddedQRData(qrDataPadded).map(Field)
 const day = Field.from(1)
 const month = Field.from(1)
@@ -76,12 +70,7 @@ const { verificationKey } = await ExtractorCircuit.compile({
 })
 
 console.time('Proof generation time')
-const { proof } = await ExtractorCircuit.extract(
-  qrData,
-  year,
-  month,
-  day
-)
+const { proof } = await ExtractorCircuit.extract(qrData, year, month, day)
 console.timeEnd('Proof generation time')
 
 const constraints = await ExtractorCircuit.analyzeMethods()

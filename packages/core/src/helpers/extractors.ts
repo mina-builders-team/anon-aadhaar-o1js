@@ -1,14 +1,11 @@
-import { assert, Bool, Field, Provable} from 'o1js'
+import { assert, Bool, Field, Provable } from 'o1js'
 import {
   digitBytesToInt,
   digitBytesToTimestamp,
   searchElement,
   selectSubarray,
 } from '../utils.js'
-import {
-  DATA_ARRAY_SIZE,
-  DELIMITER_POSITION
-} from '../constants.js'
+import { DATA_ARRAY_SIZE, DELIMITER_POSITION } from '../constants.js'
 export {
   delimitData,
   timestampExtractor,
@@ -28,8 +25,8 @@ export {
  */
 function delimitData(paddedData: Field[]) {
   const delimitedData = []
-  let counter = Field.from(0);
-  let photoIndexReached = Bool(false);
+  let counter = Field.from(0)
+  let photoIndexReached = Bool(false)
 
   for (let i = 0; i < DATA_ARRAY_SIZE; i++) {
     const is255 = paddedData[i].equals(255)
@@ -42,7 +39,10 @@ function delimitData(paddedData: Field[]) {
     counter = counter.seal()
     delimitedData[i] = paddedData[i].add(dataDelta)
     counter = counter.add(is255.toField())
-    photoIndexReached = Bool.or(photoIndexReached, counter.equals(DELIMITER_POSITION.PHOTO))
+    photoIndexReached = Bool.or(
+      photoIndexReached,
+      counter.equals(DELIMITER_POSITION.PHOTO)
+    )
   }
 
   return delimitedData
@@ -103,10 +103,12 @@ function timestampExtractor(nDelimitedData: Field[]) {
 function dobAndGenderExtractor(nDelimitedData: Field[]) {
   const ageData: Field[] = []
   const startIndex = Provable.witness(Field, () => {
-    return  nDelimitedData.findIndex((value) => value.toBigInt() === BigInt(DELIMITER_POSITION.DOB * 255))
+    return nDelimitedData.findIndex(
+      (value) => value.toBigInt() === BigInt(DELIMITER_POSITION.DOB * 255)
+    )
   })
-  startIndex.assertGreaterThanOrEqual(0);
-  startIndex.assertLessThanOrEqual(DATA_ARRAY_SIZE);
+  startIndex.assertGreaterThanOrEqual(0)
+  startIndex.assertLessThanOrEqual(DATA_ARRAY_SIZE)
   // Date consist of 12 characters including delimiters.
   for (let i = 0; i < 12; i++) {
     const currentIndex = startIndex.add(i)
@@ -142,10 +144,12 @@ function dobAndGenderExtractor(nDelimitedData: Field[]) {
 function pincodeExtractor(nDelimitedData: Field[]) {
   // startIndex is the index of delimiter
   const startIndex = Provable.witness(Field, () => {
-    return nDelimitedData.findIndex((value) => value.toBigInt() === BigInt(DELIMITER_POSITION.PINCODE * 255))
+    return nDelimitedData.findIndex(
+      (value) => value.toBigInt() === BigInt(DELIMITER_POSITION.PINCODE * 255)
+    )
   })
-  startIndex.assertGreaterThanOrEqual(0);
-  startIndex.assertLessThanOrEqual(DATA_ARRAY_SIZE);
+  startIndex.assertGreaterThanOrEqual(0)
+  startIndex.assertLessThanOrEqual(DATA_ARRAY_SIZE)
 
   const pincodeArray: Field[] = []
 
@@ -171,20 +175,26 @@ function pincodeExtractor(nDelimitedData: Field[]) {
  */
 function stateExtractor(nDelimitedData: Field[]) {
   const startIndex = Provable.witness(Field, () => {
-    return nDelimitedData.findIndex((value) => value.toBigInt() === BigInt(DELIMITER_POSITION.STATE * 255))
+    return nDelimitedData.findIndex(
+      (value) => value.toBigInt() === BigInt(DELIMITER_POSITION.STATE * 255)
+    )
   })
-  startIndex.assertGreaterThanOrEqual(0);
-  startIndex.assertLessThanOrEqual(DATA_ARRAY_SIZE);
+  startIndex.assertGreaterThanOrEqual(0)
+  startIndex.assertLessThanOrEqual(DATA_ARRAY_SIZE)
   // Under assumption that state data will be at most <256th byte and under 16 bytes.
-  const stateArray = selectSubarray(nDelimitedData.slice(0, 256), startIndex, 18)
-  assert(stateArray[0].equals(DELIMITER_POSITION.STATE * 255));
+  const stateArray = selectSubarray(
+    nDelimitedData.slice(0, 256),
+    startIndex,
+    18
+  )
+  assert(stateArray[0].equals(DELIMITER_POSITION.STATE * 255))
   // convert bytes after stateData to zero
-  const endValue = (DELIMITER_POSITION.STATE + 1) * 255;
-  let isEndReached = Bool(false);
+  const endValue = (DELIMITER_POSITION.STATE + 1) * 255
+  let isEndReached = Bool(false)
   for (let i = 0; i < 18; i++) {
     isEndReached = Bool.or(isEndReached, stateArray[i].equals(endValue))
     stateArray[i] = Provable.if(isEndReached.not(), stateArray[i], Field(0))
   }
 
-  return stateArray.slice(1,18)
+  return stateArray.slice(1, 18)
 }

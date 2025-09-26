@@ -13,10 +13,7 @@ import {
   timestampExtractor,
 } from './helpers/extractors.js'
 import { getDelimiterIndices } from './utils.js'
-import {
-  DELIMITER_POSITION,
-  DATA_ARRAY_SIZE,
-} from './constants.js'
+import { DELIMITER_POSITION, DATA_ARRAY_SIZE } from './constants.js'
 import { ConstraintSystemSummary } from 'o1js/dist/node/lib/provable/core/provable-context.js'
 import { SignatureVerifier } from './helpers/signatureVerifier.js'
 import { hashProgram } from './helpers/sha256Hash.js'

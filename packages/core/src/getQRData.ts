@@ -2,7 +2,10 @@ import { Bytes, Gadgets } from 'o1js'
 import { decompressByteArray } from './utils.js'
 import { Bigint2048 } from './helpers/rsa.js'
 import { bufferToHex } from './utils.js'
-import { AADHAAR_PROD_PUBLIC_KEY, AADHAAR_TEST_PUBLIC_KEY } from './constants.js'
+import {
+  AADHAAR_PROD_PUBLIC_KEY,
+  AADHAAR_TEST_PUBLIC_KEY,
+} from './constants.js'
 
 export { getQRData, TEST_DATA, TEST_DATA_2 }
 

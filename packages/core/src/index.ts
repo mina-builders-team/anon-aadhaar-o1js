@@ -1,23 +1,27 @@
-import { SignatureVerifier } from './helpers/signatureVerifier.js';
-import { hashProgram } from './helpers/sha256Hash.js';
-import { AadhaarVerifier, AadhaarVerifierProof } from './AadhaarVerifier.js';
-import { getQRData, TEST_DATA } from './getQRData.js';
-import { getDelimiterIndices } from './utils.js';
-import { prepareRecursiveHashData, createPaddedQRData } from '../tests/testUtils.js';
-import { AadhaarCredentialFactory } from './AadhaarCredential.js';
-export * from './presentationSpecs.js';
+import { SignatureVerifier } from './helpers/signatureVerifier.js'
+import { hashProgram } from './helpers/sha256Hash.js'
+import { AadhaarVerifier, AadhaarVerifierProof } from './AadhaarVerifier.js'
+import { getQRData, TEST_DATA } from './getQRData.js'
+import { getDelimiterIndices } from './utils.js'
+import {
+  prepareRecursiveHashData,
+  createPaddedQRData,
+} from '../tests/testUtils.js'
+import { AadhaarCredentialFactory } from './AadhaarCredential.js'
+export * from './presentationSpecs.js'
 export * from './constants.js'
-import { CounterZkapp } from './CounterZkapp.js';
+import { CounterZkapp } from './CounterZkapp.js'
 
-export { SignatureVerifier,
-         CounterZkapp,
-         hashProgram,
-         AadhaarVerifier,
-         AadhaarVerifierProof,
-         AadhaarCredentialFactory,
-         getQRData,
-         TEST_DATA,
-         getDelimiterIndices,
-         prepareRecursiveHashData,
-         createPaddedQRData 
+export {
+  SignatureVerifier,
+  CounterZkapp,
+  hashProgram,
+  AadhaarVerifier,
+  AadhaarVerifierProof,
+  AadhaarCredentialFactory,
+  getQRData,
+  TEST_DATA,
+  getDelimiterIndices,
+  prepareRecursiveHashData,
+  createPaddedQRData,
 }

@@ -65,7 +65,10 @@ const hashProgramWrapper = ZkProgram({
     run: {
       privateInputs: [],
       async method(blocks: MerkleBlocks) {
-        const currentState = await hashBlocks(blocks, BLOCKS_PER_RECURSIVE_PROOF)
+        const currentState = await hashBlocks(
+          blocks,
+          BLOCKS_PER_RECURSIVE_PROOF
+        )
         return { publicOutput: currentState }
       },
     },
@@ -100,7 +103,10 @@ async function hashBlocks(
     hashProgram.Proof,
     async () => {
       // convert the blocks to constants
-      const blocksForProof = Provable.toConstant(MerkleBlocks, remaining.clone())
+      const blocksForProof = Provable.toConstant(
+        MerkleBlocks,
+        remaining.clone()
+      )
 
       // If remaining blocks of recursive approach is less than a threshold (BLOCKS_PER_BASE_PROOF), a base hashing is applied.
       const remainingBlocks = remaining.lengthUnconstrained().get()
@@ -110,9 +116,9 @@ async function hashBlocks(
 
       // Choose which hashing method will be used depending on the remainingBlocks.
       if (remainingBlocks <= BLOCKS_PER_BASE_PROOF) {
-        ({ proof } = await hashProgram.hashBase(blocksForProof))
+        ;({ proof } = await hashProgram.hashBase(blocksForProof))
       } else {
-        ({ proof } = await hashProgram.hashRecursive(blocksForProof))
+        ;({ proof } = await hashProgram.hashRecursive(blocksForProof))
       }
       return proof
     }
