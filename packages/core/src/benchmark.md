@@ -23,16 +23,26 @@ To minimize the impact of cache optimizations during circuit compilation, the `f
 
 Provable functions include extractors and the nullifier. Constraint counts are gathered using `Provable.constraintSystem`. For this API to work correctly, inputs must be provided as witnesses. Otherwise, constraint counts will appear as zero. A helper function named `getBenchmarkParameters` is used to streamline this process by returning both the constraint summary and method name.
 
-┌─────────┬──────────────────┬───────┐
-│ (index) │      Method      │ Rows  │
-├─────────┼──────────────────┼───────┤
+
+│   index │      Method      │ Rows  │
+|---------|------------------┼-------┤
 │    0    │  'Delimit Data'  │ 10753 │
 │    1    │ 'Age and Gender' │ 9416  │
 │    2    │   'Timestamp'    │  953  │
 │    3    │    'Pincode'     │ 4606  │
 │    4    │     'State'      │ 9406  │
 │    5    │   'Nullifier'    │  13   │
-└─────────┴──────────────────┴───────┘
+
+ | Method           |  Rows  |  
+ |------------------|--------|              
+ |  'Delimit Data'  |  10753 |     
+ | 'Age and Gender' |  9416  |
+ |'Timestamp'.      |   953  |
+ |  'Pincode'       |  4606  |
+ |  State           |  9406  |
+ | Nullifier        |   13   |
+
+
 
 ## ZkProgram Compilation Times
 
@@ -55,6 +65,17 @@ Note: Execution time for the base hashing method depends on input size. Also rem
 | Method Name     | Rows  | Time      |
 | --------------- | ----- | --------- |
 | verifySignature | 38973 | 113.528 s |
+
+
+## Browser benchmarks
+|     Method Name                   |   Time     | 
+|-----------------------------------|------------|
+|Worker initialization              |   114.65 s |
+|verifySignature                    |   116.61 s |
+|extract                            |   45.29 s  |
+|Credential                         |   36.56 s  |
+|Total time (excluding worker init) |   198.47 s |
+|Total time (including worker init) |   313.14 s |
 
 ## Conclusion and Remarks
 
