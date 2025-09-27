@@ -1,4 +1,6 @@
 # Anon Aadhaar in o1js
+> [!WARNING]
+> This repository is neither audit nor %100 completed yet. We do not recommend you to use this project for production code.
 
 Anon Aadhaar is a privacy-preserving protocol that enables users to prove specific attributes from their Aadhaar identity—such as age, residency, or gender—without revealing their full identity. It utilizes zero-knowledge proofs to allow users to generate verifiable claims based on data extracted from Aadhaar QR codes issued by the Indian government, ensuring that no sensitive personal information is exposed unless **explicitly** chosen by the user.
 
@@ -61,16 +63,11 @@ After the data is split into the **signature** and **signed data**, it can be us
 
 The Aadhaar QR verifier circuit takes the following inputs:
 
-- **Signature** and **signed data**, which are obtained off the circuit. The signature is used in the verification component together with the signed data.
+- **Signature** and **Signed Data**, which are obtained off the circuit. The signature is used in the verification component together with the signed data.
 - **RSA Public Key**, which is fetched from UIDAI off the circuit.
-- **Signal Hash**: A hash of a user-chosen **signal**, which acts as a commitment to a public message. It's used in the circuit for two main reasons:
-    - **Prevent front-running** – Binding the proof to a specific signal (e.g., an Ethereum address) ensures only the intended party can use it.
-    - **Enable secure signing** – especially useful in ERC-4337 flows, where the signal can represent a specific action (like a transaction), tying the proof directly to that action.
 - **Nullifier Seed**, which is used to generate a **nullifier** by hashing it with the user's photo. This prevents the same Aadhaar from being used multiple times for the same action or across apps, while keeping the identity private.
-- **Reveal Age Above 18**, **Reveal Gender**, **Reveal State**, and **Reveal Pincode**, which are boolean inputs that allow the user to specify the identity fields to be revealed in the proof.
 
 #### Signature Verifier Component
-
 
 The signature verification is performed by this component using the signature and signed data, and follows these steps:
 
@@ -85,7 +82,7 @@ For each field in the data, a dedicated extractor circuit is used to extract the
 
 - Extraction proceeds in the following steps:
     - **Timestamp Extraction**: The timestamp indicating when the QR code was signed is extracted from the data. It is converted from IST to UNIX UTC format. Using this value, the year, month, and day are computed and returned as integers, along with the original timestamp.
-    - **Age Extraction**: The date of birth is extracted from the Aadhaar data and converted into day, month, and year components. The circuit receives the current date as input and calculates the user's age in years. This value can be used to determine whether the user is over 18.
+    - **Date of Birth Extraction**: The date of birth is extracted from the Aadhaar data and converted into day, month, and year components. Later on, extracted Date of Birth can be used to calculated age.
     - **Gender Extraction**: Gender is extracted from the data and returned as a single-byte integer representing the gender code.
     - **Pincode Extraction**: The pincode is extracted by reading a predefined byte range within the address field. It is returned as a 6-digit integer representing the user's postal code.
     - **Photograph Extraction**: The photograph is extracted from the data, depending on the version of the Aadhaar QR code. It is returned as a big-endian integer array—typically of length 33—representing the encoded image data.
@@ -98,10 +95,7 @@ Along with the proof, the following values are output:
 - **Nullifier**, calculated using photograph bytes and the nullifier seed.
 - **Timestamp**, obtained from the **Timestamp Extractor** component.
 - **Public Key Hash**, derived by hashing the RSA public key in the signature verifier component.
-- **Signal Hash**, the same hash provided as input by the user.
-- **Nullifier Seed**, returned as is for verification.
-- **Age Above 18**, **Gender**, **State**, and **Pincode**, extracted from the identity data and revealed based on the user's disclosure preferences.
-
+- **Date of Birth**, **Gender**, **State**, and **Pincode**, extracted from the identity data and returned along with the proof.
 ```mermaid
 flowchart TD
     %% Main sections
@@ -110,18 +104,10 @@ flowchart TD
     
     %% Input section contents
     subgraph Inputs
-        subgraph OptParams["Optional Inputs"]
-            direction LR
-            revealAgeAbove18[/"Reveal Age Above 18"/]
-            revealGender[/"Reveal Gender"/]
-            revealState[/"Reveal State"/]
-            revealPincode[/"Reveal Pincode"/]
-        end
-        
+
         Signature[/"Signature"/]
         SignedData[/"Signed Data"/]
         RSAPublicKey[/"RSA Public Key"/]
-        signalHash[/"Signal Hash"/]
         nullifierSeed[/"Nullifier Seed"/]
     end
     
@@ -134,29 +120,24 @@ flowchart TD
         
         subgraph ExtractorTemplate["Extractor Template"]
 		        direction TB
-            ExtractFields["Extract the timestamp, age, gender, pincode, state And photograph from data"]
+            ExtractFields["Extract the timestamp, date of birth, gender, pincode, state And photograph from data"]
         end
 
         SignatureVerifierTemplate --> ExtractorTemplate 
 
-        ExtractorTemplate --> anonNode["Choose Fields To Be Revealed"]
-        anonNode["Choose fields to be revealed"] --> anonNode2["Compute the nullifier using nullifier seed and extracted photo"]
+        ExtractorTemplate --> anonNode2["Compute the nullifier using nullifier seed and extracted photo"]
     end
     
     %% Output section contents
     subgraph Outputs
-        subgraph OptOutputs["Optional Outputs"]
-            direction LR
-            AgeAbove18[/"Age Above 18"/]
-            Gender[/"Gender"/]
-            State[/"State"/]
-            Pincode[/"Pincode"/]
-        end
         
         Nullifier[/"Nullifier"/]
         Timestamp[/"Timestamp"/]
         pubKeyHash[/"Public Key Hash"/]
-        signalHash2[/"Signal Hash"/]
+        dob[/"Date of Birth"/]
+        gen[/"Gender"/]
+        pinc[/"Pincode"/]
+        stat[/"State"/]
         nullifierSeed2[/"Nullifier Seed"/]
     end
 
@@ -167,12 +148,15 @@ flowchart TD
     classDef subgraphStyle fill:#1A202C,stroke:#2D3748,color:#FFFFFF
     linkStyle default stroke:#d7d8da, color:#d7d8da
     %% Apply styles
-    class revealAgeAbove18,revealGender,revealState,revealPincode,AgeAbove18,Gender,State,Pincode orangeNode
-    class Signature,SignedData,RSAPublicKey,signalHash,nullifierSeed,Nullifier,Timestamp,pubKeyHash,signalHash2,nullifierSeed2 blueNode
+    class AgeAbove18,Gender,State,Pincode orangeNode
+    class Signature,SignedData,RSAPublicKey,signalHash,nullifierSeed,Nullifier,Timestamp,pubKeyHash,dob,stat,pinc,gen,nullifierSeed2 blueNode
     class ExtractFields,ApplySHA256,VerifyRSA1,VerifyRSA2,VerifyRSA3,VerifyRSA4,anonNode,anonNode2 roundedNode
     class Inputs,Outputs,AadhaarVerifier,SignatureVerifierTemplate,ExtractorTemplate,OptParams,OptOutputs subgraphStyle
-
 ```
+
+## Advancements
+
+o1js implementation of Anon Aadhaar differs from **circom** and **noir** implementations in some architecture designs. In o1js, it is possible to store the proof in users wallets - which enables users to create private attestations afterwards using this proof. In that way, a system where **proof of proofs** can be used for creating statements on some information. In the original implementation, gender, state, pincode and a boolean value indicates that age is over 18 is revealed by taking boolean values to reveal these values. In o1js implementation, it is possible to use private credentials to use the public outputs of the proof and create credentials proving these statements.
 
 ## Resources
 
@@ -195,7 +179,7 @@ pnpm run test
 ```
 
 ## How to run benchmark
-[Benchmark Results](./benchmark.md)
+[Benchmark Results](./packages/core/src/benchmark.md)
 
 When the benchmark is run using the following command, it should produce a table in the same format as shown in `benchmark.md`.
 
