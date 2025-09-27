@@ -19,7 +19,6 @@ export default function ZkAppCounterDisplay({ zkAppPublicKey }: ZkAppCounterDisp
     try {
       const zkAppAddress = PublicKey.fromBase58(zkAppPublicKey);
       const zkAppInstance = new CounterZkapp(zkAppAddress);
-
       const network = Mina.Network({
         mina: MINA_NODE_ENDPOINT,
         archive: MINA_ARCHIVE_ENDPOINT,
@@ -41,7 +40,6 @@ export default function ZkAppCounterDisplay({ zkAppPublicKey }: ZkAppCounterDisp
       setLoading(false);
     }
   };
-
   useEffect(() => {
     if (zkAppPublicKey) fetchCounterValue();
   }, [zkAppPublicKey]);
@@ -81,12 +79,6 @@ export default function ZkAppCounterDisplay({ zkAppPublicKey }: ZkAppCounterDisp
 
     {!loading && !error && counterValue === null && (
       <p className="text-gray-400">No counter value available</p>
-    )}
-
-    {!loading && !error && counterValue !== null && (
-      <p className="text-xs text-gray-500 mt-1">
-        Last updated: {new Date().toLocaleTimeString()}
-      </p>
     )}
   </div>
 </div>
