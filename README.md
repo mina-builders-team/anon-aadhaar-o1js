@@ -1,6 +1,6 @@
 # Anon Aadhaar in o1js
 > [!WARNING]
-> This repository is neither audit nor %100 completed yet. We do not recommend you to use this project for production code.
+> This repository is not audited,so we do not recommend you to use this project for production code.
 
 Anon Aadhaar is a privacy-preserving protocol that enables users to prove specific attributes from their Aadhaar identity—such as age, residency, or gender—without revealing their full identity. It utilizes zero-knowledge proofs to allow users to generate verifiable claims based on data extracted from Aadhaar QR codes issued by the Indian government, ensuring that no sensitive personal information is exposed unless **explicitly** chosen by the user.
 
@@ -14,7 +14,9 @@ In the Aadhaar QR code, identity data is embedded in a structured, encrypted for
 
 ## How does it work?
 
-The architecture is split into two parts: 1) Data Extraction & Processing 2) Proof Generation. 
+The architecture is split into two parts: 
+- Data Extraction & Processing 
+- Proof Generation
 
 In the first part, the user fetches data from UIDAI, validates it, and processes it to use it in circuits.
 
