@@ -1,9 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Credential } from 'mina-attestations';
-import { PrivateKey } from 'o1js';
+import { Credential, Presentation, PresentationRequest } from 'mina-attestations';
+import { Field, PrivateKey } from 'o1js';
 import { useWorkerStore } from '@/stores/workerStore';
 import { ProgressSteps, type StepItem } from '@/components/ProgressSteps';
+import { ageMoreThan18Spec } from 'anon-aadhaar-o1js';
 
 interface OutputClaim {
   pubKeyHash: string;
@@ -37,11 +38,27 @@ export default function SpecVerification({ credentialJson, ownerKey, aadhaarEnv,
         ...prev,
         { id: 'fetch', label: 'Fetch presentation request', status: 'active' },
       ]);
-      // 1) fetch presentation request from server
-      const res = await fetch('/api/presentation/request', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'request_failed');
-      const reqJson = data.requestJson as string;
+
+      const spec = await ageMoreThan18Spec()
+      const now = new Date()
+      const currentDay = Field.from(now.getUTCDate())
+      const currentMonth = Field.from(now.getUTCMonth() + 1)
+      const currentYear = Field.from(now.getUTCFullYear())
+
+      const request = PresentationRequest.https(
+        spec,
+        {
+          currentDay,
+          currentMonth,
+          currentYear,
+        },
+        { action: 'anon-aadhaar:age-check' }
+      )
+      console.log(
+        `currentDay: ${currentDay.toString()}, currentMonth: ${currentMonth.toString()}, currentYear: ${currentYear.toString()}`
+      )
+      const reqJson = PresentationRequest.toJSON(request)
+
       setRequestJson(reqJson);
       // Mark fetch step done
       setSteps((prev) => {
@@ -69,19 +86,29 @@ export default function SpecVerification({ credentialJson, ownerKey, aadhaarEnv,
       setSteps((prev) => [
         ...prev,
         { id: 'verify', label: 'Verify on server', status: 'active' },
-      ]);
+      ]); 
       // 3) verify on server
+
+      if (!requestJson || !presentationJson) {
+        return setButtonText('Could not found request or presentation!');
+      }
+      console.time('verifying Presentation took')
+
+      const presentation = Presentation.fromJSON(presentationJson)
+      const outputClaim = await Presentation.verify(request, presentation, {
+        verifierIdentity: 'anon-aadhaar-o1js.demo',
+      })
+      console.timeEnd('verifying Presentation took')
       console.time('verifying on server')
-      const vres = await fetch('/api/presentation/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestJson: reqJson, presentationJson: presJson, environment: aadhaarEnv })
-      });
+
       console.timeEnd('verifying on server')
-      const vdata = await vres.json();
-      if (!vdata.ok) throw new Error(vdata?.error || 'verification_failed');
-      console.log("vdata.outputClaim.pubKeyHash", vdata)
-      setOutputClaim(JSON.parse(vdata.outputClaim));
+      if (!outputClaim) throw new Error('Verification failed!');
+      console.log("vdata.outputClaim.pubKeyHash", outputClaim.pubKeyHash)
+      setOutputClaim({
+        owner: outputClaim.owner.toBase58(),
+        pubKeyHash: outputClaim.pubKeyHash
+      });
+
       setButtonText('Verified');
       // Mark verify as done
       setSteps((prev) => {
