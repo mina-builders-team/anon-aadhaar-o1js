@@ -57,7 +57,7 @@ export default function SpecSettlement({proofJson, zkAppPublicKey}: Props){
       const result = await provider.sendTransaction({
         transaction: txJson,
         feePayer: {
-          fee: 1e9
+          fee: 1e10
         }
       });
 
