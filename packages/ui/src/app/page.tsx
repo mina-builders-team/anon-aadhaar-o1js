@@ -160,21 +160,6 @@ export default function Page() {
         <p className="text-sm text-gray-400 text-center mt-1">Prove facts about your Aadhaar without revealing it.</p>
         {/* Mode toggle */}
         <div className="mt-2 flex justify-center items-center gap-2">
-          <span className="text-xs text-gray-400">Mode:</span>
-          <div className="inline-flex rounded overflow-hidden border border-gray-700">
-            <button
-              onClick={() => setAadhaarEnv('test')}
-              className={`px-3 py-1 text-xs ${aadhaarEnv === 'test' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-            >
-              Test
-            </button>
-            <button
-              onClick={() => setAadhaarEnv('prod')}
-              className={`px-3 py-1 text-xs ${aadhaarEnv === 'prod' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-            >
-              Prod
-            </button>
-          </div>
         </div>
         {/* Status indicators moved to Step 2 */}
         
