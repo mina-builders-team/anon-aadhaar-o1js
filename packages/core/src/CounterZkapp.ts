@@ -30,12 +30,14 @@ class CounterZkapp extends SmartContract {
     this.counter.set(Field.from(0))
   }
 
-  @method async verifyAadhaar(aadhaarProof: AadhaarVerifierProof, currentYear: Field, currentMonth: Field, currentDay: Field) {
+  @method async verifyAadhaar(aadhaarProof: AadhaarVerifierProof, currentYear: Field, currentMonth: Field, currentDay: Field, pubKeyHash: Field) {
     aadhaarProof.verify()
 
     const publicOutputs = aadhaarProof.publicOutput;
 
     publicOutputs.Timestamp.greaterThan(0)
+
+    publicOutputs.pubKeyHash.assertEquals(pubKeyHash, 'pubKeyHash does not match!');
 
     const dobYear = publicOutputs.DobYear;
     const dobMonth = publicOutputs.DobMonth;

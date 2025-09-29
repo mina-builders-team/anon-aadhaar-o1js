@@ -14,7 +14,7 @@ import ZkAppCounterDisplay from '@/components/ZkappCounter';
 
 type VerificationType = 'https' | 'zkapp';
 
-let zkAppPublicKey = 'B62qqnxnpStpuzbnXnK4j3y7q5FXVzwrBjx7jr9L6E2GK5y6qGH6xZZ';
+let zkAppPublicKey = 'B62qpdk93PNPuqNQpV1cBwCcE9y542sup1o6B8hqBuec2Jewk2Yioeq';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<VerificationType>('https');
