@@ -277,7 +277,7 @@ export default function Page() {
         </div>
 
         <div className="border-b border-gray-700 mt-6">
-            <p className="text-sm text-gray-400 mt-1">Generates a zero-knowledge credential in the browser that can be verified in browser. To settle the proof and increment counter, click crete proof.</p>
+            <p className="text-sm text-gray-400 mt-1">To verify credential in the browser, use <b>HTTPS Vericiation</b> tab. To settle your proof in zkApp and increment the counter, use <b>zkApp Verification</b> tab. <br></br> Upon included tx, fetch the latest value to see your increment! </p>
             <nav className="-mb-px flex space-x-1" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab('https')}
