@@ -121,6 +121,11 @@ export default function Page() {
   };
 
     const handleCreateProof = async (qrData: string) => {
+    if(aadhaarVerifierProof){
+      console.log('a proof json already exists!')
+      return;
+    }
+
     console.log('Creating proof...');
     // Reset steps and seed with scan step
     setProgressActive(true);
@@ -219,8 +224,8 @@ export default function Page() {
 
           {/* Step 2 */}
           <div className="p-4 rounded-lg bg-gray-800/60 border border-gray-700">
-            <h2 className="text-lg font-semibold">Step 2 — Create credential</h2>
-            <p className="text-sm text-gray-400 mt-1">Generates a zero-knowledge credential in the browser.</p>
+            <h2 className="text-lg font-semibold">Step 2 — Create credential or proof</h2>
+            <p className="text-sm text-gray-400 mt-1">Generates a zero-knowledge credential in the browser that can be verified in browser. To settle the proof and increment counter, click crete proof.</p>
             <div className="mt-3 items-center flex gap-3">
               <button
                 onClick={() => qrNumericString && handleCreateCredential(qrNumericString)}
@@ -272,6 +277,7 @@ export default function Page() {
         </div>
 
         <div className="border-b border-gray-700 mt-6">
+            <p className="text-sm text-gray-400 mt-1">Generates a zero-knowledge credential in the browser that can be verified in browser. To settle the proof and increment counter, click crete proof.</p>
             <nav className="-mb-px flex space-x-1" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab('https')}
