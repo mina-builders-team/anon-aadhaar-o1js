@@ -15,7 +15,7 @@ import { useMinaProvider } from '@/context/MinaProviderContext';
 
 type VerificationType = 'https' | 'zkapp';
 
-let zkAppPublicKey = 'B62qpdk93PNPuqNQpV1cBwCcE9y542sup1o6B8hqBuec2Jewk2Yioeq';
+const zkAppPublicKey = 'B62qpdk93PNPuqNQpV1cBwCcE9y542sup1o6B8hqBuec2Jewk2Yioeq';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<VerificationType>('https');
@@ -188,13 +188,13 @@ export default function Page() {
           <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
             <h3 className="text-lg font-semibold text-blue-400 mb-2">How to use</h3>
             <ul className="text-sm text-gray-300 space-y-2">
-              <li>• Download test QR from the link (screenshot works)</li>
-              <li>• Click 'Create Proof' to settle on zkApp and increment counter</li>
-              <li>• Click 'Settle Proof' in zkApp tab when ready</li>
-              <li>• Click 'Fetch' to see the updated counter</li>
-              <li>• Optional: Click 'Create Credential' for a credential</li>
-              <li>• Use HTTPS Verification tab to validate credentials</li>
-              <li>• View your credential in Auro wallet (Settings → Credentials)</li>
+              <li>{"• Download test QR from the link (screenshot works)"}</li>
+              <li>{"• Click 'Create Proof' to settle on zkApp and increment counter"}</li>
+              <li>{"• Click 'Settle Proof' in zkApp tab when ready"}</li>
+              <li>{"• Click 'Fetch' to see the updated counter"}</li>
+              <li>{"• Optional: Click 'Create Credential' for a credential"}</li>
+              <li>{"• Use HTTPS Verification tab to validate credentials"}</li>
+              <li>{"• View your credential in Auro wallet (Settings → Credentials)"}</li>
             </ul>
           </div>
           
