@@ -225,7 +225,7 @@ export default function Page() {
           {/* Step 2 */}
           <div className="p-4 rounded-lg bg-gray-800/60 border border-gray-700">
             <h2 className="text-lg font-semibold">Step 2 — Create credential or proof</h2>
-            <p className="text-sm text-gray-400 mt-1">Generates a zero-knowledge credential in the browser that can be verified in browser. To settle the proof and increment counter, click crete proof.</p>
+            <p className="text-sm text-gray-400 mt-1">Generates a zero-knowledge credential in the browser that can be verified in browser. To settle the proof and increment counter, click create proof.</p>
             <div className="mt-3 items-center flex gap-3">
               <button
                 onClick={() => qrNumericString && handleCreateCredential(qrNumericString)}
