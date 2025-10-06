@@ -7,6 +7,7 @@ interface MinaProviderContextType {
   provider: IMinaProvider | null;
   setProvider: (provider: IMinaProvider | null) => void;
   disconnectProvider: () => void;
+  connectWallet: () => void;
 }
 
 // Create the context with an undefined default
@@ -49,12 +50,6 @@ export const AuroMinaProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     window.addEventListener('mina:announceProvider', handleAnnounceProvider as EventListener);
 
-    // Dispatch mina:requestProvider to prompt wallet
-    window.dispatchEvent(new Event('mina:requestProvider'));
-    setTimeout(() => {
-      window.dispatchEvent(new Event('mina:requestProvider'));
-    }, 1000);
-
     return () => {
       window.removeEventListener('mina:announceProvider', handleAnnounceProvider as EventListener);
     };
@@ -79,6 +74,12 @@ export const AuroMinaProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, [provider]);
 
+
+  const connectWallet = () => {
+  // Ask Auro wallet to announce itself
+  window.dispatchEvent(new Event('mina:requestProvider'));
+  };
+
   // Disconnect provider
   const disconnectProvider = () => {
     setProvider(null);
@@ -86,9 +87,9 @@ export const AuroMinaProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   return (
-    <MinaProviderContext.Provider value={{ provider, setProvider, disconnectProvider }}>
-      {children}
-    </MinaProviderContext.Provider>
+  <MinaProviderContext.Provider value={{ provider, setProvider, disconnectProvider, connectWallet }}>
+    {children}
+  </MinaProviderContext.Provider>
   );
 };
 
