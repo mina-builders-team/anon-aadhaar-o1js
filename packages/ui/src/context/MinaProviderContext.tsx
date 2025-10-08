@@ -94,6 +94,7 @@ export const AuroMinaProvider: React.FC<{ children: ReactNode }> = ({
 
       return () => {
         provider.removeListener('accountsChanged', handleAccountsChanged)
+        provider.removeListener('chainChanged',syncMinaChain)
       }
     }
   }, [provider])
