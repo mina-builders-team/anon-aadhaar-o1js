@@ -23,7 +23,7 @@ export default function Page() {
   const [qrNumericString, setQrNumericString] = useState<string | null>(null);
   const [aadhaarName, setAadhaarName] = useState<string | null>(null);
   const [aadhaarEnv, setAadhaarEnv] = useState<'test' | 'prod'>('test');
-  const { provider, connectWallet, disconnectProvider } = useMinaProvider();
+  const { provider, walletError, connectWallet, disconnectProvider, syncMinaChain } = useMinaProvider();
   const { status, initialize, createCredential, createProof, verifyAadhaarVerifierProof } = useWorkerStore();
   const credentialJson = useCredentialStore((s) => s.credentialJson);
   const [credentialReady,setCredentialReady] = useState<boolean>(false);
@@ -165,7 +165,15 @@ export default function Page() {
           >
             Connect Auro Wallet
           </button>
-        ) : (
+        ) : walletError ?
+          (<button
+            onClick={syncMinaChain}
+            className="px-4 py-2 bg-orange-600 rounded hover:bg-orange-500"
+          >
+            Change Network
+          </button>
+        )
+            :(
           <button
             onClick={disconnectProvider}
             className="px-4 py-2 bg-red-600 rounded hover:bg-red-500"
