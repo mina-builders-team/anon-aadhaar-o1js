@@ -90,6 +90,8 @@ interface WorkerState {
     ownerPrivateKeyBase58: string
   }) => Promise<string | undefined>
   settleProof: (aadhaarVerifierProof: string, zkAppPublicKey: string, senderAddress: string) => Promise<string>
+  validateCredential: (credJson:string) => Promise<void>
+
 }
 
 export const useWorkerStore = create<WorkerState>((set, get) => ({
@@ -381,4 +383,12 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
     return txResult;
 
   },
+
+
+  validateCredential: async (credJson: string) => {
+    set({ status: { status: 'computing', message: 'Validating credential' } })
+    await credentialProxy?.validateCredential(credJson);
+    set({ status: { status: 'computed', message: 'Validated credential' } })
+  }
+
 }))

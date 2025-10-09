@@ -76,11 +76,18 @@ async function createCredential(
   console.log('Credential created')
   return Credential.toJSON(credential)
 }
+async function validateCredential(credJson: string){
+  console.time('Credential Validation')
+  await Credential.validate(await Credential.fromJSON(credJson));
+  console.timeEnd('Credential Validation')
+}
 
 const api = {
   init,
   createCredential,
+  validateCredential
 }
+
 
 export type API = typeof api
 

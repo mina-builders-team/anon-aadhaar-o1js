@@ -24,7 +24,7 @@ export default function Page() {
   const [aadhaarName, setAadhaarName] = useState<string | null>(null);
   const [aadhaarEnv, setAadhaarEnv] = useState<'test' | 'prod'>('test');
   const { provider, walletError, connectWallet, disconnectProvider, syncMinaChain } = useMinaProvider();
-  const { status, initialize, createCredential, createProof, verifyAadhaarVerifierProof } = useWorkerStore();
+  const { status, initialize, createCredential, createProof, verifyAadhaarVerifierProof, validateCredential} = useWorkerStore();
   const credentialJson = useCredentialStore((s) => s.credentialJson);
   const [credentialReady,setCredentialReady] = useState<boolean>(false);
   const setCredentialJson = useCredentialStore((s) => s.setCredentialJson);
@@ -151,7 +151,7 @@ export default function Page() {
   const handleVerifyCredential = async () => {
     if (!credentialJson) return;
     console.time('Credential validation');
-    await Credential.validate(await Credential.fromJSON(credentialJson));
+    await validateCredential(credentialJson);
     console.timeEnd('Credential validation');
   };
 
