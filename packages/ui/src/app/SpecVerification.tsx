@@ -19,8 +19,6 @@ type Props = {
 };
 
 export default function SpecVerification({ credentialJson, ownerKey, aadhaarEnv, disabled }: Props) {
-  const [requestJson, setRequestJson] = useState<string | undefined>();
-  const [presentationJson, setPresentationJson] = useState<string | undefined>();
   const [outputClaim, setOutputClaim] = useState<OutputClaim | undefined>();
   const [buttonText, setButtonText] = useState('Verify age > 18');
   const { createPresentation, status } = useWorkerStore();
@@ -59,7 +57,6 @@ export default function SpecVerification({ credentialJson, ownerKey, aadhaarEnv,
       )
       const reqJson = PresentationRequest.toJSON(request)
 
-      setRequestJson(reqJson);
       // Mark fetch step done
       setSteps((prev) => {
         const up = [...prev];
@@ -79,7 +76,6 @@ export default function SpecVerification({ credentialJson, ownerKey, aadhaarEnv,
       });
       console.timeEnd("presentation creation took")
       if (!presJson) throw new Error('presentation_create_failed');
-      setPresentationJson(presJson);
 
       setButtonText('Verifying presentation...');
       // Append verify step as active
@@ -89,12 +85,17 @@ export default function SpecVerification({ credentialJson, ownerKey, aadhaarEnv,
       ]); 
       // 3) verify on server
 
-      if (!requestJson || !presentationJson) {
+      if (!request || !presJson) {
         return setButtonText('Could not found request or presentation!');
       }
+      setSteps((prev)=> [
+        ...prev,
+        {id: 'verify', label: 'Verifying Credential', status:'error'},
+      ]);
+
       console.time('verifying Presentation took')
 
-      const presentation = Presentation.fromJSON(presentationJson)
+      const presentation = Presentation.fromJSON(presJson)
       const outputClaim = await Presentation.verify(request, presentation, {
         verifierIdentity: 'anon-aadhaar-o1js.demo',
       })
@@ -103,10 +104,10 @@ export default function SpecVerification({ credentialJson, ownerKey, aadhaarEnv,
 
       console.timeEnd('verifying on server')
       if (!outputClaim) throw new Error('Verification failed!');
-      console.log("vdata.outputClaim.pubKeyHash", outputClaim.pubKeyHash)
+      console.log("vdata.outputClaim.pubKeyHash", outputClaim.pubKeyHash.toString())
       setOutputClaim({
         owner: outputClaim.owner.toBase58(),
-        pubKeyHash: outputClaim.pubKeyHash
+        pubKeyHash: outputClaim.pubKeyHash.toString()
       });
 
       setButtonText('Verified');
