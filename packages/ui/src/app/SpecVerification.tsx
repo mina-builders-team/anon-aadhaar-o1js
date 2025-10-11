@@ -162,7 +162,7 @@ export default function SpecVerification({ credentialJson, ownerKey, aadhaarEnv,
   }, [status]);
 
   return (
-    <div className="flex flex-col items-center gap-6 p-6 max-w-2xl mx-auto">
+    <div className="flex flex-col items-center gap-6 p-2 py-8 max-w-2xl mx-auto">
       <button
         onClick={handleVerifyAge}
         className="px-6 py-3 bg-green-600 text-white font-medium rounded-lg shadow-sm hover:bg-green-500 disabled:opacity-50 transition-colors"
@@ -170,6 +170,7 @@ export default function SpecVerification({ credentialJson, ownerKey, aadhaarEnv,
       >
         {buttonText}
       </button>
+
       {/* Progress for presentation flow (visible only after click) */}
       {progressActive && (
         <div className="w-full">

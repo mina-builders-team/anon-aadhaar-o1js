@@ -364,14 +364,14 @@ export default function Page() {
           <div className="mt-3 gap-2 flex">
             <button 
               onClick={handleVerifyCredential} 
-              className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 disabled:opacity-50" 
+              className="px-4 py-2 bg-purple-600 flex-1 rounded hover:bg-purple-500 disabled:opacity-50" 
               disabled={status.status === 'computing' || !credentialJson}
             >
               Verify Credential
             </button>
             <button 
               onClick={handleVerifyAadhaarProof} 
-              className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 disabled:opacity-50" 
+              className="px-4 py-2 bg-purple-600 flex-1 rounded hover:bg-purple-500 disabled:opacity-50" 
               disabled={status.status === 'computing' || !aadhaarVerifierProof}
             >
               Verify Aadhaar Proof

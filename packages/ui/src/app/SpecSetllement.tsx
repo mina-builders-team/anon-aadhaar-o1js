@@ -78,7 +78,7 @@ export default function SpecSettlement({ proofJson, zkAppPublicKey }: Props) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6 p-6 max-w-2xl mx-auto">
+    <div className="flex flex-col items-center gap-6 p-2 max-w-2xl mx-auto">
       <button
         onClick={handleSettlement}
         disabled={!provider || !proofJson || isLoading || walletError !== null}
