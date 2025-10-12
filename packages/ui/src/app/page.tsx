@@ -156,7 +156,8 @@ export default function Page() {
   };
 
   return (
-    <main className="min-h-screen p-10 bg-gray-900 text-white " style={{ zoom: 0.70 }}>
+    <div className="bg-gray-900 min-h-screen">
+    <main className="min-h-screen p-10 bg-gray-900 text-white " style={{ zoom: 0.70 } }>
 
       <div className='flex justify-between mb-6'> 
 
@@ -427,5 +428,6 @@ export default function Page() {
         aadhaarMode={aadhaarEnv}
       />
     </main>
+    </div>
   );
 }
