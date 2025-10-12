@@ -74,7 +74,8 @@ interface WorkerState {
     qrNumericString: string,
     owner: PublicKey,
     publicKeyHex: string,
-    zkAppPublicKey: string
+    zkAppPublicKey: string,
+    proofJson?:string
   ) => Promise<
     { credentialJson: string; aadhaarVerifierProof: string } | undefined
   >
@@ -153,8 +154,10 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
     qrNumericString: string,
     owner: PublicKey,
     publicKeyHex: string,
-    zkAppPublicKey: string
+    zkAppPublicKey: string,
+    proofJson?: string
   ) => {
+
     console.log(
       'Executing Credential Creation Method, qrNumericString: ',
       qrNumericString
@@ -172,32 +175,41 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
       set({ status: { status: 'errored', error: 'Workers not ready' } })
       return undefined
     }
-    try {
-      set({
-        status: { status: 'computing', message: 'Computing Verifier Proof' },
-      })
-      console.time('total time')
-      console.time('verifierWorker took')
-      const vProof = await verifierProxy.verifySignature(
-        qrNumericString,
-        publicKeyHex
-      )
-      console.timeEnd('verifierWorker took')
-      if (!vProof) {
-        set({ status: { status: 'errored', error: 'Verifier proof failed' } })
-        return undefined
-      }
 
-      set({
-        status: { status: 'computing', message: 'Computing Extractor Proof' },
-      })
-      console.time('extractorWorker took')
-      const eProof = await extractorProxy.extract(
-        vProof,
-        qrNumericString,
-        publicKeyHex
-      )
-      console.timeEnd('extractorWorker took')
+    try {
+      let eProof: string;
+
+      if(proofJson){
+        eProof = proofJson;
+      }
+      else{
+        set({
+          status: { status: 'computing', message: 'Computing Verifier Proof' },
+        })
+        console.time('total time')
+        console.time('verifierWorker took')
+        const vProof = await verifierProxy.verifySignature(
+          qrNumericString,
+          publicKeyHex
+        )
+        console.timeEnd('verifierWorker took')
+        if (!vProof) {
+          set({ status: { status: 'errored', error: 'Verifier proof failed' } })
+          return undefined
+        }
+
+        set({
+          status: { status: 'computing', message: 'Computing Extractor Proof' },
+        })
+        console.time('extractorWorker took')
+        eProof = await extractorProxy.extract(
+          vProof,
+          qrNumericString,
+          publicKeyHex
+        ) as string
+        console.timeEnd('extractorWorker took')
+      }
+     
       if (!eProof) {
         set({ status: { status: 'errored', error: 'Extractor proof failed' } })
         return undefined

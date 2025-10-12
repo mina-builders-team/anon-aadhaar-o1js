@@ -132,7 +132,11 @@ export default function Page() {
     }
     
     const selectedKey = aadhaarEnv === 'test' ? AADHAAR_TEST_PUBLIC_KEY : AADHAAR_PROD_PUBLIC_KEY;
-    const res = await createCredential(qrData, owner, selectedKey, zkAppPublicKey);
+    
+    const res = aadhaarVerifierProof
+      ? await createCredential(qrData, owner, selectedKey, zkAppPublicKey, aadhaarVerifierProof)
+      : await createCredential(qrData, owner, selectedKey, zkAppPublicKey);
+          
     if (res?.credentialJson) {
       setCredentialJson(res.credentialJson);
       setCredentialReady(true);
@@ -391,7 +395,7 @@ export default function Page() {
             <button 
               onClick={handleVerifyCredential} 
               className="px-4 py-2 bg-purple-600 flex-1 rounded hover:bg-purple-500 disabled:opacity-50" 
-              disabled={status.status === 'computing' || !credentialReady}
+              disabled={status.status === 'computing' || !credentialReady }
             >
               Verify Credential
             </button>
