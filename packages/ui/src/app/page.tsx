@@ -23,6 +23,7 @@ export default function Page() {
   const [qrNumericString, setQrNumericString] = useState<string | null>(null);
   const [aadhaarName, setAadhaarName] = useState<string | null>(null);
   const [aadhaarEnv, setAadhaarEnv] = useState<'test' | 'prod'>('test');
+  const [workerReady, setWorkerReady] = useState<boolean>(false);
   const { provider, walletError, connectWallet, disconnectProvider, syncMinaChain } = useMinaProvider();
   const { status, initialize, createCredential, createProof, verifyAadhaarVerifierProof, validateCredential} = useWorkerStore();
   const credentialJson = useCredentialStore((s) => s.credentialJson);
@@ -34,6 +35,27 @@ export default function Page() {
   const [steps, setSteps] = useState<StepItem[]>([]);
   const [progressActive, setProgressActive] = useState(false);
   const prevStatusRef = useRef<WorkerStatus | undefined>(undefined);
+
+  useEffect(() => {
+    (async () => {
+      setSteps([
+        {
+          id: 'init',
+          label: 'Initializing workers',
+          status: 'active',
+        },
+      ]);
+      await initialize(zkAppPublicKey);
+      setSteps([
+        {
+          id: 'init',
+          label: 'Initializing workers',
+          status: 'done',
+        },
+      ]);
+      setWorkerReady(true);
+    })();
+  }, []);
 
   useEffect(() => {
     if (!progressActive) return;
@@ -98,15 +120,17 @@ export default function Page() {
   const handleCreateCredential = async (qrData: string) => {
     console.log('Creating credential...');
     setProgressActive(true);
-    await initialize(zkAppPublicKey);
-    setSteps([
-      {
-        id: 'init',
-        label: 'Initializing workers',
-        status: 'done',
-      },
-    ]);
-
+    if(!workerReady){
+      await initialize(zkAppPublicKey);
+      setSteps([
+        {
+          id: 'init',
+          label: 'Initializing workers',
+          status: 'done',
+        },
+      ]);        
+    }
+    
     const selectedKey = aadhaarEnv === 'test' ? AADHAAR_TEST_PUBLIC_KEY : AADHAAR_PROD_PUBLIC_KEY;
     const res = await createCredential(qrData, owner, selectedKey, zkAppPublicKey);
     if (res?.credentialJson) {
@@ -126,14 +150,17 @@ export default function Page() {
 
     console.log('Creating proof...');
     setProgressActive(true);
-    await initialize(zkAppPublicKey);
-    setSteps([
-      {
-        id: 'init',
-        label: 'Initializing workers',
-        status: 'done',
-      },
-    ]);
+    if(!workerReady){
+      await initialize(zkAppPublicKey);
+      setSteps([
+        {
+          id: 'init',
+          label: 'Initializing workers',
+          status: 'done',
+        },
+      ]);
+    }
+    
 
     const selectedKey = aadhaarEnv === 'test' ? AADHAAR_TEST_PUBLIC_KEY : AADHAAR_PROD_PUBLIC_KEY;
     const proofJson = await createProof(qrData, selectedKey, zkAppPublicKey);
@@ -157,7 +184,7 @@ export default function Page() {
 
   return (
     <div className="bg-gray-900 min-h-screen">
-    <main className="min-h-screen p-10 bg-gray-900 text-white " style={{ zoom: 0.70 } }>
+    <main className=" p-10 text-white " style={{ zoom: 0.70 } }>
 
       <div className='flex justify-between mb-6'> 
 
@@ -334,7 +361,7 @@ export default function Page() {
                 <button
                   onClick={() => qrNumericString && handleCreateCredential(qrNumericString)}
                   className="px-4 py-2 bg-blue-600 flex-1 rounded hover:bg-blue-500 disabled:opacity-50 min-h-[44px]"
-                  disabled={!qrNumericString || progressActive}
+                  disabled={!qrNumericString || progressActive || !workerReady}
                 >
                   {credentialReady ? "Credential Ready ✓" : "Create Credential"}
                 </button>
@@ -342,16 +369,14 @@ export default function Page() {
                 <button
                   onClick={() => qrNumericString && handleCreateProof(qrNumericString)}
                   className="px-4 py-2 bg-blue-600 flex-1 rounded hover:bg-blue-500 disabled:opacity-50 min-h-[44px]"
-                  disabled={!qrNumericString || progressActive}
+                  disabled={!qrNumericString || progressActive || !workerReady} 
                 >
                   Create Proof
                 </button>
               </div>
-              {progressActive && (
-                <div className="mt-4">
-                  <ProgressSteps title="Progress" steps={steps} />
-                </div>
-              )}
+              <div className="mt-4">
+                <ProgressSteps title="Progress" steps={steps} />
+              </div>
               {status.status === 'errored' && status.error && (
                 <div className="text-left text-red-300 mt-3 text-sm">
                   <p className="font-semibold">Error:</p>
@@ -366,7 +391,7 @@ export default function Page() {
             <button 
               onClick={handleVerifyCredential} 
               className="px-4 py-2 bg-purple-600 flex-1 rounded hover:bg-purple-500 disabled:opacity-50" 
-              disabled={status.status === 'computing' || !credentialJson}
+              disabled={status.status === 'computing' || !credentialReady}
             >
               Verify Credential
             </button>
