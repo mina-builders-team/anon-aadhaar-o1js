@@ -21,7 +21,7 @@ export const QrScannerModal = ({
   publicKeyHex,
   aadhaarMode,
 }: QrScannerModalProps) => {
-  const [mode, setMode] = useState<'scan' | 'upload'>('scan')
+  const [mode, setMode] = useState<'scan' | 'upload'>('upload')
   const [qrNumericString, setQrNumericString] = useState<string | null>(null)
   const [aadhaarDetails, setAadhaarDetails] = useState<{ name: string } | null>(
     null

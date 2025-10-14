@@ -32,6 +32,7 @@ export default function Page() {
   const [aadhaarVerifierProof, setAadhaarVerifierProof] = useState<string | undefined>();
   const ownerKey = PrivateKey.fromBase58(DEMO_PRIVATEKEY);
   const owner = ownerKey.toPublicKey();
+  const [validation, setValidation] = useState<boolean>(false);
   const [steps, setSteps] = useState<StepItem[]>([]);
   const [progressActive, setProgressActive] = useState(false);
   const prevStatusRef = useRef<WorkerStatus | undefined>(undefined);
@@ -173,12 +174,6 @@ export default function Page() {
     setProgressActive(false);
   };  
 
-  const handleVerifyAadhaarProof = async () => {
-    if (!aadhaarVerifierProof) return;
-    const ok = await verifyAadhaarVerifierProof(aadhaarVerifierProof);
-    console.log('Aadhaar proof verified:', ok);
-  };
-
   const handleVerifyCredential = async () => {
     if (!credentialJson) return;
     console.time('Credential validation');
@@ -250,7 +245,7 @@ export default function Page() {
         )}
       </div>
 
-      <div className="flex gap-6 w-full max-w-7xl mx-auto">
+      <div className="flex gap-6 max-w-7xl mx-auto">
         {/* Information Cards - Left Side */}
         <div className="hidden lg:flex flex-col gap-8 w-80 flex-shrink-0 ">
           <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
@@ -259,24 +254,11 @@ export default function Page() {
               Anon Aadhaar allows you to prove facts about your Aadhaar identity without revealing the actual document. Using zero-knowledge proofs, you maintain complete privacy.
             </p>
           </div>
-          
-          <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
-            <h3 className="text-lg font-semibold text-blue-400 mb-2">How to use</h3>
-            <ul className="text-sm text-gray-300 space-y-2">
-              <li>{"• Download test QR from the link (screenshot works)"}</li>
-              <li>{"• Click 'Create Proof' to settle on zkApp and increment counter"}</li>
-              <li>{"• Click 'Settle Proof' in zkApp tab when ready"}</li>
-              <li>{"• Click 'Fetch' to see the updated counter"}</li>
-              <li>{"• Optional: Click 'Create Credential' for a credential"}</li>
-              <li>{"• Use HTTPS Verification tab to validate credentials"}</li>
-              <li>{"• View your credential in Auro wallet (Settings → Credentials)"}</li>
-            </ul>
-          </div>
-          
+
           <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
             <h3 className="text-lg font-semibold text-purple-400 mb-2">Privacy First</h3>
             <p className="text-sm text-gray-300">
-              All processing happens in your browser. Your Aadhaar data <b>never</b> leaves your device, ensuring maximum privacy and security.
+              All processing happens in your browser. Your Aadhaar data <b>never</b> leaves your device, ensuring maximum privacy and security. Only the transaction data is interacted with outter world.
             </p>
           </div>
         </div>
@@ -299,14 +281,13 @@ export default function Page() {
               />
             </svg>            
             <p className="text-sm text-yellow-200">
-              <strong className="font-semibold">Not Audited:</strong> This project has not been audited. Although it runs entirely on the client side, we strongly recommend that you do <strong> NOT </strong> use your real Aadhaar.
+              <strong className="font-semibold">Warning:</strong> This project has not been audited. Although it runs entirely on the client side, we strongly recommend that you do <strong> NOT </strong> use your real Aadhaar.
             </p>
           </div>
-
           
           <div className="space-y-6 mt-4">
             {/* Step 1 */}
-            <div className="p-4 rounded-lg bg-gray-800/60 border border-gray-700">
+            <div className="p-4 justify-center rounded-lg bg-gray-800/60 border border-gray-700">
               <h2 className="text-lg font-semibold">Step 1 — Scan or upload your {aadhaarEnv === 'test' ? 'Test ' : ''}Aadhaar QR</h2>
               <p className="text-sm text-gray-400 mt-1">We only parse the QR locally in your browser.</p>
               <div className="mt-2 text-sm">
@@ -319,7 +300,7 @@ export default function Page() {
                       rel="noreferrer"
                       className="text-green-400 hover:underline"
                     >
-                      this Link
+                      this link
                     </a>
                     .
                   </p>
@@ -338,7 +319,7 @@ export default function Page() {
                   </p>
                 )}
               </div>
-              <div className="mt-3 flex gap-3 flex-wrap">
+              <div className="mt-3 p-4 flex justify-center gap-3 flex-wrap">
                 <button 
                   onClick={handleOpenQrModal}
                   className="px-4 py-2 bg-green-600 rounded hover:bg-green-500 disabled:opacity-50"
@@ -346,7 +327,7 @@ export default function Page() {
                   Scan or Upload
                 </button>
               </div>
-              <div className="mt-2 text-sm text-gray-300">
+              <div className="mt-2 flex justify-center text-sm text-gray-300">
                 {qrNumericString && aadhaarName ? (
                   <>
                     <span className="font-medium text-gray-400  ">Aadhaar Name:</span> <span className="text-white">{aadhaarName}</span>
@@ -360,7 +341,7 @@ export default function Page() {
             {/* Step 2 */}
             <div className="p-4 rounded-lg bg-gray-800/60 border border-gray-700">
               <h2 className="text-lg font-semibold">Step 2 — Create credential or proof</h2>
-              <p className="text-sm text-gray-400 mt-1">Generates a zero-knowledge credential in the browser that can be verified in browser. To settle the proof and increment counter, click create proof.</p>
+              <p className="text-sm text-gray-400 mt-1">Creates a zero-knowledge credential in the browser that can be verified in browser. To settle the proof and increment counter, click create proof.</p>
               <div className="mt-3 items-center flex gap-3">
                 <button
                   onClick={() => qrNumericString && handleCreateCredential(qrNumericString)}
@@ -391,25 +372,19 @@ export default function Page() {
           </div>
           <div className='border border-gray-700 p-4 rounded-lg'>
           <h2 className="text-lg font-semibold mt-6">Step 3 — Test your credential</h2>
+          <p className="text-sm text-gray-400 mt-1"> Validate if your credential is created correctly or not. </p>
           <div className="mt-3 gap-2 flex">
             <button 
               onClick={handleVerifyCredential} 
               className="px-4 py-2 bg-purple-600 flex-1 rounded hover:bg-purple-500 disabled:opacity-50" 
               disabled={status.status === 'computing' || !credentialReady }
             >
-              Verify Credential
-            </button>
-            <button 
-              onClick={handleVerifyAadhaarProof} 
-              className="px-4 py-2 bg-purple-600 flex-1 rounded hover:bg-purple-500 disabled:opacity-50" 
-              disabled={status.status === 'computing' || !aadhaarVerifierProof}
-            >
-              Verify Aadhaar Proof
+              Validate Credential
             </button>
           </div>
             
           <div className=" mt-6">
-              <p className="text-sm text-gray-400 mt-1">To verify credential in the browser, use <b>HTTPS Vericiation</b> tab. To settle your proof in zkApp and increment the counter, use <b>zkApp Verification</b> tab. <br></br> Upon included tx, fetch the latest value to see your increment! </p>
+              <p className="text-sm text-gray-400 mt-1"> To verify credential in the browser, use <b>Browser Vericiation</b> section. To settle your proof in zkApp and increment the counter, use <b>zkApp   Verification</b> section. <br></br> Upon included tx, fetch the latest value to see your increment! </p>
             </div>
             </div>
 
@@ -420,7 +395,7 @@ export default function Page() {
                     ? 'text-green-400 bg-gray-800/50 border-green-500 hover:bg-gray-800 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-green-500/20 after:blur-sm' 
                     : 'text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-700'}`}
                 >
-                  HTTPS Verification
+                  Browser Verification
                 </button>
                 <button
                   onClick={() => setActiveTab('zkapp')}
@@ -445,6 +420,41 @@ export default function Page() {
             <div className="pt-8">
               <ZkAppCounterDisplay zkAppPublicKey={zkAppPublicKey} ></ZkAppCounterDisplay>
             </div>
+        </div>
+
+        <div className="flex gap-6 max-w-7xl mx-auto">
+        {/* Information Cards - Left Side */}
+        <div className="hidden lg:flex flex-col py-60 gap-28 w-80 flex-shrink-0 ">
+          <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+            <h3 className="text-lg font-semibold text-green-400 mb-2">Step 1</h3>
+            <p className="text-sm text-gray-300">
+              Click to the QR code generation link. After downloading, upload it using <em>Scan or Upload</em> button.
+            </p>
+          </div>
+          
+          <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+            <h3 className="text-lg font-semibold text-green-400 mb-2">Step 2</h3>
+            <ul className="text-sm text-gray-300 space-y-2">
+              Wait for workers to be initialized. When initialized you can choose: 
+              <li>• <strong>Create Credential</strong> button, to create credential and verify it using <strong>Browser Verification</strong> section. </li>
+              <li>• <strong> Create Proof</strong> button, to create a zk proof and verify it using <strong>zkApp Verification</strong> section, which will require your signature and increase the counter below! </li>
+            </ul>
+          </div>
+
+          <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+            <h3 className="text-lg font-semibold text-green-400 mb-2">Step 3</h3>
+            <p className="text-sm text-gray-300">
+              If you chose to create a credential, you can validate it here to check if it is created correctly. 
+            </p>
+          </div>
+          
+          <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+            <h3 className="text-lg font-semibold text-green-400 mb-2">Step 4</h3>
+            <p className="text-sm text-gray-300">
+              After you created your proof, you can settle it. When you send the settlement tx, you will be able to see your tx link. When tx is included, click <strong>refresh</strong> to see the increment.
+            </p>
+          </div>
+        </div>
         </div>
       </div>
       
