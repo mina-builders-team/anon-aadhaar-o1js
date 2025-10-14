@@ -13,6 +13,7 @@
     "@aurowallet/mina-provider": "^1.0.12",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
+    "IProvider": "link:@aurowallet/mina-provider/dist/IProvider",
     "anon-aadhaar-o1js": "workspace:*",
     "comlink": "^4.4.2",
     "mina-attestations": "^0.5.0",

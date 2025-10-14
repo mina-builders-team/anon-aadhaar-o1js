@@ -87,6 +87,9 @@ importers:
       '@zxing/library':
         specifier: ^0.21.3
         version: 0.21.3
+      IProvider:
+        specifier: link:@aurowallet/mina-provider/dist/IProvider
+        version: link:@aurowallet/mina-provider/dist/IProvider
       anon-aadhaar-o1js:
         specifier: workspace:*
         version: link:../core
