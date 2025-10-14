@@ -183,7 +183,7 @@ export default function Page() {
 
   return (
     <div className="bg-gray-900 min-h-screen">
-    <main className=" p-10 text-white " style={{ zoom: 0.70 } }>
+    <main className=" p-10 text-white " style={{ zoom: 0.85 } }>
 
       <div className='flex justify-between mb-6'> 
 
@@ -250,14 +250,14 @@ export default function Page() {
         <div className="hidden lg:flex flex-col gap-8 w-80 flex-shrink-0 ">
           <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
             <h3 className="text-lg font-semibold text-green-400 mb-2">What is Anon Aadhaar?</h3>
-            <p className="text-sm text-gray-300">
+            <p className="text-md text-gray-300">
               Anon Aadhaar allows you to prove facts about your Aadhaar identity without revealing the actual document. Using zero-knowledge proofs, you maintain complete privacy.
             </p>
           </div>
 
           <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
             <h3 className="text-lg font-semibold text-purple-400 mb-2">Privacy First</h3>
-            <p className="text-sm text-gray-300">
+            <p className="text-md text-gray-300">
               All processing happens in your browser. Your Aadhaar data <b>never</b> leaves your device, ensuring maximum privacy and security. Only the transaction data is interacted with outter world.
             </p>
           </div>
@@ -266,7 +266,7 @@ export default function Page() {
         {/* Main Card */}
         <div className="flex-1 max-w-xl p-6 space-y-6 bg-gray-800 rounded-lg shadow-lg">
           <h1 className="text-2xl font-bold text-center">Anon Aadhaar</h1>
-          <p className="text-sm text-gray-400 text-center mt-1">Prove facts about your Aadhaar without revealing it.</p>
+          <p className="text-md text-gray-400 text-center mt-1">Prove facts about your Aadhaar without revealing it.</p>
           <div className='flex p-3 mt-3 bg-yellow-900/30 rounded border border-yellow-600/50 gap-3'>
             
             <svg 
@@ -280,7 +280,7 @@ export default function Page() {
                 clipRule="evenodd" 
               />
             </svg>            
-            <p className="text-sm text-yellow-200">
+            <p className="text-md text-yellow-200">
               <strong className="font-semibold">Warning:</strong> This project has not been audited. Although it runs entirely on the client side, we strongly recommend that you do <strong> NOT </strong> use your real Aadhaar.
             </p>
           </div>
@@ -289,8 +289,8 @@ export default function Page() {
             {/* Step 1 */}
             <div className="p-4 justify-center rounded-lg bg-gray-800/60 border border-gray-700">
               <h2 className="text-lg font-semibold">Step 1 — Scan or upload your {aadhaarEnv === 'test' ? 'Test ' : ''}Aadhaar QR</h2>
-              <p className="text-sm text-gray-400 mt-1">We only parse the QR locally in your browser.</p>
-              <div className="mt-2 text-sm">
+              <p className="text-md text-gray-400 mt-1">We only parse the QR locally in your browser.</p>
+              <div className="mt-2 text-md">
                 {aadhaarEnv === 'test' ? (
                   <p className="text-gray-300">
                     Generate a test QR code using {' '}
@@ -327,7 +327,7 @@ export default function Page() {
                   Scan or Upload
                 </button>
               </div>
-              <div className="mt-2 flex justify-center text-sm text-gray-300">
+              <div className="mt-2 flex justify-center text-md text-gray-300">
                 {qrNumericString && aadhaarName ? (
                   <>
                     <span className="font-medium text-gray-400  ">Aadhaar Name:</span> <span className="text-white">{aadhaarName}</span>
@@ -341,7 +341,7 @@ export default function Page() {
             {/* Step 2 */}
             <div className="p-4 rounded-lg bg-gray-800/60 border border-gray-700">
               <h2 className="text-lg font-semibold">Step 2 — Create credential or proof</h2>
-              <p className="text-sm text-gray-400 mt-1">Creates a zero-knowledge credential in the browser that can be verified in browser. To settle the proof and increment counter, click create proof.</p>
+              <p className="text-md text-gray-400 mt-1">Creates a zero-knowledge credential in the browser that can be verified in browser. To settle the proof and increment counter, click create proof.</p>
               <div className="mt-3 items-center flex gap-3">
                 <button
                   onClick={() => qrNumericString && handleCreateCredential(qrNumericString)}
@@ -363,7 +363,7 @@ export default function Page() {
                 <ProgressSteps title="Progress" steps={steps} />
               </div>
               {status.status === 'errored' && status.error && (
-                <div className="text-left text-red-300 mt-3 text-sm">
+                <div className="text-left text-red-300 mt-3 text-md">
                   <p className="font-semibold">Error:</p>
                   <p className="break-words">{status.error}</p>
                 </div>
@@ -372,7 +372,7 @@ export default function Page() {
           </div>
           <div className='border border-gray-700 p-4 rounded-lg'>
           <h2 className="text-lg font-semibold mt-6">Step 3 — Test your credential</h2>
-          <p className="text-sm text-gray-400 mt-1"> Validate if your credential is created correctly or not. </p>
+          <p className="text-md text-gray-400 mt-1"> Validate if your credential is created correctly or not. </p>
           <div className="mt-3 gap-2 flex">
             <button 
               onClick={handleVerifyCredential} 
@@ -384,14 +384,14 @@ export default function Page() {
           </div>
             
           <div className=" mt-6">
-              <p className="text-sm text-gray-400 mt-1"> To verify credential in the browser, use <b>Browser Vericiation</b> section. To settle your proof in zkApp and increment the counter, use <b>zkApp   Verification</b> section. <br></br> Upon included tx, fetch the latest value to see your increment! </p>
+              <p className="text-md text-gray-400 mt-1"> To verify credential in the browser, use <b>Browser Verificiation</b> section. To settle your proof in zkApp and increment the counter, use <b>zkApp   Verification</b> section. <br></br> Upon included tx, fetch the latest value to see your increment! </p>
             </div>
             </div>
 
               <nav className="-mb-px flex space-x-1" aria-label="Tabs">
                 <button
                   onClick={() => setActiveTab('https')}
-                  className={`px-8 py-3 text-sm flex-1 font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'https' 
+                  className={`px-8 py-3 text-md flex-1 font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'https' 
                     ? 'text-green-400 bg-gray-800/50 border-green-500 hover:bg-gray-800 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-green-500/20 after:blur-sm' 
                     : 'text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-700'}`}
                 >
@@ -399,7 +399,7 @@ export default function Page() {
                 </button>
                 <button
                   onClick={() => setActiveTab('zkapp')}
-                  className={`px-8 py-3 text-sm flex-1 font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'zkapp' 
+                  className={`px-8 py-3 text-md flex-1 font-medium rounded-t-lg border-b-2 transition-colors relative ${activeTab === 'zkapp' 
                     ? 'text-green-400 bg-gray-800/50 border-green-500 hover:bg-gray-800 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-green-500/20 after:blur-sm' 
                     : 'text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-700'}`}
                 >
@@ -427,14 +427,14 @@ export default function Page() {
         <div className="hidden lg:flex flex-col py-60 gap-28 w-80 flex-shrink-0 ">
           <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
             <h3 className="text-lg font-semibold text-green-400 mb-2">Step 1</h3>
-            <p className="text-sm text-gray-300">
+            <p className="text-md text-gray-300">
               Click to the QR code generation link. After downloading, upload it using <em>Scan or Upload</em> button.
             </p>
           </div>
           
           <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
             <h3 className="text-lg font-semibold text-green-400 mb-2">Step 2</h3>
-            <ul className="text-sm text-gray-300 space-y-2">
+            <ul className="text-md text-gray-300 space-y-2">
               Wait for workers to be initialized. When initialized you can choose: 
               <li>• <strong>Create Credential</strong> button, to create credential and verify it using <strong>Browser Verification</strong> section. </li>
               <li>• <strong> Create Proof</strong> button, to create a zk proof and verify it using <strong>zkApp Verification</strong> section, which will require your signature and increase the counter below! </li>
@@ -443,14 +443,14 @@ export default function Page() {
 
           <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
             <h3 className="text-lg font-semibold text-green-400 mb-2">Step 3</h3>
-            <p className="text-sm text-gray-300">
+            <p className="text-md text-gray-300">
               If you chose to create a credential, you can validate it here to check if it is created correctly. 
             </p>
           </div>
           
           <div className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
             <h3 className="text-lg font-semibold text-green-400 mb-2">Step 4</h3>
-            <p className="text-sm text-gray-300">
+            <p className="text-md text-gray-300">
               After you created your proof, you can settle it. When you send the settlement tx, you will be able to see your tx link. When tx is included, click <strong>refresh</strong> to see the increment.
             </p>
           </div>
